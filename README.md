@@ -1,6 +1,12 @@
 # 42webserv
 
+### Linkedin Learning
+
 https://www.linkedin.com/learning/network-programming-in-c/
+
+https://www.linkedin.com/learning/network-forensics/
+
+### Youtube
 
 https://www.youtube.com/playlist?list=PLBlnK6fEyqRgKl0MbI6kbI5ffNt7BF8Fn
 
