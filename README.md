@@ -1,6 +1,6 @@
 # 42webserv
 
-### FreeCodeCamp
+### FreeCodeCamp: HTTP
 
 https://www.youtube.com/watch?v=2JYT5f2isg4
 
@@ -10,7 +10,15 @@ https://www.linkedin.com/learning/network-programming-in-c/
 
 https://www.linkedin.com/learning/network-forensics/
 
-### Youtube
+### Network Programming
+
+https://www.youtube.com/playlist?list=PL9IEJIKnBJjH_zM5LnovnoaKlXML5qh17
+
+### Sockets
+
+https://www.youtube.com/watch?v=8TGV4zcd9k4
+
+### Youtube ???
 
 https://www.youtube.com/playlist?list=PLBlnK6fEyqRgKl0MbI6kbI5ffNt7BF8Fn
 
@@ -20,4 +28,3 @@ https://www.youtube.com/playlist?list=PLhy9gU5W1fvUND_5mdpbNVHC1WCIaABbP
 
 https://www.youtube.com/watch?v=JhpUch6lWMw
 
-https://www.youtube.com/playlist?list=PL9IEJIKnBJjH_zM5LnovnoaKlXML5qh17
