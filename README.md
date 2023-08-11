@@ -1,5 +1,7 @@
 # 42webserv
 
+https://www.manning.com/books/http2-in-action
+
 ### FreeCodeCamp: HTTP
 
 https://www.youtube.com/watch?v=2JYT5f2isg4
