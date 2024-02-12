@@ -53,6 +53,7 @@ int main(int argc, char ** argv) {
         buffer[strcspn(buffer, "\n")] = '\0'; // Remove trailing newline
 
         // Send the message to the server
+        printf("Sending %s \n", buffer);
         if (send(client_socket, buffer, strlen(buffer), 0) == -1) {
             perror("send");
             break;
@@ -73,7 +74,7 @@ int main(int argc, char ** argv) {
         buffer[num_bytes_recv] = '\0'; // Null-terminate the received data
 
         // Print server response
-        printf("Server response: %s\n", buffer);
+        printf("Server response: %s [fd: %d]\n", buffer, client_socket);
     }
 
     // Close the socket
