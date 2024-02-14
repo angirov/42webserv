@@ -125,7 +125,7 @@ int main(int argc, char **argv)
                 std::cout << "Got zero bytes == Peer has closed the connection gracefully\n";
                 close(*it);
                 std::cout << "Removing fd " << *it << std::endl;
-                it = conn_l.erase(it);;
+                it = conn_l.erase(it);
                 std::cout << " from the list. New list: [";
                 cout_list(conn_l);
                 continue;
