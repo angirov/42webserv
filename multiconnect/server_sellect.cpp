@@ -13,9 +13,10 @@
 #include <iterator>
 #include <map>
 #include <sys/select.h>
+#include <sstream>
 
 #define LISTENQ 10
-#define BUFFERSIZE 5
+#define BUFFERSIZE 1000
 
 typedef struct sockaddr SA;
 
@@ -60,7 +61,10 @@ int main(int argc, char **argv)
     struct hostent *hp;
     char *haddr_ptr;
     char buffer[BUFFERSIZE] = {0};
-
+    std::string httpResponse = "HTTP/1.1 200 OK\r\n"
+                                "Content-Type: text/plain\r\n"
+                                "Transfer-Encoding: chunked\r\n"
+                                "\r\n";
     std::list<int> conn_l;
     fd_set fds_listen;
     fd_set fds_listen_ret;
@@ -181,11 +185,24 @@ int main(int argc, char **argv)
             if (!FD_ISSET(*it, &fds_listen_ret) && FD_ISSET(*it, &fds_listen)) {
                 if (requests[*it].size() > 0)
                 {
-                    requests[*it] = "RESPONCE: " + requests[*it] + ". Thank you for using our server!";
-                    send(*it, requests[*it].c_str(), requests[*it].size(), 0);
-                    std::cout << ">>> DEBUG: sent to the client " << *it <<
-                    " : " << requests[*it] << std::endl;
+                    std::string res;
+                    res += "RESPONCE: your request was:\n";
+                    res += "============================\n";
+                    res += requests[*it];
+                    res += "============================\n";
+                    res += "Thank you for using our server!";
+
+                    std::stringstream ss;
+                    ss << httpResponse
+                    << std::hex << res.length() << "\r\n"
+                    << res << "\r\n0\r\n\r\n";
+
+                    std::string to_send = ss.str();
+                    send(*it, to_send.c_str(), to_send.size(), 0);
                     requests[*it] = "";
+
+                    std::cout << ">>> DEBUG: sent to the client " << *it <<
+                    " : " << res << std::endl;
                 }
             }
         }
