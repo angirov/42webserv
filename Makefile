@@ -10,6 +10,12 @@ hello_server: server_sellect.cpp
 	$(COMPILER) $(CFLAGS) server_sellect.cpp -o hello_server
 
 clean:
-	rm -f client hello_server
+	rm -f hello_server
+
+fclean:
+	rm -f client
+
+test: re
+	bash test.sh
 
 re: clean all
