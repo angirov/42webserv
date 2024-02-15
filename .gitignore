@@ -39,3 +39,5 @@ cmake-build-debug/
 webserv
 ubuntu_cgi_tester
 ubuntu_tester
+
+*.txt
