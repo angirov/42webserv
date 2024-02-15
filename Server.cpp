@@ -139,20 +139,22 @@ void Server::run()
                 }
             }
         }
-
-        // Check if request is ready to be processed
-        for (std::list<int>::iterator it = client_fds_l.begin(); it != client_fds_l.end(); ++it)
+        send_stuff();
+    }
+}
+void Server::send_stuff() {
+    // Check if request is ready to be processed
+    for (std::list<int>::iterator it = client_fds_l.begin(); it != client_fds_l.end(); ++it)
+    {
+        if (!FD_ISSET(*it, &fds_listen_ret) && FD_ISSET(*it, &fds_listen))
         {
-            if (!FD_ISSET(*it, &fds_listen_ret) && FD_ISSET(*it, &fds_listen))
+            if (requests[*it].size() > 0)
             {
-                if (requests[*it].size() > 0)
-                {
-                    std::string responce = process_request(requests[*it]);
-                    send(*it, responce.c_str(), responce.size(), 0);
-                    requests[*it] = "";
+                std::string responce = process_request(requests[*it]);
+                send(*it, responce.c_str(), responce.size(), 0);
+                requests[*it] = "";
 
-                    std::cout << ">>> DEBUG: sent to the client " << *it << " :\n" << responce << std::endl;
-                }
+                std::cout << ">>> DEBUG: sent to the client " << *it << " :\n" << responce << std::endl;
             }
         }
     }

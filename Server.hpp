@@ -62,6 +62,7 @@ public:
     void accept_new_conn(int fd);
     void cout_list(std::list<int> l);
     std::string process_request(const std::string & request);
+    void send_stuff();
     void run();
 };
 
