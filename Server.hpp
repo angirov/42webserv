@@ -22,6 +22,8 @@
 #define LISTENQ 10
 #define BUFFERSIZE 5
 
+# include "Request.hpp"
+
 typedef struct sockaddr SA;
 
 class Server
@@ -54,15 +56,14 @@ public:
         tv.tv_usec = 10;
     }
 
-    void init_server_sockets(std::list<int> ports_l);
-    void accept_new_conn(int fd);
+    void        init_server_sockets(std::list<int> ports_l);
+    void        accept_new_conn(int fd);
     std::string cout_list(std::list<int> const l);
-    std::string process_request(const std::string & request);
-    void handle_client_disconnect(std::list<int>::iterator & fd_itr);
-    void do_select();
-    void do_read(std::list<int>::iterator & fd_itr);
-    void do_send();
-    void run();
+    void        handle_client_disconnect(std::list<int>::iterator & fd_itr);
+    void        do_select();
+    void        do_read(std::list<int>::iterator & fd_itr);
+    void        do_send();
+    void        run();
 };
 
 #endif

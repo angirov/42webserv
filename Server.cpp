@@ -163,7 +163,7 @@ void Server::do_send() {
         {
             if (requests[*it].size() > 0)
             {
-                std::string responce = process_request(requests[*it]);
+                std::string responce = Request(requests[*it]).process();
                 send(*it, responce.c_str(), responce.size(), 0);
                 requests[*it] = "";
 
@@ -173,22 +173,24 @@ void Server::do_send() {
     }
 }
 
-std::string Server::process_request(const std::string & request) {
-    std::string http200chunked = "HTTP/1.1 200 OK\r\n"
-                         "Content-Type: text/plain\r\n"
-                         "Transfer-Encoding: chunked\r\n"
-                         "\r\n";
-    std::string res;
-    res += "RESPONCE: your request was:\n";
-    res += "============================\n";
-    res += request;
-    res += "============================\n";
-    res += "Thank you for using our server!";
+//    std::string process_request(const std::string & request);
 
-    std::stringstream ss;
-    ss << http200chunked
-        << std::hex << res.length() << "\r\n"
-        << res << "\r\n0\r\n\r\n";
+// std::string Server::process_request(const std::string & request) {
+//     std::string http200chunked = "HTTP/1.1 200 OK\r\n"
+//                          "Content-Type: text/plain\r\n"
+//                          "Transfer-Encoding: chunked\r\n"
+//                          "\r\n";
+//     std::string res;
+//     res += "RESPONCE: your request was:\n";
+//     res += "============================\n";
+//     res += request;
+//     res += "============================\n";
+//     res += "Thank you for using our server!";
 
-    return ss.str();
-}
+//     std::stringstream ss;
+//     ss << http200chunked
+//         << std::hex << res.length() << "\r\n"
+//         << res << "\r\n0\r\n\r\n";
+
+//     return ss.str();
+// }

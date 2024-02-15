@@ -1,7 +1,7 @@
 COMPILER = g++
 CFLAGS = -Wall -Werror -Wextra -std=c++98
-SRCS	:=	main.cpp Server.cpp
-HDRS	:=	Server.hpp
+SRCS	:=	main.cpp Server.cpp Request.cpp
+HDRS	:=	Server.hpp Request.hpp
 all: client server
 
 client: client.cpp
