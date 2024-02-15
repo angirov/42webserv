@@ -60,9 +60,11 @@ public:
 
     void init_server_sockets(std::list<int> ports_l);
     void accept_new_conn(int fd);
-    void cout_list(std::list<int> l);
+    std::string cout_list(std::list<int> const l);
     std::string process_request(const std::string & request);
-    void send_stuff();
+    void do_select();
+    void do_send();
+    void handle_client_disconnect(std::list<int>::iterator & fd_ptr);
     void run();
 };
 
