@@ -9,7 +9,8 @@ enum LogLevel {
     DEBUG,
     INFO,
     WARNING,
-    ERROR
+    ERROR,
+    UNKNOWN
 };
 
 class Logger {
@@ -17,8 +18,10 @@ private:
     std::ostream& outputStream;
     std::ofstream logfile;
     LogLevel logLevel;
+    LogLevel stringToLogLevel(const std::string& levelStr);
 
 public:
+    Logger(std::string level, const std::string& filename = "", std::ostream& out = std::cout);
     Logger(LogLevel level, const std::string& filename = "", std::ostream& out = std::cout);
     ~Logger();
     void log(LogLevel level, const std::string& message);

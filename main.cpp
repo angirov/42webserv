@@ -1,6 +1,5 @@
 #include "Server.hpp"
 #include "Logger.hpp"
-
 std::list<int> argv2ports(int argc, char **argv)
 {
     std::list<int> ports_l;
@@ -13,8 +12,20 @@ std::list<int> argv2ports(int argc, char **argv)
     return ports_l;
 }
 
-int test_logger() {
-    Logger logger(INFO, "logfile.txt");
+int test_logger()
+{
+    char *env;
+    std::string loglevel = "INFO";
+    if ((env = std::getenv("WEBSERV_LOGLEVEL")))
+    {
+        loglevel = env;
+    }
+    Logger logger(loglevel, "logfile.txt");
+
+    if (env)
+        logger.log(INFO, "Value of WEBSERV_LOGLEVEL is " + std::string(env));
+    else
+        logger.log(INFO, "Value of WEBSERV_LOGLEVEL is NOT FOUND");
     logger.log(DEBUG, "This is a debug message.");
     logger.log(INFO, "This is an info message.");
     logger.log(WARNING, "This is a warning message.");
@@ -26,7 +37,6 @@ int test_logger() {
 
     return 0;
 }
-
 
 int main(int argc, char **argv)
 {

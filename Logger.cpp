@@ -7,6 +7,15 @@ Logger::Logger(LogLevel level, const std::string& filename, std::ostream& out)
     }
 }
 
+Logger::Logger(std::string level, const std::string& filename, std::ostream& out)
+    : outputStream(out) {
+    logLevel = stringToLogLevel(level);
+    if (!filename.empty()) {
+        logfile.open(filename.c_str(), std::ios::app);
+    }
+}
+
+
 Logger::~Logger() {
     if (logfile.is_open()) {
         logfile.close();
@@ -40,5 +49,19 @@ void Logger::log(LogLevel level, const std::string& message) {
         else {
             outputStream << "[" << timestamp << "] [" << levelString << "]\t" << message << std::endl;
         }
+    }
+}
+
+LogLevel Logger::stringToLogLevel(const std::string& levelStr) {
+    if (levelStr == "DEBUG") {
+        return DEBUG;
+    } else if (levelStr == "INFO") {
+        return INFO;
+    } else if (levelStr == "WARNING") {
+        return WARNING;
+    } else if (levelStr == "ERROR") {
+        return ERROR;
+    } else {
+        return UNKNOWN;
     }
 }
