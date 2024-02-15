@@ -56,8 +56,8 @@ int main(int argc, char **argv)
 {
     int listenfd, connfd, port, clientlen;
     struct sockaddr_in clientaddr;
-    struct hostent *hp;
-    char *haddr_ptr;
+    // struct hostent *hp;
+    // char *haddr_ptr;
     char buffer[BUFFERSIZE] = {0};
     std::list<int> conn_l;
     std::map<int, std::string> requests;
