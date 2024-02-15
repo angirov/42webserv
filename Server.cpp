@@ -21,7 +21,7 @@ void Server::init_server_sockets(std::list<int> ports_l)
             exit(EXIT_FAILURE);
         };
 
-        // Listenfd is endpoint for all requests to port on ANY IP for this host
+        // This fd is endpoint for all requests to port on ANY IP for this host
         bzero((char *)&serveraddr, sizeof(serveraddr));
         serveraddr.sin_family = AF_INET;
         serveraddr.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -38,6 +38,8 @@ void Server::init_server_sockets(std::list<int> ports_l)
             exit(EXIT_FAILURE);
         };
         printf("Server listening on port %d...\n", *it);
+        fcntl(fd, F_SETFL, O_NONBLOCK);
+
         server_socket_fds_l.push_back(fd);
     }
 }
@@ -52,50 +54,49 @@ void Server::cout_list(std::list<int> l)
     std::cout << "]" << std::endl;
 }
 
-void Server::run()
+void Server::accept_new_conn(int fd)
 {
-
-    init_server_sockets(ports_l);
-    listenfd = *server_socket_fds_l.begin();
-    fcntl(listenfd, F_SETFL, O_NONBLOCK);
-
-    while (1)
+    clientlen = sizeof(clientaddr);
+    connfd = accept(fd, (SA *)&clientaddr, (socklen_t *)&clientlen);
+    // https://stackoverflow.com/questions/7003234/
+    if (connfd == -1)
     {
-        clientlen = sizeof(clientaddr);
-        connfd = accept(listenfd, (SA *)&clientaddr, (socklen_t *)&clientlen);
-        // https://stackoverflow.com/questions/7003234/
-        if (connfd == -1)
+        if (errno == EWOULDBLOCK || errno == EAGAIN)
         {
-            if (errno == EWOULDBLOCK || errno == EAGAIN)
-            {
-                printf("Checked server socket... No connection attempt ...\n");
-                sleep(1);
-                // continue;
-            }
-            else
-            {
-                perror("accept");
-                exit(EXIT_FAILURE);
-            }
+            printf("Checked server socket... No connection attempt ...\n");
+            // sleep(1);
         }
         else
         {
-            fcntl(connfd, F_SETFL, O_NONBLOCK);
-            client_fds_l.push_back(connfd);
-            FD_SET(connfd, &fds_listen);
-            if (FD_ISSET(connfd, &fds_listen))
-            {
-                std::cout << "DEBUG: Checked if ISSET for the new client socket: TRUE\n";
-            }
-            else
-            {
-                std::cout << "DEBUG: Checked if ISSET for the new client socket: FALSE\n";
-            };
-            requests[connfd] = "";
-            std::cout << "Adding fd " << connfd << " to the list. New list: [";
-            cout_list(client_fds_l);
-            printf("Connection from %s:%d\n", inet_ntoa(clientaddr.sin_addr), ntohs(clientaddr.sin_port));
+            perror("accept");
+            exit(EXIT_FAILURE);
         }
+    }
+    else
+    {
+        fcntl(connfd, F_SETFL, O_NONBLOCK);
+        client_fds_l.push_back(connfd);
+        FD_SET(connfd, &fds_listen);
+        requests[connfd] = "";
+
+        // The rest is just for debugging
+        // if (FD_ISSET(connfd, &fds_listen)) {
+        //     std::cout << "DEBUG: Checked if ISSET for the new client socket: TRUE\n";
+        // } else {
+        //     std::cout << "DEBUG: Checked if ISSET for the new client socket: FALSE\n";
+        // };
+        std::cout << "Adding fd " << connfd << " to the list. New list: [";
+        cout_list(client_fds_l);
+        printf("Connection from %s:%d\n", inet_ntoa(clientaddr.sin_addr), ntohs(clientaddr.sin_port));
+    }
+}
+
+void Server::run()
+{
+    init_server_sockets(ports_l);
+    while (1)
+    {
+        accept_new_conn(*server_socket_fds_l.begin());
 
         std::cout << ">>> DEBUG: before select" << std::endl;
         fds_listen_ret = fds_listen;
@@ -167,5 +168,4 @@ void Server::run()
             }
         }
     }
-    close(listenfd);
 }
