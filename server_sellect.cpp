@@ -58,9 +58,8 @@ void cout_list(std::list<int> l)
     std::cout << "]" << std::endl;
 }
 
-int main(int argc, char **argv)
-{
-    int listenfd, connfd, port, clientlen;
+void run(int port) {
+    int listenfd, connfd, clientlen;
     struct sockaddr_in clientaddr;
     char buffer[BUFFERSIZE] = {0};
     std::string httpResponse = "HTTP/1.1 200 OK\r\n"
@@ -80,12 +79,7 @@ int main(int argc, char **argv)
 
     std::map<int, std::string> requests;
 
-    if (argc != 2)
-    {
-        fprintf(stderr, "usage: %s <port>\n", argv[0]);
-        exit(0);
-    }
-    port = atoi(argv[1]);
+
 
     listenfd = open_listenfd(port);
     fcntl(listenfd, F_SETFL, O_NONBLOCK);
@@ -211,5 +205,18 @@ int main(int argc, char **argv)
 
     }
     close(listenfd);
+}
+
+int main(int argc, char **argv)
+{
+    if (argc != 2)
+    {
+        fprintf(stderr, "usage: %s <port>\n", argv[0]);
+        exit(0);
+    }
+    int port = atoi(argv[1]);
+    
+    run(port);
+
     return 0;
 }
