@@ -1,13 +1,13 @@
 COMPILER = g++
-CFLAGS = -Wall -Werror -Wextra
+CFLAGS = -Wall -Werror -Wextra -std=c++98
 
 all: client hello_server
 
-client: multiconnect/client.cpp
-	$(COMPILER) $(CFLAGS) multiconnect/client.cpp -o client
+client: client.cpp
+	$(COMPILER) $(CFLAGS) client.cpp -o client
 
-hello_server: multiconnect/server_http_hello_world.cpp
-	$(COMPILER) $(CFLAGS) multiconnect/server_http_hello_world.cpp -o hello_server
+hello_server: server_sellect.cpp
+	$(COMPILER) $(CFLAGS) server_sellect.cpp -o hello_server
 
 clean:
 	rm -f client hello_server
