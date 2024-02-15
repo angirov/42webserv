@@ -147,25 +147,29 @@ void Server::run()
             {
                 if (requests[*it].size() > 0)
                 {
-                    std::string res;
-                    res += "RESPONCE: your request was:\n";
-                    res += "============================\n";
-                    res += requests[*it];
-                    res += "============================\n";
-                    res += "Thank you for using our server!";
-
-                    std::stringstream ss;
-                    ss << http200chunked
-                       << std::hex << res.length() << "\r\n"
-                       << res << "\r\n0\r\n\r\n";
-
-                    std::string to_send = ss.str();
-                    send(*it, to_send.c_str(), to_send.size(), 0);
+                    std::string responce = process_request(requests[*it]);
+                    send(*it, responce.c_str(), responce.size(), 0);
                     requests[*it] = "";
 
-                    std::cout << ">>> DEBUG: sent to the client " << *it << " : " << res << std::endl;
+                    std::cout << ">>> DEBUG: sent to the client " << *it << " :\n" << responce << std::endl;
                 }
             }
         }
     }
+}
+
+std::string Server::process_request(const std::string & request) {
+    std::string res;
+    res += "RESPONCE: your request was:\n";
+    res += "============================\n";
+    res += request;
+    res += "============================\n";
+    res += "Thank you for using our server!";
+
+    std::stringstream ss;
+    ss << http200chunked
+        << std::hex << res.length() << "\r\n"
+        << res << "\r\n0\r\n\r\n";
+
+    return ss.str();
 }

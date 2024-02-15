@@ -61,6 +61,7 @@ public:
     void init_server_sockets(std::list<int> ports_l);
     void accept_new_conn(int fd);
     void cout_list(std::list<int> l);
+    std::string process_request(const std::string & request);
     void run();
 };
 
