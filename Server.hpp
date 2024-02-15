@@ -21,7 +21,8 @@
 #include <cstdlib> // For getenv
 
 #define LISTENQ 10
-#define BUFFERSIZE 1000
+#define BUFFERSIZE 10000
+#define BUFFERTEST 100
 
 # include "Request.hpp"
 # include "Logger.hpp"
@@ -33,13 +34,14 @@ class Server
 private:
     bool handTesting;
     Logger lg;
+    unsigned int buffsize;
 
 public:
     int connfd;
     int clientlen;
     struct timeval tv;
     struct sockaddr_in clientaddr;
-    char buffer[BUFFERSIZE];
+    char * buffer;
     int optval;
     struct sockaddr_in serveraddr;
 

@@ -1,24 +1,36 @@
 #include "Server.hpp"
 
-
 Server::Server(std::list<int> ports_l) : ports_l(ports_l)
 {
-    std::string loglevel = std::getenv("WEBSERV_LOGLEVEL");
-    
-    if (loglevel.empty()){
-        loglevel = "INFO";
-        std::cout << "loglevel: " << loglevel <<std::endl;
-    }
-    Logger lg(loglevel, "logfile.txt");
-    lg.log(INFO, "Loglevel is " + loglevel);
-
-    lg.env("WEBSERV_HANDTESTING");
     if (std::getenv("WEBSERV_HANDTESTING"))
         handTesting = true;
     else
         handTesting = false;
+
+    std::string loglevel;
+    const char *log_var = std::getenv("WEBSERV_LOGLEVEL");
+    if (!log_var || std::string(log_var).empty())
+        loglevel = "INFO";
+    else
+        loglevel = std::getenv("WEBSERV_LOGLEVEL");
+
+    if (handTesting)
+    {
+        buffsize = BUFFERTEST;
+        lg = Logger(loglevel, "", std::cout);
+    }
+    else
+    {
+        buffsize = BUFFERSIZE;
+        lg = Logger(loglevel, "logfile.txt");
+    }
+    buffer = new char[buffsize];
+    lg.log(INFO, "Logger level is " + lg.str(lg.getLevel()));
+
+    lg.env("WEBSERV_HANDTESTING");
+    lg.env("WEBSERV_LOGLEVEL");
     optval = 1;
-    memset(buffer, 0, sizeof(buffer));
+    memset(buffer, 0, buffsize);
     FD_ZERO(&fds_listen);
     FD_ZERO(&fds_listen_ret);
     // fd_set fds_write;
@@ -26,7 +38,6 @@ Server::Server(std::list<int> ports_l) : ports_l(ports_l)
     tv.tv_sec = 0;
     tv.tv_usec = 10;
 }
-
 
 void Server::init_server_sockets(std::list<int> ports_l)
 {
@@ -65,7 +76,7 @@ void Server::init_server_sockets(std::list<int> ports_l)
             perror("listen");
             exit(EXIT_FAILURE);
         };
-        printf("Server listening on port %d...\n", *it);
+        lg.log(INFO, "Server listening on port" + lg.str(*it));
         fcntl(fd, F_SETFL, O_NONBLOCK);
 
         server_socket_fds_l.push_back(fd);
@@ -95,7 +106,7 @@ void Server::accept_new_conn(int fd)
     {
         if (errno == EWOULDBLOCK || errno == EAGAIN)
         {
-            printf("Checked server socket... No connection attempt ...\n");
+            lg.log(DEBUG, "No connection request for " + lg.str(fd));
             if (handTesting)
                 sleep(1);
         }
@@ -112,14 +123,8 @@ void Server::accept_new_conn(int fd)
         FD_SET(connfd, &fds_listen);
         requests[connfd] = "";
 
-        // The rest is just for debugging
-        // if (FD_ISSET(connfd, &fds_listen)) {
-        //     std::cout << "DEBUG: Checked if ISSET for the new client socket: TRUE\n";
-        // } else {
-        //     std::cout << "DEBUG: Checked if ISSET for the new client socket: FALSE\n";
-        // };
-        std::cout << "Adding fd " << connfd << " to the list. New list " << cout_list(client_fds_l) << std::endl;
-        printf("Connection from %s:%d\n", inet_ntoa(clientaddr.sin_addr), ntohs(clientaddr.sin_port));
+        lg.log(INFO, "Connection from " + std::string(inet_ntoa(clientaddr.sin_addr)) + ":" + lg.str(ntohs(clientaddr.sin_port)));
+        lg.log(DEBUG, "Adding fd " + lg.str(connfd) + " to the list. New list " + cout_list(client_fds_l));
     }
 }
 
@@ -134,12 +139,13 @@ void Server::run()
     }
 }
 
-void Server::do_read(std::list<int>::iterator & fd_itr) {
+void Server::do_read(std::list<int>::iterator &fd_itr)
+{
     ssize_t num_bytes_recv = 0;
-    num_bytes_recv = recv(*fd_itr, buffer, BUFFERSIZE, 0);
+    num_bytes_recv = recv(*fd_itr, buffer, buffsize, 0);
     if (num_bytes_recv > 0)
     {
-        printf("Received %d bytes: %.*s from fd %d\n", (int)num_bytes_recv, (int)num_bytes_recv, buffer, *fd_itr);
+        lg.log(DEBUG, "Received " + lg.str(num_bytes_recv) + " bytes from fd " + lg.str(*fd_itr) + ": " + std::string(buffer, num_bytes_recv));
         requests[*fd_itr] += std::string(buffer, num_bytes_recv);
     }
     if (num_bytes_recv == 0)
@@ -152,52 +158,47 @@ void Server::do_read(std::list<int>::iterator & fd_itr) {
     }
 }
 
-void Server::do_select() {
-    std::cout << ">>> DEBUG: before select" << std::endl;
+void Server::do_select()
+{
     fds_listen_ret = fds_listen;
     int ret;
     ret = select(1024, &fds_listen_ret, NULL, NULL, &tv); // TODO: max has to be calculated
-    std::cout << ">>> DEBUG: after select: returned: " << ret << std::endl;
+    lg.log(DEBUG, "select returned: " + lg.str(ret) + " Fds to monitor: " + cout_list(client_fds_l));
 
     if (ret > 0)
     {
         for (std::list<int>::iterator it = client_fds_l.begin(); it != client_fds_l.end(); ++it)
         {
-            std::cout << "Checking fd " << *it;
+            lg.log(DEBUG, "Checking fd " + lg.str(*it));
             if (!FD_ISSET(*it, &fds_listen_ret))
-            {
-                std::cout << " --> NOTHING to read\n";
                 continue;
-            }
-            std::cout << " --> READY to read\n";
             do_read(it);
         }
     }
 }
 
-void Server::handle_client_disconnect(std::list<int>::iterator & fd_itr) {
-    std::cout << "Got zero bytes == Peer has closed the connection gracefully\n";
+void Server::handle_client_disconnect(std::list<int>::iterator &fd_itr)
+{
+    lg.log(INFO, "Got zero bytes == Peer has closed the connection gracefully");
     close(*fd_itr);
-    std::cout << "Removing fd " << *fd_itr << " from the list. ";
+    lg.log(DEBUG, "Removing fd " + lg.str(*fd_itr) + " from the list. ");
     fd_itr = client_fds_l.erase(fd_itr);
     FD_CLR(*fd_itr, &fds_listen);
-    std::cout << "New list: " << cout_list(client_fds_l) << std::endl;
+    lg.log(DEBUG, "New list: " + cout_list(client_fds_l));
 }
 
-void Server::do_send() {
+void Server::do_send()
+{
     // Check if request is ready to be processed
     for (std::list<int>::iterator it = client_fds_l.begin(); it != client_fds_l.end(); ++it)
     {
-        if (!FD_ISSET(*it, &fds_listen_ret) && FD_ISSET(*it, &fds_listen))
+        if (!FD_ISSET(*it, &fds_listen_ret) && requests[*it].size() > 0)
         {
-            if (requests[*it].size() > 0)
-            {
-                std::string responce = Request(requests[*it]).process();
-                send(*it, responce.c_str(), responce.size(), 0);
-                requests[*it] = "";
+            std::string responce = Request(requests[*it]).process();
+            send(*it, responce.c_str(), responce.size(), 0);
+            requests[*it] = "";
 
-                std::cout << ">>> DEBUG: sent to the client " << *it << " :\n" << responce << std::endl;
-            }
+            lg.log(INFO, "sent to the client " + lg.str(*it) + " :\n" + responce);
         }
     }
 }
