@@ -1,20 +1,39 @@
 #include "Logger.hpp"
 
-Logger::Logger(LogLevel level, const std::string& filename, std::ostream& out)
-    : outputStream(out), logLevel(level) {
-    if (!filename.empty()) {
-        logfile.open(filename.c_str(), std::ios::app);
+Logger::Logger() : outputStream(std::cout){}
+
+Logger::Logger(LogLevel level, const std::string& logfileName, std::ostream& out)
+    : logfileName(logfileName), outputStream(out), logLevel(level) {
+    if (!logfileName.empty()) {
+        logfile.open(logfileName.c_str(), std::ios::app);
     }
 }
 
-Logger::Logger(std::string level, const std::string& filename, std::ostream& out)
-    : outputStream(out) {
+Logger::Logger(std::string level, const std::string& logfileName, std::ostream& out)
+    : logfileName(logfileName), outputStream(out) {
     logLevel = stringToLogLevel(level);
-    if (!filename.empty()) {
-        logfile.open(filename.c_str(), std::ios::app);
+    if (!logfileName.empty()) {
+        logfile.open(logfileName.c_str(), std::ios::app);
     }
 }
 
+Logger& Logger::operator=(const Logger& other) {
+    if (this != &other) { // Avoid self-assignment
+        // Close current logfile
+        if (logfile.is_open()) {
+            logfile.close();
+        }
+
+        // Copy log level
+        this->logLevel = other.logLevel;
+
+        // Copy logfile stream
+        if (other.logfile.is_open()) {
+            this->logfile.open(other.logfileName.c_str(), std::ios::app);
+        }
+    }
+    return *this;
+}
 
 Logger::~Logger() {
     if (logfile.is_open()) {
@@ -64,4 +83,12 @@ LogLevel Logger::stringToLogLevel(const std::string& levelStr) {
     } else {
         return UNKNOWN;
     }
+}
+
+void Logger::env(const char * var) {
+    std::string val = std::getenv(var);
+    if (!val.empty())
+        this->log(INFO, "Value of " + std::string(var) + " is " + val);
+    else
+        this->log(INFO, "Value of " + std::string(var) + " is EMPTY");
 }

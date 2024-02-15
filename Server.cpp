@@ -3,6 +3,20 @@
 
 Server::Server(std::list<int> ports_l) : ports_l(ports_l)
 {
+    std::string loglevel = std::getenv("WEBSERV_LOGLEVEL");
+    
+    if (loglevel.empty()){
+        loglevel = "INFO";
+        std::cout << "loglevel: " << loglevel <<std::endl;
+    }
+    Logger lg(loglevel, "logfile.txt");
+    lg.log(INFO, "Loglevel is " + loglevel);
+
+    lg.env("WEBSERV_HANDTESTING");
+    if (std::getenv("WEBSERV_HANDTESTING"))
+        handTesting = true;
+    else
+        handTesting = false;
     optval = 1;
     memset(buffer, 0, sizeof(buffer));
     FD_ZERO(&fds_listen);
@@ -82,7 +96,8 @@ void Server::accept_new_conn(int fd)
         if (errno == EWOULDBLOCK || errno == EAGAIN)
         {
             printf("Checked server socket... No connection attempt ...\n");
-            // sleep(1);
+            if (handTesting)
+                sleep(1);
         }
         else
         {

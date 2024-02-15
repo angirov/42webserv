@@ -20,7 +20,7 @@ int test_logger()
     {
         loglevel = env;
     }
-    Logger logger(loglevel, "logfile.txt");
+    Logger logger(loglevel, "logfile3.txt");
 
     if (env)
         logger.log(INFO, "Value of WEBSERV_LOGLEVEL is " + std::string(env));
@@ -40,7 +40,7 @@ int test_logger()
 
 int main(int argc, char **argv)
 {
-    test_logger();
+    // test_logger();
     if (argc != 2)
     {
         fprintf(stderr, "usage: %s <port>\n", argv[0]);

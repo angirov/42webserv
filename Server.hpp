@@ -18,16 +18,22 @@
 #include <sys/select.h>
 #include <sstream>
 #include <cstring>
+#include <cstdlib> // For getenv
 
 #define LISTENQ 10
-#define BUFFERSIZE 5
+#define BUFFERSIZE 1000
 
 # include "Request.hpp"
+# include "Logger.hpp"
 
 typedef struct sockaddr SA;
 
 class Server
 {
+private:
+    bool handTesting;
+    Logger lg;
+
 public:
     int connfd;
     int clientlen;
