@@ -1,18 +1,19 @@
 COMPILER = g++
 CFLAGS = -Wall -Werror -Wextra -std=c++98
-
-all: client hello_server
+SRCS	:=	main.cpp Server.cpp
+HDRS	:=	Server.hpp
+all: client server
 
 client: client.cpp
 	$(COMPILER) $(CFLAGS) client.cpp -o client
 
-hello_server: server_sellect.cpp
-	$(COMPILER) $(CFLAGS) server_sellect.cpp -o hello_server
+server: ${HDRS}
+	$(COMPILER) $(CFLAGS) ${SRCS} -o server
 
 clean:
-	rm -f hello_server
+	rm -f server
 
-fclean:
+fclean: clean
 	rm -f client
 
 test: re

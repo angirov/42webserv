@@ -1,30 +1,7 @@
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <strings.h>
-#include <arpa/inet.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <list>
-#include <iostream>
-#include <algorithm>
-#include <iterator>
-#include <map>
-#include <sys/select.h>
-#include <sstream>
+#include "Server.hpp"
 
-#define LISTENQ 10
-#define BUFFERSIZE 1000
-
-typedef struct sockaddr SA;
-
-int open_listenfd(int port)
+int Server::open_listenfd(int port)
 {
-    int listenfd, optval = 1;
-    struct sockaddr_in serveraddr;
-
     // create a socket fd
     if ((listenfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
         return -1;
@@ -48,7 +25,7 @@ int open_listenfd(int port)
     return listenfd;
 }
 
-void cout_list(std::list<int> l)
+void Server::cout_list(std::list<int> l)
 {
     std::ostream_iterator<int> out_it(std::cout, ", ");
     for(std::list<int>::iterator it = l.begin(); it != l.end(); ++it)
@@ -58,26 +35,8 @@ void cout_list(std::list<int> l)
     std::cout << "]" << std::endl;
 }
 
-void run(int port) {
-    int listenfd, connfd, clientlen;
-    struct sockaddr_in clientaddr;
-    char buffer[BUFFERSIZE] = {0};
-    std::string httpResponse = "HTTP/1.1 200 OK\r\n"
-                                "Content-Type: text/plain\r\n"
-                                "Transfer-Encoding: chunked\r\n"
-                                "\r\n";
-    std::list<int> conn_l;
-    fd_set fds_listen;
-    fd_set fds_listen_ret;
-    FD_ZERO(&fds_listen);
-    FD_ZERO(&fds_listen_ret);
-    // fd_set fds_write;
+void Server::run(int port) {
 
-    struct timeval tv;
-    tv.tv_sec = 1;
-    tv.tv_usec = 0;
-
-    std::map<int, std::string> requests;
 
 
 
@@ -155,22 +114,7 @@ void run(int port) {
                 }
                 if (num_bytes_recv == -1)
                 {
-                    // if (errno == EWOULDBLOCK || errno == EAGAIN)
-                    // {
-                    //     std::cout << "Checked connection of fd " << *it << ": nothing to read\n";
-                    //     if (requests[*it].size() > 0)
-                    //     {
-                    //         requests[*it] = "RESPONCE: " + requests[*it] + ". Thank you for using our server!";
-                    //         send(*it, requests[*it].c_str(), requests[*it].size(), 0);
-                    //         requests[*it] = "";
-                    //     }
-                    //     sleep(2);
-                    //     ;
-                    // }
-                    // else
-                    // {
                     perror("recv");
-                    // }
                 }
             }
         }
@@ -205,18 +149,4 @@ void run(int port) {
 
     }
     close(listenfd);
-}
-
-int main(int argc, char **argv)
-{
-    if (argc != 2)
-    {
-        fprintf(stderr, "usage: %s <port>\n", argv[0]);
-        exit(0);
-    }
-    int port = atoi(argv[1]);
-    
-    run(port);
-
-    return 0;
 }
