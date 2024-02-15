@@ -1,47 +1,64 @@
 #include "Server.hpp"
 
-int Server::open_listenfd(int port)
+void Server::init_server_sockets(std::list<int> ports_l)
 {
-    // create a socket fd
-    if ((listenfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-        return -1;
+    std::list<int>::iterator it;
+    for (it = ports_l.begin(); it != ports_l.end(); ++it)
+    {
+        int fd;
+        // create a socket fd
+        if ((fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+        {
+            perror("socket");
+            exit(EXIT_FAILURE);
+        };
 
-    // eliminate addr already in use error
-    if (setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR,
-                   (const void *)&optval, sizeof(int)) < 0)
-        return -1;
+        // eliminate addr already in use error
+        if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR,
+                       (const void *)&optval, sizeof(int)) < 0)
+        {
+            perror("setsockopt");
+            exit(EXIT_FAILURE);
+        };
 
-    // Listenfd is endpoint for all requests to port on ANY IP for this host
-    bzero((char *)&serveraddr, sizeof(serveraddr));
-    serveraddr.sin_family = AF_INET;
-    serveraddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    serveraddr.sin_port = htons((unsigned short)port);
-    if (bind(listenfd, (SA *)&serveraddr, sizeof(serveraddr)) < 0)
-        return -1;
+        // Listenfd is endpoint for all requests to port on ANY IP for this host
+        bzero((char *)&serveraddr, sizeof(serveraddr));
+        serveraddr.sin_family = AF_INET;
+        serveraddr.sin_addr.s_addr = htonl(INADDR_ANY);
+        serveraddr.sin_port = htons((unsigned short)*it);
+        if (bind(fd, (SA *)&serveraddr, sizeof(serveraddr)) < 0)
+        {
+            perror("bind");
+            exit(EXIT_FAILURE);
+        };
 
-    if (listen(listenfd, LISTENQ) < 0)
-        return -1;
-    printf("Server listening on port %d...\n", port);
-    return listenfd;
+        if (listen(fd, LISTENQ) < 0)
+        {
+            perror("listen");
+            exit(EXIT_FAILURE);
+        };
+        printf("Server listening on port %d...\n", *it);
+        server_socket_fds_l.push_back(fd);
+    }
 }
 
 void Server::cout_list(std::list<int> l)
 {
     std::ostream_iterator<int> out_it(std::cout, ", ");
-    for(std::list<int>::iterator it = l.begin(); it != l.end(); ++it)
+    for (std::list<int>::iterator it = l.begin(); it != l.end(); ++it)
     {
         *out_it++ = *it;
     }
     std::cout << "]" << std::endl;
 }
 
-void Server::run() {
+void Server::run()
+{
 
-
-
-
-    listenfd = open_listenfd(*ports_l.begin());
+    init_server_sockets(ports_l);
+    listenfd = *server_socket_fds_l.begin();
     fcntl(listenfd, F_SETFL, O_NONBLOCK);
+
     while (1)
     {
         clientlen = sizeof(clientaddr);
@@ -64,16 +81,19 @@ void Server::run() {
         else
         {
             fcntl(connfd, F_SETFL, O_NONBLOCK);
-            conn_l.push_back(connfd);
+            client_fds_l.push_back(connfd);
             FD_SET(connfd, &fds_listen);
-            if (FD_ISSET(connfd, &fds_listen)) {
+            if (FD_ISSET(connfd, &fds_listen))
+            {
                 std::cout << "DEBUG: Checked if ISSET for the new client socket: TRUE\n";
-            } else {
+            }
+            else
+            {
                 std::cout << "DEBUG: Checked if ISSET for the new client socket: FALSE\n";
             };
             requests[connfd] = "";
             std::cout << "Adding fd " << connfd << " to the list. New list: [";
-            cout_list(conn_l);
+            cout_list(client_fds_l);
             printf("Connection from %s:%d\n", inet_ntoa(clientaddr.sin_addr), ntohs(clientaddr.sin_port));
         }
 
@@ -85,7 +105,7 @@ void Server::run() {
 
         if (ret > 0)
         {
-            for (std::list<int>::iterator it = conn_l.begin(); it != conn_l.end(); ++it)
+            for (std::list<int>::iterator it = client_fds_l.begin(); it != client_fds_l.end(); ++it)
             {
                 std::cout << "Checking fd " << *it;
                 ssize_t num_bytes_recv = 0;
@@ -105,11 +125,11 @@ void Server::run() {
                 {
                     std::cout << "Got zero bytes == Peer has closed the connection gracefully\n";
                     close(*it);
-                    std::cout << "Removing fd " << *it << " from the list. "; 
-                    it = conn_l.erase(it);
+                    std::cout << "Removing fd " << *it << " from the list. ";
+                    it = client_fds_l.erase(it);
                     FD_CLR(*it, &fds_listen);
                     std::cout << "New list: [";
-                    cout_list(conn_l);
+                    cout_list(client_fds_l);
                     continue;
                 }
                 if (num_bytes_recv == -1)
@@ -120,9 +140,10 @@ void Server::run() {
         }
 
         // Check if request is ready to be processed
-        for (std::list<int>::iterator it = conn_l.begin(); it != conn_l.end(); ++it)
+        for (std::list<int>::iterator it = client_fds_l.begin(); it != client_fds_l.end(); ++it)
         {
-            if (!FD_ISSET(*it, &fds_listen_ret) && FD_ISSET(*it, &fds_listen)) {
+            if (!FD_ISSET(*it, &fds_listen_ret) && FD_ISSET(*it, &fds_listen))
+            {
                 if (requests[*it].size() > 0)
                 {
                     std::string res;
@@ -133,20 +154,18 @@ void Server::run() {
                     res += "Thank you for using our server!";
 
                     std::stringstream ss;
-                    ss << httpResponse
-                    << std::hex << res.length() << "\r\n"
-                    << res << "\r\n0\r\n\r\n";
+                    ss << http200chunked
+                       << std::hex << res.length() << "\r\n"
+                       << res << "\r\n0\r\n\r\n";
 
                     std::string to_send = ss.str();
                     send(*it, to_send.c_str(), to_send.size(), 0);
                     requests[*it] = "";
 
-                    std::cout << ">>> DEBUG: sent to the client " << *it <<
-                    " : " << res << std::endl;
+                    std::cout << ">>> DEBUG: sent to the client " << *it << " : " << res << std::endl;
                 }
             }
         }
-
     }
     close(listenfd);
 }

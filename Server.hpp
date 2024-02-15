@@ -35,9 +35,10 @@ public:
     int optval;
     struct sockaddr_in serveraddr;
 
-    std::string httpResponse;
+    std::string http200chunked;
     std::list<int> ports_l;
-    std::list<int> conn_l;
+    std::list<int> client_fds_l;
+    std::list<int> server_socket_fds_l;
     fd_set fds_listen;
     fd_set fds_listen_ret;
     std::map<int, std::string> requests;
@@ -48,15 +49,15 @@ public:
         FD_ZERO(&fds_listen);
         FD_ZERO(&fds_listen_ret);
         // fd_set fds_write;
-        httpResponse =  "HTTP/1.1 200 OK\r\n"
-                        "Content-Type: text/plain\r\n"
-                        "Transfer-Encoding: chunked\r\n"
-                        "\r\n";
-        tv.tv_sec = 1;
-        tv.tv_usec = 0;
+        http200chunked = "HTTP/1.1 200 OK\r\n"
+                         "Content-Type: text/plain\r\n"
+                         "Transfer-Encoding: chunked\r\n"
+                         "\r\n";
+        tv.tv_sec = 0;
+        tv.tv_usec = 10;
     }
 
-    int open_listenfd(int port);
+    void init_server_sockets(std::list<int> ports_l);
     void cout_list(std::list<int> l);
     void run();
 };
