@@ -44,17 +44,7 @@ public:
     fd_set fds_listen_ret;
     std::map<int, std::string> requests;
 
-    Server(std::list<int> ports_l) : ports_l(ports_l)
-    {
-        optval = 1;
-        memset(buffer, 0, sizeof(buffer));
-        FD_ZERO(&fds_listen);
-        FD_ZERO(&fds_listen_ret);
-        // fd_set fds_write;
-
-        tv.tv_sec = 0;
-        tv.tv_usec = 10;
-    }
+    Server(std::list<int> ports_l);
 
     void        init_server_sockets(std::list<int> ports_l);
     void        accept_new_conn(int fd);
