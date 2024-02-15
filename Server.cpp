@@ -174,6 +174,10 @@ void Server::do_send() {
 }
 
 std::string Server::process_request(const std::string & request) {
+    std::string http200chunked = "HTTP/1.1 200 OK\r\n"
+                         "Content-Type: text/plain\r\n"
+                         "Transfer-Encoding: chunked\r\n"
+                         "\r\n";
     std::string res;
     res += "RESPONCE: your request was:\n";
     res += "============================\n";
