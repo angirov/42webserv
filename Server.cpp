@@ -105,6 +105,24 @@ void Server::run()
     }
 }
 
+void Server::do_read(std::list<int>::iterator & fd_itr) {
+    ssize_t num_bytes_recv = 0;
+    num_bytes_recv = recv(*fd_itr, buffer, BUFFERSIZE, 0);
+    if (num_bytes_recv > 0)
+    {
+        printf("Received %d bytes: %.*s from fd %d\n", (int)num_bytes_recv, (int)num_bytes_recv, buffer, *fd_itr);
+        requests[*fd_itr] += std::string(buffer, num_bytes_recv);
+    }
+    if (num_bytes_recv == 0)
+    {
+        handle_client_disconnect(fd_itr);
+    }
+    if (num_bytes_recv == -1)
+    {
+        perror("recv");
+    }
+}
+
 void Server::do_select() {
     std::cout << ">>> DEBUG: before select" << std::endl;
     fds_listen_ret = fds_listen;
@@ -117,38 +135,23 @@ void Server::do_select() {
         for (std::list<int>::iterator it = client_fds_l.begin(); it != client_fds_l.end(); ++it)
         {
             std::cout << "Checking fd " << *it;
-            ssize_t num_bytes_recv = 0;
             if (!FD_ISSET(*it, &fds_listen_ret))
             {
                 std::cout << " --> NOTHING to read\n";
                 continue;
             }
             std::cout << " --> READY to read\n";
-            num_bytes_recv = recv(*it, buffer, BUFFERSIZE, 0);
-            if (num_bytes_recv > 0)
-            {
-                printf("Received %d bytes: %.*s from fd %d\n", (int)num_bytes_recv, (int)num_bytes_recv, buffer, *it);
-                requests[*it] += std::string(buffer, num_bytes_recv);
-            }
-            if (num_bytes_recv == 0)
-            {
-                handle_client_disconnect(it);
-                continue;
-            }
-            if (num_bytes_recv == -1)
-            {
-                perror("recv");
-            }
+            do_read(it);
         }
     }
 }
 
-void Server::handle_client_disconnect(std::list<int>::iterator & fd_ptr) {
+void Server::handle_client_disconnect(std::list<int>::iterator & fd_itr) {
     std::cout << "Got zero bytes == Peer has closed the connection gracefully\n";
-    close(*fd_ptr);
-    std::cout << "Removing fd " << *fd_ptr << " from the list. ";
-    fd_ptr = client_fds_l.erase(fd_ptr);
-    FD_CLR(*fd_ptr, &fds_listen);
+    close(*fd_itr);
+    std::cout << "Removing fd " << *fd_itr << " from the list. ";
+    fd_itr = client_fds_l.erase(fd_itr);
+    FD_CLR(*fd_itr, &fds_listen);
     std::cout << "New list: " << cout_list(client_fds_l) << std::endl;
 }
 

@@ -62,9 +62,10 @@ public:
     void accept_new_conn(int fd);
     std::string cout_list(std::list<int> const l);
     std::string process_request(const std::string & request);
+    void handle_client_disconnect(std::list<int>::iterator & fd_itr);
     void do_select();
+    void do_read(std::list<int>::iterator & fd_itr);
     void do_send();
-    void handle_client_disconnect(std::list<int>::iterator & fd_ptr);
     void run();
 };
 

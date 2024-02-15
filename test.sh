@@ -25,7 +25,6 @@ DIFF_2=$(diff ${TEMPFILE_2} ${EXPECTEDFILE})
 
 if [[ -z ${DIFF_1} && -z ${DIFF_2} ]]; then
     echo "Test PASSED"
-    sleep 5
     rm ${TEMPFILE_1} ${TEMPFILE_2}
     kill ${PID}
 else
