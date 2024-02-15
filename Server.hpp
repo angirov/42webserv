@@ -36,12 +36,13 @@ public:
     struct sockaddr_in serveraddr;
 
     std::string httpResponse;
+    std::list<int> ports_l;
     std::list<int> conn_l;
     fd_set fds_listen;
     fd_set fds_listen_ret;
     std::map<int, std::string> requests;
 
-    Server() {
+    Server(std::list<int> ports_l) : ports_l(ports_l) {
         optval = 1;
         memset(buffer, 0, sizeof(buffer));
         FD_ZERO(&fds_listen);
@@ -57,7 +58,7 @@ public:
 
     int open_listenfd(int port);
     void cout_list(std::list<int> l);
-    void run(int port);
+    void run();
 };
 
 #endif

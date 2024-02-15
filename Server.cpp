@@ -35,12 +35,12 @@ void Server::cout_list(std::list<int> l)
     std::cout << "]" << std::endl;
 }
 
-void Server::run(int port) {
+void Server::run() {
 
 
 
 
-    listenfd = open_listenfd(port);
+    listenfd = open_listenfd(*ports_l.begin());
     fcntl(listenfd, F_SETFL, O_NONBLOCK);
     while (1)
     {
