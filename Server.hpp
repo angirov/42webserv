@@ -1,5 +1,5 @@
 #ifndef SERVER_HPP
-# define SERVER_HPP
+#define SERVER_HPP
 
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -24,8 +24,8 @@
 #define BUFFERSIZE 10000
 #define BUFFERTEST 100
 
-# include "Request.hpp"
-# include "Logger.hpp"
+#include "Request.hpp"
+#include "Logger.hpp"
 
 typedef struct sockaddr SA;
 
@@ -41,28 +41,27 @@ public:
     int clientlen;
     struct timeval tv;
     struct sockaddr_in clientaddr;
-    char * buffer;
+    char *buffer;
     int optval;
     struct sockaddr_in serveraddr;
 
     std::list<int> ports_l;
     std::list<int> client_fds_l;
     std::list<int> server_socket_fds_l;
-    // fd_set fds_listen; ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    fd_set fds_listen_ret;
+    fd_set listen_fd_set;
     std::map<int, std::string> requests;
 
     Server(std::list<int> ports_l);
 
-    void        fill_fd_set();
-    void        init_server_sockets(std::list<int> ports_l);
-    void        accept_new_conn(int fd);
+    void fill_fd_set();
+    void init_server_sockets(std::list<int> ports_l);
+    void accept_new_conn(int fd);
     std::string cout_list(std::list<int> const l);
-    void        handle_client_disconnect(std::list<int>::iterator & fd_itr);
-    void        do_select();
-    void        do_read(std::list<int>::iterator & fd_itr);
-    void        do_send();
-    void        run();
+    void handle_client_disconnect(std::list<int>::iterator &fd_itr);
+    void do_select();
+    void do_read(std::list<int>::iterator &fd_itr);
+    void do_send();
+    void run();
 };
 
 #endif

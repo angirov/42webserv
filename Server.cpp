@@ -31,8 +31,7 @@ Server::Server(std::list<int> ports_l) : ports_l(ports_l)
     lg.env("WEBSERV_LOGLEVEL");
     optval = 1;
     memset(buffer, 0, buffsize);
-    // FD_ZERO(&fds_listen); ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    FD_ZERO(&fds_listen_ret);
+    FD_ZERO(&listen_fd_set);
     // fd_set fds_write;
 
     tv.tv_sec = 0;
@@ -120,7 +119,6 @@ void Server::accept_new_conn(int fd)
     {
         fcntl(connfd, F_SETFL, O_NONBLOCK);
         client_fds_l.push_back(connfd);
-        // FD_SET(connfd, &fds_listen); ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         requests[connfd] = "";
 
         lg.log(INFO, "Connection from " + std::string(inet_ntoa(clientaddr.sin_addr)) + ":" + lg.str(ntohs(clientaddr.sin_port)));
@@ -158,20 +156,20 @@ void Server::do_read(std::list<int>::iterator &fd_itr)
     }
 }
 
-void Server::fill_fd_set() {
-    FD_ZERO(&fds_listen_ret);
-    for (std::list<int>::iterator it = client_fds_l.begin(); it != client_fds_l.end(); ++it) {
-        FD_SET(*it, &fds_listen_ret);
+void Server::fill_fd_set()
+{
+    FD_ZERO(&listen_fd_set);
+    for (std::list<int>::iterator it = client_fds_l.begin(); it != client_fds_l.end(); ++it)
+    {
+        FD_SET(*it, &listen_fd_set);
     }
 }
 
-
 void Server::do_select()
 {
-    // fds_listen_ret = fds_listen; ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     fill_fd_set();
     int ret;
-    ret = select(1024, &fds_listen_ret, NULL, NULL, &tv); // TODO: max has to be calculated
+    ret = select(1024, &listen_fd_set, NULL, NULL, &tv); // TODO: max has to be calculated
     lg.log(DEBUG, "select returned: " + lg.str(ret) + " Fds to monitor: " + cout_list(client_fds_l));
 
     if (ret > 0)
@@ -179,7 +177,7 @@ void Server::do_select()
         for (std::list<int>::iterator it = client_fds_l.begin(); it != client_fds_l.end(); ++it)
         {
             lg.log(DEBUG, "Checking fd " + lg.str(*it));
-            if (!FD_ISSET(*it, &fds_listen_ret))
+            if (!FD_ISSET(*it, &listen_fd_set))
                 continue;
             do_read(it);
         }
@@ -192,7 +190,6 @@ void Server::handle_client_disconnect(std::list<int>::iterator &fd_itr)
     close(*fd_itr);
     lg.log(DEBUG, "Removing fd " + lg.str(*fd_itr) + " from the list. ");
     fd_itr = client_fds_l.erase(fd_itr);
-    // FD_CLR(*fd_itr, &fds_listen); ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     lg.log(DEBUG, "New list: " + cout_list(client_fds_l));
 }
 
@@ -201,7 +198,7 @@ void Server::do_send()
     // Check if request is ready to be processed
     for (std::list<int>::iterator it = client_fds_l.begin(); it != client_fds_l.end(); ++it)
     {
-        if (!FD_ISSET(*it, &fds_listen_ret) && requests[*it].size() > 0)
+        if (!FD_ISSET(*it, &listen_fd_set) && requests[*it].size() > 0)
         {
             std::string responce = Request(requests[*it]).process();
             send(*it, responce.c_str(), responce.size(), 0);
