@@ -106,8 +106,6 @@ void Server::accept_new_conn(int fd)
         if (errno == EWOULDBLOCK || errno == EAGAIN)
         {
             lg.log(DEBUG, "No connection request for " + lg.str(fd));
-            if (handTesting)
-                sleep(1);
         }
         else
         {
@@ -131,7 +129,9 @@ void Server::run()
     init_server_sockets(ports_l);
     while (1)
     {
-        accept_new_conn(*server_socket_fds_l.begin());
+        if (handTesting)
+            sleep(1);
+        fill_fd_set();
         do_select();
         do_send();
     }
@@ -159,6 +159,14 @@ void Server::do_read(std::list<int>::iterator &fd_itr)
 void Server::fill_fd_set()
 {
     FD_ZERO(&listen_fd_set);
+
+    // Insert Server FDs
+    for (std::list<int>::iterator it = server_socket_fds_l.begin(); it != server_socket_fds_l.end(); ++it)
+    {
+        FD_SET(*it, &listen_fd_set);
+    }
+
+    // Insert Client FDs
     for (std::list<int>::iterator it = client_fds_l.begin(); it != client_fds_l.end(); ++it)
     {
         FD_SET(*it, &listen_fd_set);
@@ -167,13 +175,22 @@ void Server::fill_fd_set()
 
 void Server::do_select()
 {
-    fill_fd_set();
     int ret;
     ret = select(1024, &listen_fd_set, NULL, NULL, &tv); // TODO: max has to be calculated
-    lg.log(DEBUG, "select returned: " + lg.str(ret) + " Fds to monitor: " + cout_list(client_fds_l));
+    lg.log(DEBUG, "select returned: " + lg.str(ret) + " Server Fds: " + cout_list(server_socket_fds_l) + " Client Fds: " + cout_list(client_fds_l));
 
     if (ret > 0)
     {
+        // Check Server FDs
+        for (std::list<int>::iterator it = server_socket_fds_l.begin(); it != server_socket_fds_l.end(); ++it)
+        {
+            lg.log(DEBUG, "Checking fd " + lg.str(*it));
+            if (!FD_ISSET(*it, &listen_fd_set))
+                continue;
+            accept_new_conn(*it);
+        }
+
+        // Check Client FDs
         for (std::list<int>::iterator it = client_fds_l.begin(); it != client_fds_l.end(); ++it)
         {
             lg.log(DEBUG, "Checking fd " + lg.str(*it));
