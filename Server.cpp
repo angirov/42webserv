@@ -1,5 +1,8 @@
 #include "Server.hpp"
 
+// Server::Server(Configs configs) {
+//                                                               // <<<<<<<<<<<<< CONFIG <<<<<<<<<<<<<<<<
+// };
 
 
 Server::Server(std::list<int> ports_l) : ports_l(ports_l)
@@ -228,7 +231,7 @@ void Server::do_send()
         if (!FD_ISSET(*it, &read_fd_set) && requests[*it].size() > 0)
         {
             lg.log(DEBUG, "Processing request from " + lg.str(*it) + ". Request:\n" + requests[*it]);
-            responces[*it] = Request(requests[*it]).process(); // ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            responces[*it] = Request(requests[*it]).process();                                                            // <<<<<<<<<<<<< REQUEST <<<<<<<<<<<<<<<<
             lg.log(DEBUG, "DONE processing request from " + lg.str(*it) + ". Rescponce:\n" + responces[*it]);
             requests[*it] = "";
         }

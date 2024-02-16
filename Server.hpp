@@ -26,6 +26,7 @@
 
 #include "Request.hpp"
 #include "Logger.hpp"
+// #include "Configs.hpp"
 
 typedef struct sockaddr SA;
 
@@ -53,6 +54,7 @@ public:
     std::map<int, std::string> requests;
     std::map<int, std::string> responces;
 
+    // Server(Configs configs);
     Server(std::list<int> ports_l);
 
     void fill_fd_sets();
