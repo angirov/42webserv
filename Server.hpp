@@ -48,12 +48,14 @@ public:
     std::list<int> ports_l;
     std::list<int> client_fds_l;
     std::list<int> server_socket_fds_l;
-    fd_set listen_fd_set;
+    fd_set read_fd_set;
+    fd_set write_fd_set;
     std::map<int, std::string> requests;
+    std::map<int, std::string> responces;
 
     Server(std::list<int> ports_l);
 
-    void fill_fd_set();
+    void fill_fd_sets();
     void init_server_sockets(std::list<int> ports_l);
     void accept_new_conn(int fd);
     std::string cout_list(std::list<int> const l);

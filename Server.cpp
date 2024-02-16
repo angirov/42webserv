@@ -1,5 +1,7 @@
 #include "Server.hpp"
 
+
+
 Server::Server(std::list<int> ports_l) : ports_l(ports_l)
 {
     if (std::getenv("WEBSERV_HANDTESTING"))
@@ -31,8 +33,8 @@ Server::Server(std::list<int> ports_l) : ports_l(ports_l)
     lg.env("WEBSERV_LOGLEVEL");
     optval = 1;
     memset(buffer, 0, buffsize);
-    FD_ZERO(&listen_fd_set);
-    // fd_set fds_write;
+    FD_ZERO(&read_fd_set);
+    FD_ZERO(&write_fd_set);
 
     tv.tv_sec = 0;
     tv.tv_usec = 10;
@@ -131,7 +133,8 @@ void Server::run()
     {
         if (handTesting)
             sleep(1);
-        fill_fd_set();
+
+        fill_fd_sets();
         do_select();
         do_send();
     }
@@ -156,27 +159,34 @@ void Server::do_read(std::list<int>::iterator &fd_itr)
     }
 }
 
-void Server::fill_fd_set()
+void Server::fill_fd_sets()
 {
-    FD_ZERO(&listen_fd_set);
+    FD_ZERO(&read_fd_set);
+    FD_ZERO(&write_fd_set);
 
     // Insert Server FDs
     for (std::list<int>::iterator it = server_socket_fds_l.begin(); it != server_socket_fds_l.end(); ++it)
     {
-        FD_SET(*it, &listen_fd_set);
+        FD_SET(*it, &read_fd_set);
     }
 
-    // Insert Client FDs
+    // Insert Read FDs
     for (std::list<int>::iterator it = client_fds_l.begin(); it != client_fds_l.end(); ++it)
     {
-        FD_SET(*it, &listen_fd_set);
+        FD_SET(*it, &read_fd_set);
+    }
+
+    // Insert Write FDs
+    for (std::list<int>::iterator it = client_fds_l.begin(); it != client_fds_l.end(); ++it)
+    {
+        FD_SET(*it, &write_fd_set);
     }
 }
 
 void Server::do_select()
 {
     int ret;
-    ret = select(1024, &listen_fd_set, NULL, NULL, &tv); // TODO: max has to be calculated
+    ret = select(1024, &read_fd_set, &write_fd_set, NULL, &tv); // TODO: max has to be calculated
     lg.log(DEBUG, "select returned: " + lg.str(ret) + " Server Fds: " + cout_list(server_socket_fds_l) + " Client Fds: " + cout_list(client_fds_l));
 
     if (ret > 0)
@@ -185,16 +195,16 @@ void Server::do_select()
         for (std::list<int>::iterator it = server_socket_fds_l.begin(); it != server_socket_fds_l.end(); ++it)
         {
             lg.log(DEBUG, "Checking fd " + lg.str(*it));
-            if (!FD_ISSET(*it, &listen_fd_set))
+            if (!FD_ISSET(*it, &read_fd_set))
                 continue;
             accept_new_conn(*it);
         }
 
-        // Check Client FDs
+        // Check Client FDs for READING
         for (std::list<int>::iterator it = client_fds_l.begin(); it != client_fds_l.end(); ++it)
         {
             lg.log(DEBUG, "Checking fd " + lg.str(*it));
-            if (!FD_ISSET(*it, &listen_fd_set))
+            if (!FD_ISSET(*it, &read_fd_set))
                 continue;
             do_read(it);
         }
@@ -212,16 +222,23 @@ void Server::handle_client_disconnect(std::list<int>::iterator &fd_itr)
 
 void Server::do_send()
 {
-    // Check if request is ready to be processed
     for (std::list<int>::iterator it = client_fds_l.begin(); it != client_fds_l.end(); ++it)
     {
-        if (!FD_ISSET(*it, &listen_fd_set) && requests[*it].size() > 0)
+        // Check if any requests are fully read and process them
+        if (!FD_ISSET(*it, &read_fd_set) && requests[*it].size() > 0)
         {
-            std::string responce = Request(requests[*it]).process();
-            send(*it, responce.c_str(), responce.size(), 0);
+            lg.log(DEBUG, "Processing request from " + lg.str(*it) + ". Request:\n" + requests[*it]);
+            responces[*it] = Request(requests[*it]).process(); // ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            lg.log(DEBUG, "DONE processing request from " + lg.str(*it) + ". Rescponce:\n" + responces[*it]);
             requests[*it] = "";
-
-            lg.log(INFO, "sent to the client " + lg.str(*it) + " :\n" + responce);
+        }
+        // Check if any responces are ready to be sent
+        if (FD_ISSET(*it, &write_fd_set) && responces[*it].size() > 0)
+        {
+            lg.log(DEBUG, "Sending responce for " + lg.str(*it));
+            send(*it, responces[*it].c_str(), responces[*it].size(), 0);
+            lg.log(INFO, "Sent " + lg.str(responces[*it].size()) + " bytes for client " + lg.str(*it));
+            responces[*it] = "";
         }
     }
 }
