@@ -4,7 +4,6 @@
 //                                                               // <<<<<<<<<<<<< CONFIG <<<<<<<<<<<<<<<<
 // };
 
-
 Server::Server(std::list<int> ports_l) : ports_l(ports_l)
 {
     if (std::getenv("WEBSERV_HANDTESTING"))
@@ -85,6 +84,8 @@ void Server::init_server_sockets(std::list<int> ports_l)
 
         server_socket_fds_l.push_back(fd);
     }
+
+    max_server_fd = *std::max_element(server_socket_fds_l.begin(), server_socket_fds_l.end());
 }
 
 std::string Server::cout_list(std::list<int> l)
@@ -120,9 +121,9 @@ void Server::accept_new_conn(int fd)
     }
     else
     {
-        fcntl(connfd, F_SETFL, O_NONBLOCK);
+        fcntl(connfd, F_SETFL, O_NONBLOCK); // the socket is set as non blocking. for macOS only. should be changed for Linux
         client_fds_l.push_back(connfd);
-        requests[connfd] = "";
+        requests[connfd] = ""; // maybe not necessary
 
         lg.log(INFO, "Connection from " + std::string(inet_ntoa(clientaddr.sin_addr)) + ":" + lg.str(ntohs(clientaddr.sin_port)));
         lg.log(DEBUG, "Adding fd " + lg.str(connfd) + " to the list. New list " + cout_list(client_fds_l));
@@ -186,11 +187,30 @@ void Server::fill_fd_sets()
     }
 }
 
+int Server::find_maxFd()
+{
+    int maxFd;
+    std::list<int>::iterator max_client_fd_itr = std::max_element(client_fds_l.begin(), client_fds_l.end());
+    if (max_client_fd_itr != client_fds_l.end())
+    {
+        maxFd = std::max(max_server_fd, *max_client_fd_itr);
+    }
+    else
+    {
+        maxFd = max_server_fd;
+    }
+    return maxFd;
+}
+
 void Server::do_select()
 {
     int ret;
-    ret = select(1024, &read_fd_set, &write_fd_set, NULL, &tv); // TODO: max has to be calculated
-    lg.log(DEBUG, "select returned: " + lg.str(ret) + " Server Fds: " + cout_list(server_socket_fds_l) + " Client Fds: " + cout_list(client_fds_l));
+    int maxFd = find_maxFd();
+    ret = select(maxFd + 1, &read_fd_set, &write_fd_set, NULL, &tv);
+    lg.log(DEBUG, "Select returned: " + lg.str(ret) +
+                      " Max FD is " + lg.str(maxFd) +
+                      " Server Fds: " + cout_list(server_socket_fds_l) +
+                      " Client Fds: " + cout_list(client_fds_l));
 
     if (ret > 0)
     {
@@ -211,6 +231,7 @@ void Server::do_select()
                 continue;
             do_read(it);
         }
+        // do writing???
     }
 }
 
@@ -228,10 +249,11 @@ void Server::do_send()
     for (std::list<int>::iterator it = client_fds_l.begin(); it != client_fds_l.end(); ++it)
     {
         // Check if any requests are fully read and process them
+        // Should be independent of the return value of select but consider the last state of the read set
         if (!FD_ISSET(*it, &read_fd_set) && requests[*it].size() > 0)
         {
             lg.log(DEBUG, "Processing request from " + lg.str(*it) + ". Request:\n" + requests[*it]);
-            responces[*it] = Request(requests[*it]).process();                                                            // <<<<<<<<<<<<< REQUEST <<<<<<<<<<<<<<<<
+            responces[*it] = Request(requests[*it]).process(); // <<<<<<<<<<<<< REQUEST <<<<<<<<<<<<<<<<
             lg.log(DEBUG, "DONE processing request from " + lg.str(*it) + ". Rescponce:\n" + responces[*it]);
             requests[*it] = "";
         }
@@ -239,7 +261,7 @@ void Server::do_send()
         if (FD_ISSET(*it, &write_fd_set) && responces[*it].size() > 0)
         {
             lg.log(DEBUG, "Sending responce for " + lg.str(*it));
-            send(*it, responces[*it].c_str(), responces[*it].size(), 0);
+            send(*it, responces[*it].c_str(), responces[*it].size(), 0); // Maybe responce has to be sent in pieces
             lg.log(INFO, "Sent " + lg.str(responces[*it].size()) + " bytes for client " + lg.str(*it));
             responces[*it] = "";
         }

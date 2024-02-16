@@ -49,6 +49,7 @@ public:
     std::list<int> ports_l;
     std::list<int> client_fds_l;
     std::list<int> server_socket_fds_l;
+    int max_server_fd;
     fd_set read_fd_set;
     fd_set write_fd_set;
     std::map<int, std::string> requests;
@@ -63,6 +64,7 @@ public:
     std::string cout_list(std::list<int> const l);
     void handle_client_disconnect(std::list<int>::iterator &fd_itr);
     void do_select();
+    int find_maxFd();
     void do_read(std::list<int>::iterator &fd_itr);
     void do_send();
     void run();
