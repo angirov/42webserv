@@ -30,7 +30,7 @@
 
 typedef struct sockaddr SA;
 
-class Server
+struct Server
 {
 private:
     bool handTesting;
