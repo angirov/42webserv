@@ -13,3 +13,9 @@ NGINX will then read and use that configuration file when serving requests.
   - to check if conf file is ok
 - make sure you have root permission
 - Add an entry in your /etc/hosts file to map your.customdomain to localhost:
+
+https://docs.nginx.com/nginx/admin-guide/web-server/web-server/
+
+https://nginx.org/en/docs/switches.html
+
+check switches for syntax check
