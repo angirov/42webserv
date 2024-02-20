@@ -134,3 +134,17 @@ std::string Logger::str(int n)
     ss << n;
     return ss.str();
 }
+
+std::string Logger::str(double n)
+{
+    std::stringstream ss;
+    ss << n;
+    return ss.str();
+}
+
+std::string Logger::str(time_t n)
+{
+    std::stringstream ss;
+    ss << n;
+    return ss.str();
+}
