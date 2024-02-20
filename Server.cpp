@@ -146,7 +146,7 @@ void Server::run()
     while (1)
     {
         if (handTesting)
-            usleep(100000);
+            usleep(1000000);
         do_timing();
         fill_fd_sets();
         do_select();
