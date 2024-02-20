@@ -37,6 +37,8 @@ private:
     bool handTesting;
     Logger lg;
     unsigned int buffsize;
+    int timeout;
+    time_t last_checked;
 
 public:
     int connfd;
@@ -69,6 +71,10 @@ public:
     int find_maxFd();
     void do_read(std::list<int>::iterator &fd_itr);
     void do_send();
+    void do_timing();
+    void check_timeout();
+    void disconnect_client(int fd);
+    void set_last_time(int fd);
     void run();
 };
 
