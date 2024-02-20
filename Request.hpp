@@ -12,26 +12,6 @@
 
 #include "utils.hpp"
 
-enum Method
-{
-    MethodInvalid,
-    MethodGET
-};
-
-enum HTTPVersion
-{
-    HTTPVerInvalid,
-    HTTPVer10,
-    HTTPVer11
-};
-
-enum StatusCode
-{
-    StatusCodeInvalid,
-    StatusCode200,
-
-};
-
 typedef std::map<std::string, std::vector<std::string> > header_map;
 
 struct Request
@@ -126,18 +106,6 @@ public:
     }
 
     std::string process();
-
-    Method resolveMethod(std::string const & word) {
-        if(word == "GET" ) return MethodGET;
-        return MethodInvalid;
-    };
-
-    HTTPVersion resolveHTTPVersion(std::string const & word) {
-        if(word == "HTTP/1.0" ) return HTTPVer10;
-        if(word == "HTTP/1.1" ) return HTTPVer11;
-        return HTTPVerInvalid;
-    };
-
 };
 
 class Responce
