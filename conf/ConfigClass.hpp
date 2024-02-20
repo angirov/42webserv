@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <map>
 
 class Config {
 public:
@@ -35,14 +36,26 @@ public:
 private:
 	int _timeout;
 	int _maxClients;
+	std::vector<VirtServer> _virtServers;
+	int client_max_body_size;
+};
+
+class VirtServer {
 	int _port;
 	std::string _serverName;
-	std::string _errorPage;
+	std::map<int, std::string> _errorPages;
+	std::vector<Location> locations;
+};
+
+class Location {
+	std::map<int, std::string> _returnRedir; 
+	std::string _route;
 	std::string _locationRoot;
 	std::string _locationIndex;
 	std::vector<std::string> _methods;
-	std::string _cgi;
+	std::vector<std::string> _cgiExtension;
 	std::string _uploadDir;
-};
+	bool _autoIndex;
+}
 
 #endif /* CONFIGCLASS_HPP */
