@@ -40,6 +40,7 @@ Server::Server(std::list<int> ports_l) : ports_l(ports_l)
 
     tv.tv_sec = 0;
     tv.tv_usec = 10;
+    time(&last_checked);
 }
 
 void Server::init_server_sockets(std::list<int> ports_l)
@@ -123,11 +124,19 @@ void Server::accept_new_conn(int fd)
     {
         fcntl(connfd, F_SETFL, O_NONBLOCK); // the socket is set as non blocking. for macOS only. should be changed for Linux
         client_fds_l.push_back(connfd);
-        requests[connfd] = ""; // maybe not necessary
+        requests[connfd] = ""; // necessary because there could be values of old fd
+        set_last_time(fd);
 
         lg.log(INFO, "Connection from " + std::string(inet_ntoa(clientaddr.sin_addr)) + ":" + lg.str(ntohs(clientaddr.sin_port)));
         lg.log(DEBUG, "Adding fd " + lg.str(connfd) + " to the list. New list " + cout_list(client_fds_l));
     }
+}
+
+void Server::set_last_time(int fd)
+{
+    time_t now;
+    time(&now);
+    last_times[fd] = now;
 }
 
 void Server::run()
@@ -136,12 +145,43 @@ void Server::run()
     while (1)
     {
         if (handTesting)
-            sleep(1);
-
+            usleep(100000);
+        do_timing();
         fill_fd_sets();
         do_select();
         do_send();
     }
+}
+
+void Server::disconnect_client(int fd) {
+    lg.log(ERROR, "No fuction for disconnecting client! " + lg.str(fd));
+    // lg.log(INFO, "Disconnected " + lg.str(fd) + " due to timeout");
+}
+
+void Server::check_timeout()
+{
+    // lg.log(DEBUG, "Checking timeout. Time diff: " + ss.str());
+    time_t now;
+    time(&now);
+    for (std::list<int>::iterator it = client_fds_l.begin(); it != client_fds_l.end(); ++it)
+    {
+        double secs = difftime(now, last_times[*it]);
+        if (secs > timeout) {
+            disconnect_client(*it);
+        }
+    }
+}
+
+void Server::do_timing()
+{
+    time_t now;
+    time(&now);
+    double secs = difftime(now, last_checked);
+    std::stringstream ss;
+    ss << secs;
+    if (secs > 0)
+        check_timeout();
+    last_checked = now;
 }
 
 void Server::do_read(std::list<int>::iterator &fd_itr)

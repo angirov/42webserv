@@ -19,6 +19,7 @@
 #include <sstream>
 #include <cstring>
 #include <cstdlib> // For getenv
+#include <time.h>
 
 #define LISTENQ 10
 #define BUFFERSIZE 10000
@@ -30,12 +31,14 @@
 
 typedef struct sockaddr SA;
 
-class Server
+struct Server
 {
 private:
     bool handTesting;
     Logger lg;
     unsigned int buffsize;
+    int timeout;
+    time_t last_checked;
 
 public:
     int connfd;
@@ -54,6 +57,7 @@ public:
     fd_set write_fd_set;
     std::map<int, std::string> requests;
     std::map<int, std::string> responces;
+    std::map<int, time_t> last_times;
 
     // Server(Configs configs);
     Server(std::list<int> ports_l);
@@ -67,6 +71,10 @@ public:
     int find_maxFd();
     void do_read(std::list<int>::iterator &fd_itr);
     void do_send();
+    void do_timing();
+    void check_timeout();
+    void disconnect_client(int fd);
+    void set_last_time(int fd);
     void run();
 };
 
