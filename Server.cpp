@@ -40,6 +40,7 @@ Server::Server(std::list<int> ports_l) : ports_l(ports_l)
 
     tv.tv_sec = 0;
     tv.tv_usec = 10;
+    timeout = 5;
     time(&last_checked);
 }
 
@@ -126,7 +127,7 @@ void Server::accept_new_conn(int fd)
         client_fds_l.push_back(connfd);
         requests[connfd] = ""; // necessary because there could be values of old fd
         responces[connfd] = "";
-        set_last_time(fd);
+        set_last_time(connfd);
 
         lg.log(INFO, "Connection from " + std::string(inet_ntoa(clientaddr.sin_addr)) + ":" + lg.str(ntohs(clientaddr.sin_port)));
         lg.log(DEBUG, "Adding fd " + lg.str(connfd) + " to the list. New list " + cout_list(client_fds_l));
@@ -157,13 +158,14 @@ void Server::run()
 
 void Server::check_timeout()
 {
-    // lg.log(DEBUG, "Checking timeout. Time diff: " + ss.str());
     time_t now;
     time(&now);
     for (std::list<int>::iterator it = client_fds_l.begin(); it != client_fds_l.end(); ++it)
     {
         double secs = difftime(now, last_times[*it]);
+
         if (secs > timeout) {
+            lg.log(DEBUG, "Timeout for " + lg.str(*it) + "; diff: " + lg.str((int)secs) + "; Timeout: " + lg.str(timeout));
             handle_client_disconnect(it);
         }
     }
@@ -174,8 +176,6 @@ void Server::do_timing()
     time_t now;
     time(&now);
     double secs = difftime(now, last_checked);
-    std::stringstream ss;
-    ss << secs;
     if (secs > 0)
         check_timeout();
     last_checked = now;
@@ -187,8 +187,9 @@ void Server::do_read(std::list<int>::iterator &fd_itr)
     num_bytes_recv = recv(*fd_itr, buffer, buffsize, 0);
     if (num_bytes_recv > 0)
     {
-        lg.log(DEBUG, "Received " + lg.str(num_bytes_recv) + " bytes from fd " + lg.str(*fd_itr) + ": " + std::string(buffer, num_bytes_recv));
+        lg.log(DEBUG, "Received " + lg.str((int)num_bytes_recv) + " bytes from fd " + lg.str(*fd_itr) + ": " + std::string(buffer, num_bytes_recv));
         requests[*fd_itr] += std::string(buffer, num_bytes_recv);
+        set_last_time(*fd_itr);
     }
     if (num_bytes_recv == 0)
     {
@@ -299,7 +300,8 @@ void Server::do_send()
         {
             lg.log(DEBUG, "Sending responce for " + lg.str(*it));
             send(*it, responces[*it].c_str(), responces[*it].size(), 0); // Maybe responce has to be sent in pieces
-            lg.log(INFO, "Sent " + lg.str(responces[*it].size()) + " bytes for client " + lg.str(*it));
+            set_last_time(*it);
+            lg.log(INFO, "Sent " + lg.str((int)responces[*it].size()) + " bytes for client " + lg.str(*it));
             responces[*it] = "";
         }
     }
