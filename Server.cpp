@@ -127,6 +127,7 @@ void Server::accept_new_conn(int fd)
         client_fds_l.push_back(connfd);
         requests[connfd] = ""; // necessary because there could be values of old fd
         responces[connfd] = "";
+        keep_alive[connfd] = true;
         set_last_time(connfd);
 
         lg.log(INFO, "Connection from " + std::string(inet_ntoa(clientaddr.sin_addr)) + ":" + lg.str(ntohs(clientaddr.sin_port)));

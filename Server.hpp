@@ -60,6 +60,7 @@ public:
     std::map<int, std::string> requests;
     std::map<int, std::string> responces;
     std::map<int, time_t> last_times;
+    std::map<int, bool> keep_alive;
 
     // Server(Configs configs);
     Server(std::list<int> ports_l);
