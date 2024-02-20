@@ -33,6 +33,10 @@ Method resolveMethod(std::string const & word);
 HTTPVersion resolveHTTPVersion(std::string const & word);
 StatusCode resolveStatusCode(std::string const & word);
 
+std::string toStr(Method method);
+std::string toStr(HTTPVersion httpVersion);
+std::string toStr(StatusCode statusCode);
+
 std::string strip(std::string input);
 
 #endif

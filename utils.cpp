@@ -7,10 +7,23 @@ Method resolveMethod(std::string const & word) {
     return MethodInvalid;
 }
 
+std::string toStr(Method method) {
+    if(method == MethodGET ) return "GET";
+    if(method == MethodPOST ) return "POST";
+    if(method == MethodDELETE ) return "DELETE";
+    return "";
+}
+
 HTTPVersion resolveHTTPVersion(std::string const & word) {
     if(word == "HTTP/1.0" ) return HTTPVer10;
     if(word == "HTTP/1.1" ) return HTTPVer11;
     return HTTPVerInvalid;
+}
+
+std::string toStr(HTTPVersion httpVersion) {
+    if(httpVersion == HTTPVer10 ) return "HTTP/1.0";
+    if(httpVersion == HTTPVer11 ) return "HTTP/1.1";
+    return "";
 }
 
 StatusCode resolveStatusCode(std::string const & word) {
@@ -19,6 +32,11 @@ StatusCode resolveStatusCode(std::string const & word) {
     return StatusCodeInvalid;
 }
 
+std::string toStr(StatusCode statusCode) {
+    if(statusCode == StatusCode200 ) return "200";
+    if(statusCode == StatusCode404 ) return "404";
+    return "";
+}
 
 std::string strip(std::string input) {
     std::string::iterator first = input.begin();
