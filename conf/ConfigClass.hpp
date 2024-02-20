@@ -32,7 +32,8 @@ private:
 class VirtServer {
 public:
 	VirtServer(int port, const std::string &serverName);
-	VirtServer(const VirtServer &other); // Copy constructor
+	// Copy constructor
+	VirtServer(const VirtServer &other);
 
 	// Setter and Getter functions for VirtServer class
 	void setPort(int port);
@@ -57,7 +58,8 @@ private:
 class Location {
 public:
 	Location(const std::string &route, const std::string &locationRoot, const std::string &locationIndex);
-	Location(const Location &other); // Copy constructor
+	// Copy constructor
+	Location(const Location &other);
 
 	// Setter and Getter functions for Location class
 	void setRoute(const std::string &route);

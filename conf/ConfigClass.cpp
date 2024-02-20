@@ -1,13 +1,14 @@
 #include "ConfigClass.hpp"
 
-// Config class implementation
+// Config class implementation with global settings
 Config::Config() {
 	_timeout = 0;
 	_maxClients = 0;
 	_client_max_body_size = 0;
 }
 
-Config::Config(const Config& other) {
+// Copy Constructor
+Config::Config(const Config &other) {
 	_timeout = other._timeout;
 	_maxClients = other._maxClients;
 	_client_max_body_size = other._client_max_body_size;
@@ -45,7 +46,8 @@ VirtServer::VirtServer(int port, const std::string &serverName) {
 	_serverName = serverName;
 }
 
-VirtServer::VirtServer(const VirtServer& other) {
+// Copy Constructor
+VirtServer::VirtServer(const VirtServer &other) {
 	_port = other._port;
 	_serverName = other._serverName;
 	_errorPages = other._errorPages;
@@ -65,7 +67,7 @@ void VirtServer::setServerName(const std::string &serverName) {
 	_serverName = serverName;
 }
 
-const std::string& VirtServer::getServerName() const {
+const std::string &VirtServer::getServerName() const {
 	return _serverName;
 }
 
@@ -92,14 +94,15 @@ const std::vector<Location> &VirtServer::getLocations() const {
 
 // Location class implementation
 // Constructor
-Location::Location(const std::string &route, const std::string& locationRoot, const std::string &locationIndex) {
+Location::Location(const std::string &route, const std::string &locationRoot, const std::string &locationIndex) {
 	_locationRoot = locationRoot;
 	_locationIndex = locationIndex;
 	_autoIndex = false;
 	_route = route;
 }
 
-Location::Location(const Location& other) {
+// Copy Constructor
+Location::Location(const Location &other) {
 	_returnRedir = other._returnRedir;
 	_route = other._route;
 	_locationRoot = other._locationRoot;
@@ -111,7 +114,7 @@ Location::Location(const Location& other) {
 }
 
 // Setter and Getter functions for Location class
-void Location::setLocationRoot(const std::string& locationRoot) {
+void Location::setLocationRoot(const std::string &locationRoot) {
 	_locationRoot = locationRoot;
 }
 
@@ -119,7 +122,7 @@ const std::string& Location::getLocationRoot() const {
 	return _locationRoot;
 }
 
-void Location::setLocationIndex(const std::string& locationIndex) {
+void Location::setLocationIndex(const std::string &locationIndex) {
 	_locationIndex = locationIndex;
 }
 
@@ -139,7 +142,7 @@ void Location::setRoute(const std::string &route) {
 	_route = route;
 }
 
-const std::string& Location::getRoute() const {
+const std::string &Location::getRoute() const {
 	return _route;
 }
 
@@ -155,7 +158,7 @@ void Location::addCGIExtension(const std::string &cgiExtension) {
 	_cgiExtension.push_back(cgiExtension);
 }
 
-const std::vector<std::string>& Location::getCGIExtensions() const {
+const std::vector<std::string> &Location::getCGIExtensions() const {
 	return _cgiExtension;
 }
 
@@ -167,7 +170,7 @@ const std::string& Location::getUploadDir() const {
 	return _uploadDir;
 }
 
-void Location::addReturnRedir(int errorCode, const std::string& redirectUrl) {
+void Location::addReturnRedir(int errorCode, const std::string &redirectUrl) {
 	_returnRedir[errorCode] = redirectUrl;
 }
 
