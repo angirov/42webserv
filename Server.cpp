@@ -125,6 +125,7 @@ void Server::accept_new_conn(int fd)
         fcntl(connfd, F_SETFL, O_NONBLOCK); // the socket is set as non blocking. for macOS only. should be changed for Linux
         client_fds_l.push_back(connfd);
         requests[connfd] = ""; // necessary because there could be values of old fd
+        responces[connfd] = "";
         set_last_time(fd);
 
         lg.log(INFO, "Connection from " + std::string(inet_ntoa(clientaddr.sin_addr)) + ":" + lg.str(ntohs(clientaddr.sin_port)));
@@ -153,10 +154,6 @@ void Server::run()
     }
 }
 
-void Server::disconnect_client(int fd) {
-    lg.log(ERROR, "No fuction for disconnecting client! " + lg.str(fd));
-    // lg.log(INFO, "Disconnected " + lg.str(fd) + " due to timeout");
-}
 
 void Server::check_timeout()
 {
@@ -167,7 +164,7 @@ void Server::check_timeout()
     {
         double secs = difftime(now, last_times[*it]);
         if (secs > timeout) {
-            disconnect_client(*it);
+            handle_client_disconnect(it);
         }
     }
 }
@@ -195,6 +192,7 @@ void Server::do_read(std::list<int>::iterator &fd_itr)
     }
     if (num_bytes_recv == 0)
     {
+        lg.log(INFO, "Got zero bytes == Peer has closed the connection gracefully");
         handle_client_disconnect(fd_itr);
     }
     if (num_bytes_recv == -1)
@@ -277,7 +275,6 @@ void Server::do_select()
 
 void Server::handle_client_disconnect(std::list<int>::iterator &fd_itr)
 {
-    lg.log(INFO, "Got zero bytes == Peer has closed the connection gracefully");
     close(*fd_itr);
     lg.log(DEBUG, "Removing fd " + lg.str(*fd_itr) + " from the list. ");
     fd_itr = client_fds_l.erase(fd_itr);

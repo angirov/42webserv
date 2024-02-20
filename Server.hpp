@@ -51,10 +51,12 @@ public:
 
     std::list<int> ports_l;
     std::list<int> client_fds_l;
-    std::list<int> server_socket_fds_l;
     int max_server_fd;
     fd_set read_fd_set;
     fd_set write_fd_set;
+
+    // Client related stuff
+    std::list<int> server_socket_fds_l;
     std::map<int, std::string> requests;
     std::map<int, std::string> responces;
     std::map<int, time_t> last_times;
@@ -73,7 +75,6 @@ public:
     void do_send();
     void do_timing();
     void check_timeout();
-    void disconnect_client(int fd);
     void set_last_time(int fd);
     void run();
 };
