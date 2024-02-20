@@ -19,6 +19,7 @@
 #include <sstream>
 #include <cstring>
 #include <cstdlib> // For getenv
+#include <time.h>
 
 #define LISTENQ 10
 #define BUFFERSIZE 10000
@@ -54,6 +55,7 @@ public:
     fd_set write_fd_set;
     std::map<int, std::string> requests;
     std::map<int, std::string> responces;
+    std::map<int, time_t> last_times;
 
     // Server(Configs configs);
     Server(std::list<int> ports_l);
