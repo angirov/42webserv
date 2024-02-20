@@ -1,11 +1,11 @@
 #include <vector>
 #include <string>
 
-class Redir {
+struct Redir {
 
 };
 
-class LocationConfig {
+struct LocationConfig {
     std::vector<std::string> methods;
     Redir redir;
     std::string root_dir;
@@ -15,14 +15,14 @@ class LocationConfig {
     
 };
 
-class ServerConfig {
+struct ServerConfig {
     int port;
     std::string ipaddr;
     std::vector<std::string> server_names;
     std::vector<LocationConfig> locations;
 };
 
-class Configs {
+struct Configs {
     std::vector<ServerConfig> servers;
     int default_server = 0;
     int client_body_size_limit = 10000;

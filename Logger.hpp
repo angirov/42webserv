@@ -16,7 +16,7 @@ enum LogLevel
     UNKNOWN
 };
 
-class Logger
+struct Logger
 {
 private:
     std::string logfileName;
