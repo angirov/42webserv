@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <iostream>
 
 class Location;
 class VirtServer;
@@ -48,6 +49,8 @@ public:
 	void addLocation(const Location &location);
 	const std::vector<Location> & getLocations() const;
 
+	void display();
+
 private:
 	int _port;
 	std::string _serverName;
@@ -85,6 +88,8 @@ public:
 
 	void addReturnRedir(int errorCode, const std::string &redirectUrl);
 	const std::string & getReturnRedir(int errorCode) const;
+
+	void display();
 
 private:
 	std::map<int, std::string> _returnRedir;

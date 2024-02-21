@@ -182,3 +182,46 @@ const std::string &Location::getReturnRedir(int errorCode) const {
 	static const std::string emptyString = "";
 	return emptyString;
 }
+
+void VirtServer::display() {
+	// Display VirtServer variables
+	std::cout << "\nVirtServer Variables:\n";
+	std::cout << "Port: " << getPort() << std::endl;
+	std::cout << "Server Name: " << getServerName() << std::endl;
+
+	// Display error pages
+	std::cout << "\nError Pages:\n";
+	std::cout << "404 Error Page: " << getErrorPage(404) << std::endl;
+
+	for (size_t i = 0; i < locations.size(); ++i) {
+		locations[i].display();
+	}
+}
+
+void Location::display() {
+	// Display Location variables
+	std::cout << "\nLocation Variables:\n";
+	std::cout << "Route: " << getRoute() << std::endl;
+	std::cout << "Location Root: " << getLocationRoot() << std::endl;
+	std::cout << "Location Index: " << getLocationIndex() << std::endl;
+	std::cout << "Methods: ";
+	const std::vector<std::string>& methods = getMethods();
+	for (size_t i = 0; i < methods.size(); ++i) {
+		std::cout << methods[i];
+		if (i != methods.size() - 1) {
+			std::cout << ", ";
+		}
+	}
+	std::cout << std::endl;
+	std::cout << "Auto Index: " << (getAutoIndex() ? "On" : "Off") << std::endl;
+	std::cout << "CGI Extensions: ";
+	const std::vector<std::string>& cgiExtensions = getCGIExtensions();
+	for (size_t i = 0; i < cgiExtensions.size(); ++i) {
+		std::cout << cgiExtensions[i];
+		if (i != cgiExtensions.size() - 1) {
+			std::cout << ", ";
+		}
+	}
+	std::cout << std::endl;
+	std::cout << "Upload Dir: " << getUploadDir() << std::endl;
+}
