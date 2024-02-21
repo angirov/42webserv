@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <iostream>
 
 class Location;
 class VirtServer;
@@ -23,12 +24,14 @@ public:
 	void setClientMaxBodySize(int maxBodySize);
 	int getClientMaxBodySize() const;
 
-	std::vector<VirtServer> virtServers;
+	void addVirtServer(const VirtServer &virtServer); // Function to add a VirtServer object
+	const std::vector<VirtServer> &getVirtServers() const; // Function to get the vector of VirtServer objects
 
 private:
 	int _timeout;
 	int _maxClients;
 	int _client_max_body_size;
+	std::vector<VirtServer> virtServers; // Vector to store VirtServer objects
 };
 
 class VirtServer {
@@ -49,6 +52,8 @@ public:
 
 	void addLocation(const Location &location);
 	const std::vector<Location> & getLocations() const;
+
+	void display() const;
 
 private:
 	int _port;
@@ -87,6 +92,11 @@ public:
 
 	void addReturnRedir(int errorCode, const std::string &redirectUrl);
 	const std::string & getReturnRedir(int errorCode) const;
+
+	void addLocation(const Location &location); // Function to add a nested Location object
+	const std::vector<Location>& getLocations() const; // Function to get nested Location objects
+
+	void display() const;
 
 private:
 	std::map<int, std::string> _returnRedir;
