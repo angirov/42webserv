@@ -54,6 +54,10 @@ Server::Server(Config config) {
     _client_max_body_size = config.getClientMaxBodySize();
 
     virtServers = config.getVirtServers();
+
+    for (size_t i = 0; i < virtServers.size(); ++i) {
+        ports_l.push_back(virtServers[i].getPort());
+    }
 }
 
 void Server::init_server_sockets(std::list<int> ports_l)
