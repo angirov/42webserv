@@ -10,6 +10,7 @@
 #include <iterator>
 #include <cctype> // for strip
 
+#include "Server.hpp"
 #include "utils.hpp"
 
 typedef std::map<std::string, std::vector<std::string> > header_map;
@@ -18,6 +19,7 @@ struct Request
 {
 // private:
 public:
+    Server * server; // server->virtServers[0].locations[0]
     // Server
     static std::string default_host;
     // Connetion
@@ -27,6 +29,7 @@ public:
 
     Method       method;
     std::string  url; // should be a class??? query params?
+    std::string  resourcePath;
     HTTPVersion  httpVersion;
     header_map   headers; // conditions GET (changed since last request ), obligatory host header for virtual hosting, Connection: Keep-Alive default for http11 otherwise "close"
     std::string  body;
