@@ -27,7 +27,7 @@
 
 #include "Request.hpp"
 #include "Logger.hpp"
-// #include "Configs.hpp"
+#include "conf/ConfigClass.hpp"
 
 typedef struct sockaddr SA;
 
@@ -61,7 +61,7 @@ public:
 
     // Server(Configs configs);
     Server(std::list<int> ports_l);
-
+    Server(Config config);
     void fill_fd_sets();
     void init_server_sockets(std::list<int> ports_l);
     void accept_new_conn(int fd);
