@@ -23,6 +23,8 @@ public:
 	void setClientMaxBodySize(int maxBodySize);
 	int getClientMaxBodySize() const;
 
+	std::vector<VirtServer> virtServers;
+
 private:
 	int _timeout;
 	int _maxClients;

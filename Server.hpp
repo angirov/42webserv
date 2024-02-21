@@ -29,7 +29,6 @@
 #include "Logger.hpp"
 #include "conf/ConfigClass.hpp"
 
-
 typedef struct sockaddr SA;
 
 struct Server
