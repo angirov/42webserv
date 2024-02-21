@@ -15,6 +15,8 @@
 
 typedef std::map<std::string, std::vector<std::string> > header_map;
 
+class Server;
+
 struct Request
 {
 // private:

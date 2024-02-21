@@ -4,8 +4,7 @@
 //                                                               // <<<<<<<<<<<<< CONFIG <<<<<<<<<<<<<<<<
 // };
 
-Server::Server(std::list<int> ports_l) : ports_l(ports_l)
-{
+void Server::init() {
     if (std::getenv("WEBSERV_HANDTESTING"))
         handTesting = true;
     else
@@ -41,6 +40,18 @@ Server::Server(std::list<int> ports_l) : ports_l(ports_l)
     tv.tv_sec = 0;
     tv.tv_usec = 10;
     time(&last_checked);
+}
+
+Server::Server(std::list<int> ports_l) : ports_l(ports_l)
+{
+    init();
+}
+
+Server::Server(Config config) {
+    init();
+    _timeout = config.getTimeout();
+    _maxClients = config.getMaxClients();
+    _client_max_body_size = config.getClientMaxBodySize();
 }
 
 void Server::init_server_sockets(std::list<int> ports_l)

@@ -27,13 +27,20 @@
 
 #include "Request.hpp"
 #include "Logger.hpp"
-// #include "Configs.hpp"
+#include "conf/ConfigClass.hpp"
+
 
 typedef struct sockaddr SA;
 
 struct Server
 {
 private:
+    int _timeout;
+    int _maxClients;
+    int _client_max_body_size;
+
+
+
     bool handTesting;
     Logger lg;
     unsigned int buffsize;
@@ -41,6 +48,7 @@ private:
     time_t last_checked;
 
 public:
+
     int connfd;
     int clientlen;
     struct timeval tv;
@@ -59,9 +67,10 @@ public:
     std::map<int, std::string> responces;
     std::map<int, time_t> last_times;
 
-    // Server(Configs configs);
+    Server(Config config);
     Server(std::list<int> ports_l);
 
+    void init();
     void fill_fd_sets();
     void init_server_sockets(std::list<int> ports_l);
     void accept_new_conn(int fd);
