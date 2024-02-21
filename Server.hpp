@@ -37,8 +37,9 @@ private:
     int _timeout;
     int _maxClients;
     int _client_max_body_size;
+    std::vector<VirtServer> virtServers;
 
-
+    //////////////////////////////////////////////////////////////////////
 
     bool handTesting;
     Logger lg;

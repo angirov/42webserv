@@ -52,6 +52,8 @@ Server::Server(Config config) {
     _timeout = config.getTimeout();
     _maxClients = config.getMaxClients();
     _client_max_body_size = config.getClientMaxBodySize();
+
+    virtServers = config.virtServers;
 }
 
 void Server::init_server_sockets(std::list<int> ports_l)
