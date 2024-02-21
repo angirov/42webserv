@@ -12,6 +12,7 @@ Config::Config(const Config &other) {
 	_timeout = other._timeout;
 	_maxClients = other._maxClients;
 	_client_max_body_size = other._client_max_body_size;
+	virtServers = other.virtServers; // Copy the vector of VirtServer objects
 }
 
 // Setter and Getter functions for Config class
@@ -37,6 +38,14 @@ void Config::setClientMaxBodySize(int maxBodySize) {
 
 int Config::getClientMaxBodySize() const {
 	return _client_max_body_size;
+}
+
+void Config::addVirtServer(const VirtServer &virtServer) {
+	virtServers.push_back(virtServer); // Add a VirtServer object to the vector
+}
+
+const std::vector<VirtServer>& Config::getVirtServers() const {
+	return virtServers; // Return the vector of VirtServer objects
 }
 
 // VirtServer class implementation
@@ -183,7 +192,7 @@ const std::string &Location::getReturnRedir(int errorCode) const {
 	return emptyString;
 }
 
-void VirtServer::display() {
+void VirtServer::display() const {
 	// Display VirtServer variables
 	std::cout << "\nVirtServer Variables:\n";
 	std::cout << "Port: " << getPort() << std::endl;
@@ -198,7 +207,7 @@ void VirtServer::display() {
 	}
 }
 
-void Location::display() {
+void Location::display() const {
 	// Display Location variables
 	std::cout << "\nLocation Variables:\n";
 	std::cout << "Route: " << getRoute() << std::endl;
