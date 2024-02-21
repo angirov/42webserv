@@ -53,7 +53,7 @@ Server::Server(Config config) {
     _maxClients = config.getMaxClients();
     _client_max_body_size = config.getClientMaxBodySize();
 
-    virtServers = config.virtServers;
+    virtServers = config.getVirtServers();
 }
 
 void Server::init_server_sockets(std::list<int> ports_l)
@@ -306,7 +306,7 @@ void Server::do_send()
         if (!FD_ISSET(*it, &read_fd_set) && requests[*it].size() > 0)
         {
             lg.log(DEBUG, "Processing request from " + lg.str(*it) + ". Request:\n" + requests[*it]);
-            responces[*it] = Request(requests[*it]).process(); // <<<<<<<<<<<<< REQUEST <<<<<<<<<<<<<<<<
+            responces[*it] = Request(*this, requests[*it]).process(); // <<<<<<<<<<<<< REQUEST <<<<<<<<<<<<<<<<
             lg.log(DEBUG, "DONE processing request from " + lg.str(*it) + ". Rescponce:\n" + responces[*it]);
             requests[*it] = "";
         }
@@ -319,4 +319,21 @@ void Server::do_send()
             responces[*it] = "";
         }
     }
+}
+
+
+void Server::displayServer() const {
+	std::cout << "Displaying Server variables:\n";
+	std::cout << "Timeout: " << _timeout << std::endl;
+	std::cout << "Max Clients: " << _maxClients << std::endl;
+	std::cout << "Client Max Body Size: " << _client_max_body_size << std::endl;
+
+	// Display VirtServer and Location objects using display() functions
+	for (size_t i = 0; i < virtServers.size(); ++i) {
+		virtServers[i].display();
+	}
+
+}
+const std::vector<VirtServer> & Server::getVirtServers() const {
+	return virtServers;
 }

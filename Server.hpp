@@ -33,7 +33,7 @@ typedef struct sockaddr SA;
 
 struct Server
 {
-private:
+// private:
     int _timeout;
     int _maxClients;
     int _client_max_body_size;
@@ -71,6 +71,7 @@ public:
     Server(std::list<int> ports_l);
 
     void init();
+    void displayServer() const;
     void fill_fd_sets();
     void init_server_sockets(std::list<int> ports_l);
     void accept_new_conn(int fd);
@@ -84,6 +85,7 @@ public:
     void check_timeout();
     void disconnect_client(int fd);
     void set_last_time(int fd);
+    const std::vector<VirtServer> & getVirtServers() const;
     void run();
 };
 
