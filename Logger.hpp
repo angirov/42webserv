@@ -6,6 +6,7 @@
 #include <sstream>
 #include <ctime>
 #include <cstdlib> // For getenv
+#include <time.h>
 
 enum LogLevel
 {
@@ -36,6 +37,8 @@ public:
 
     int getLevel() { return loggerLevel; };
     static std::string str(int n);
+    static std::string str(double n);
+    static std::string str(time_t n);
 };
 
 #endif // LOGGER_H

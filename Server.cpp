@@ -4,8 +4,7 @@
 //                                                               // <<<<<<<<<<<<< CONFIG <<<<<<<<<<<<<<<<
 // };
 
-Server::Server(std::list<int> ports_l) : ports_l(ports_l)
-{
+void Server::init() {
     if (std::getenv("WEBSERV_HANDTESTING"))
         handTesting = true;
     else
@@ -40,7 +39,26 @@ Server::Server(std::list<int> ports_l) : ports_l(ports_l)
 
     tv.tv_sec = 0;
     tv.tv_usec = 10;
+    timeout = 5;
     time(&last_checked);
+}
+
+Server::Server(std::list<int> ports_l) : ports_l(ports_l)
+{
+    init();
+}
+
+Server::Server(Config config) {
+    init();
+    _timeout = config.getTimeout();
+    _maxClients = config.getMaxClients();
+    _client_max_body_size = config.getClientMaxBodySize();
+
+    virtServers = config.getVirtServers();
+
+    for (size_t i = 0; i < virtServers.size(); ++i) {
+        ports_l.push_back(virtServers[i].getPort());
+    }
 }
 
 void Server::init_server_sockets(std::list<int> ports_l)
@@ -125,7 +143,9 @@ void Server::accept_new_conn(int fd)
         fcntl(connfd, F_SETFL, O_NONBLOCK); // the socket is set as non blocking. for macOS only. should be changed for Linux
         client_fds_l.push_back(connfd);
         requests[connfd] = ""; // necessary because there could be values of old fd
-        set_last_time(fd);
+        responces[connfd] = "";
+        keep_alive[connfd] = true;
+        set_last_time(connfd);
 
         lg.log(INFO, "Connection from " + std::string(inet_ntoa(clientaddr.sin_addr)) + ":" + lg.str(ntohs(clientaddr.sin_port)));
         lg.log(DEBUG, "Adding fd " + lg.str(connfd) + " to the list. New list " + cout_list(client_fds_l));
@@ -145,7 +165,7 @@ void Server::run()
     while (1)
     {
         if (handTesting)
-            usleep(100000);
+            usleep(1000000);
         do_timing();
         fill_fd_sets();
         do_select();
@@ -153,21 +173,18 @@ void Server::run()
     }
 }
 
-void Server::disconnect_client(int fd) {
-    lg.log(ERROR, "No fuction for disconnecting client! " + lg.str(fd));
-    // lg.log(INFO, "Disconnected " + lg.str(fd) + " due to timeout");
-}
 
 void Server::check_timeout()
 {
-    // lg.log(DEBUG, "Checking timeout. Time diff: " + ss.str());
     time_t now;
     time(&now);
     for (std::list<int>::iterator it = client_fds_l.begin(); it != client_fds_l.end(); ++it)
     {
         double secs = difftime(now, last_times[*it]);
+
         if (secs > timeout) {
-            disconnect_client(*it);
+            lg.log(DEBUG, "Timeout for " + lg.str(*it) + "; diff: " + lg.str((int)secs) + "; Timeout: " + lg.str(timeout));
+            handle_client_disconnect(it);
         }
     }
 }
@@ -177,8 +194,6 @@ void Server::do_timing()
     time_t now;
     time(&now);
     double secs = difftime(now, last_checked);
-    std::stringstream ss;
-    ss << secs;
     if (secs > 0)
         check_timeout();
     last_checked = now;
@@ -190,11 +205,13 @@ void Server::do_read(std::list<int>::iterator &fd_itr)
     num_bytes_recv = recv(*fd_itr, buffer, buffsize, 0);
     if (num_bytes_recv > 0)
     {
-        lg.log(DEBUG, "Received " + lg.str(num_bytes_recv) + " bytes from fd " + lg.str(*fd_itr) + ": " + std::string(buffer, num_bytes_recv));
+        lg.log(DEBUG, "Received " + lg.str((int)num_bytes_recv) + " bytes from fd " + lg.str(*fd_itr) + ": " + std::string(buffer, num_bytes_recv));
         requests[*fd_itr] += std::string(buffer, num_bytes_recv);
+        set_last_time(*fd_itr);
     }
     if (num_bytes_recv == 0)
     {
+        lg.log(INFO, "Got zero bytes == Peer has closed the connection gracefully");
         handle_client_disconnect(fd_itr);
     }
     if (num_bytes_recv == -1)
@@ -277,7 +294,6 @@ void Server::do_select()
 
 void Server::handle_client_disconnect(std::list<int>::iterator &fd_itr)
 {
-    lg.log(INFO, "Got zero bytes == Peer has closed the connection gracefully");
     close(*fd_itr);
     lg.log(DEBUG, "Removing fd " + lg.str(*fd_itr) + " from the list. ");
     fd_itr = client_fds_l.erase(fd_itr);
@@ -293,7 +309,7 @@ void Server::do_send()
         if (!FD_ISSET(*it, &read_fd_set) && requests[*it].size() > 0)
         {
             lg.log(DEBUG, "Processing request from " + lg.str(*it) + ". Request:\n" + requests[*it]);
-            responces[*it] = Request(requests[*it]).process(); // <<<<<<<<<<<<< REQUEST <<<<<<<<<<<<<<<<
+            responces[*it] = Request(*this, requests[*it]).process(); // <<<<<<<<<<<<< REQUEST <<<<<<<<<<<<<<<<
             lg.log(DEBUG, "DONE processing request from " + lg.str(*it) + ". Rescponce:\n" + responces[*it]);
             requests[*it] = "";
         }
@@ -302,8 +318,26 @@ void Server::do_send()
         {
             lg.log(DEBUG, "Sending responce for " + lg.str(*it));
             send(*it, responces[*it].c_str(), responces[*it].size(), 0); // Maybe responce has to be sent in pieces
-            lg.log(INFO, "Sent " + lg.str(responces[*it].size()) + " bytes for client " + lg.str(*it));
+            set_last_time(*it);
+            lg.log(INFO, "Sent " + lg.str((int)responces[*it].size()) + " bytes for client " + lg.str(*it));
             responces[*it] = "";
         }
     }
+}
+
+
+void Server::displayServer() const {
+	std::cout << "Displaying Server variables:\n";
+	std::cout << "Timeout: " << _timeout << std::endl;
+	std::cout << "Max Clients: " << _maxClients << std::endl;
+	std::cout << "Client Max Body Size: " << _client_max_body_size << std::endl;
+
+	// Display VirtServer and Location objects using display() functions
+	for (size_t i = 0; i < virtServers.size(); ++i) {
+		virtServers[i].display();
+	}
+
+}
+const std::vector<VirtServer> & Server::getVirtServers() const {
+	return virtServers;
 }

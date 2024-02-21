@@ -27,13 +27,20 @@
 
 #include "Request.hpp"
 #include "Logger.hpp"
-// #include "Configs.hpp"
+#include "conf/ConfigClass.hpp"
 
 typedef struct sockaddr SA;
 
 struct Server
 {
-private:
+// private:
+    int _timeout;
+    int _maxClients;
+    int _client_max_body_size;
+    std::vector<VirtServer> virtServers;
+
+    //////////////////////////////////////////////////////////////////////
+
     bool handTesting;
     Logger lg;
     unsigned int buffsize;
@@ -41,6 +48,7 @@ private:
     time_t last_checked;
 
 public:
+
     int connfd;
     int clientlen;
     struct timeval tv;
@@ -51,17 +59,22 @@ public:
 
     std::list<int> ports_l;
     std::list<int> client_fds_l;
-    std::list<int> server_socket_fds_l;
     int max_server_fd;
     fd_set read_fd_set;
     fd_set write_fd_set;
+
+    // Client related stuff
+    std::list<int> server_socket_fds_l;
     std::map<int, std::string> requests;
     std::map<int, std::string> responces;
     std::map<int, time_t> last_times;
+    std::map<int, bool> keep_alive;
 
-    // Server(Configs configs);
+    Server(Config config);
     Server(std::list<int> ports_l);
 
+    void init();
+    void displayServer() const;
     void fill_fd_sets();
     void init_server_sockets(std::list<int> ports_l);
     void accept_new_conn(int fd);
@@ -73,8 +86,8 @@ public:
     void do_send();
     void do_timing();
     void check_timeout();
-    void disconnect_client(int fd);
     void set_last_time(int fd);
+    const std::vector<VirtServer> & getVirtServers() const;
     void run();
 };
 
