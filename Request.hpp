@@ -14,36 +14,44 @@
 #include "utils.hpp"
 
 typedef std::map<std::string, std::vector<std::string> > header_map;
+static const std::vector<std::string> notFoundStrVec;
 
 class Server;
 
 struct Request
 {
-// private:
+    // private:
 public:
-    const Server & server; // server->virtServers[0].locations[0]
-    // Server
-    static std::string default_host;
+    // Have to be initialized in the constructor?
+    const Server &server; // server->virtServers[0].locations[0]
+    int fd;
+    vsIt VirtServIt;
+    locIt LocationIt;
+
     // Connetion
     bool connectionKeepAlive;
 
-    std::istringstream  request;
+    std::istringstream request;
 
-    Method       method;
-    std::string  url; // should be a class??? query params?
-    std::string  resourcePath;
-    HTTPVersion  httpVersion;
-    header_map   headers; // conditions GET (changed since last request ), obligatory host header for virtual hosting, Connection: Keep-Alive default for http11 otherwise "close"
-    std::string  body;
+    Method method;
+    std::string url; // should be a class??? query params?
+    std::string resourcePath;
+    HTTPVersion httpVersion;
+    header_map headers; // conditions GET (changed since last request ), obligatory host header for virtual hosting, Connection: Keep-Alive default for http11 otherwise "close"
+    std::string body;
 
-    void parse_first();
+    void parse_first_line();
     void parse_header(std::string line);
     void parse();
-    void print_headers(std::stringstream & ss);
+
+    const std::vector<std::string> &getHeaderVals(std::string const key) const;
+    vsIt findHost();
+
+    void print_headers(std::stringstream &ss);
     void print_request();
 
-// public:
-    Request(const Server & server, const std::string &request);
+    // public:
+    Request(const Server &server, int fd, const std::string &request);
     void printServer() const;
 
     std::string process();

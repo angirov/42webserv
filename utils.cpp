@@ -50,3 +50,19 @@ std::string strip(std::string input) {
     }
     return (first < last) ? std::string(first, last) : std::string();
 }
+
+std::string toLower(const std::string& input) {
+    std::string result = input;
+    for (std::size_t i = 0; i < result.length(); ++i) {
+        result[i] = std::tolower(result[i]);
+    }
+    return result;
+}
+
+std::string toUpper(const std::string& input) {
+    std::string result = input;
+    for (std::size_t i = 0; i < result.length(); ++i) {
+        result[i] = std::toupper(result[i]);
+    }
+    return result;
+}

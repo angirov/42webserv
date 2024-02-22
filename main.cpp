@@ -1,6 +1,7 @@
 #include "Server.hpp"
 #include "Logger.hpp"
 #include "conf/ConfigClass.hpp"
+#include <filesystem>
 
 // Function to create objects
 void createObjects(Config &config) {
@@ -102,14 +103,13 @@ int main(int argc, char **argv)
     Server server(config);
     server.displayServer();
     
-    // Request req(server, "GET /index.html HTTP/1.1\r\n"
-    //             "Host: webserv.42\r\n"
+    // Request req(server, 42, "GET /index.html HTTP/1.1\r\n"
+    //             "Host: vLadimir.org \r\n"
     //             "Connection: Keep-Alive\r\n"
     //             "RandomHeader: val1, val2, val3\r\n"
     //             "RandomHeader2: \"val with multiple words\", \"value, with, commas\"\r\n"
     //             "BODY BODY");
 
-    // req.parse();
     // req.print_request();
 
     server.run();

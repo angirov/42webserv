@@ -309,7 +309,7 @@ void Server::do_send()
         if (!FD_ISSET(*it, &read_fd_set) && requests[*it].size() > 0)
         {
             lg.log(DEBUG, "Processing request from " + lg.str(*it) + ". Request:\n" + requests[*it]);
-            responces[*it] = Request(*this, requests[*it]).process(); // <<<<<<<<<<<<< REQUEST <<<<<<<<<<<<<<<<
+            responces[*it] = Request(*this, *it, requests[*it]).process(); // <<<<<<<<<<<<< REQUEST <<<<<<<<<<<<<<<<
             lg.log(DEBUG, "DONE processing request from " + lg.str(*it) + ". Rescponce:\n" + responces[*it]);
             requests[*it] = "";
         }
