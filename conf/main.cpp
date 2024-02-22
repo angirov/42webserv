@@ -4,8 +4,15 @@
 // Function to create objects
 void createObjects(Config &config) {
 	// Create VirtServer objects
-	VirtServer server1(8080, "Maximilian.com");
-	VirtServer server2(9090, "Vladimir.org");
+	std::vector<std::string> serverNames1;
+	serverNames1.push_back("Maximilian.com");
+	serverNames1.push_back("www.maximilian.com");
+	VirtServer server1(8080, serverNames1);
+
+	std::vector<std::string> serverNames2;
+	serverNames2.push_back("Vladimir.org");
+	serverNames2.push_back("www.vladimir.org");
+	VirtServer server2(9090, serverNames2);
 
 	// Create Location objects for server1
 	Location location1("/path1/", "/root1/", "index1.html");

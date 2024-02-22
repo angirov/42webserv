@@ -48,17 +48,16 @@ const std::vector<VirtServer>& Config::getVirtServers() const {
 	return virtServers; // Return the vector of VirtServer objects
 }
 
-// VirtServer class implementation
 // Constructor
-VirtServer::VirtServer(int port, const std::string &serverName) {
+VirtServer::VirtServer(int port, const std::vector<std::string> &serverNames) {
 	_port = port;
-	_serverName = serverName;
+	_serverNames = serverNames;
 }
 
 // Copy Constructor
 VirtServer::VirtServer(const VirtServer &other) {
 	_port = other._port;
-	_serverName = other._serverName;
+	_serverNames = other._serverNames;
 	_errorPages = other._errorPages;
 	locations = other.locations;
 }
@@ -72,12 +71,12 @@ int VirtServer::getPort() const {
 	return _port;
 }
 
-void VirtServer::setServerName(const std::string &serverName) {
-	_serverName = serverName;
+void VirtServer::setServerNames(const std::vector<std::string> &serverNames) {
+	_serverNames = serverNames;
 }
 
-const std::string &VirtServer::getServerName() const {
-	return _serverName;
+const std::vector<std::string> & VirtServer::getServerNames() const {
+	return _serverNames;
 }
 
 void VirtServer::addErrorPage(int errorCode, const std::string &errorPage) {
@@ -196,12 +195,21 @@ void VirtServer::display() const {
 	// Display VirtServer variables
 	std::cout << "\nVirtServer Variables:\n";
 	std::cout << "Port: " << getPort() << std::endl;
-	std::cout << "Server Name: " << getServerName() << std::endl;
+	std::cout << "Server Names: ";
+	const std::vector<std::string>& serverNames = getServerNames();
+	for (size_t i = 0; i < serverNames.size(); ++i) {
+		std::cout << serverNames[i];
+		if (i != serverNames.size() - 1) {
+			std::cout << ", ";
+		}
+	}
+	std::cout << std::endl;
 
 	// Display error pages
 	std::cout << "\nError Pages:\n";
 	std::cout << "404 Error Page: " << getErrorPage(404) << std::endl;
 
+	// Display locations
 	for (size_t i = 0; i < locations.size(); ++i) {
 		locations[i].display();
 	}

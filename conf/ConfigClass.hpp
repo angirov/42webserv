@@ -36,7 +36,7 @@ private:
 
 class VirtServer {
 public:
-	VirtServer(int port, const std::string &serverName);
+	VirtServer(int port, const std::vector<std::string> &serverNames);
 	// Copy constructor
 	VirtServer(const VirtServer &other);
 
@@ -44,8 +44,8 @@ public:
 	void setPort(int port);
 	int getPort() const;
 
-	void setServerName(const std::string &serverName);
-	const std::string & getServerName() const;
+	void setServerNames(const std::vector<std::string> &serverNames);
+	const std::vector<std::string> & getServerNames() const;
 
 	void addErrorPage(int errorCode, const std::string &errorPage);
 	const std::string & getErrorPage(int errorCode) const;
@@ -57,7 +57,7 @@ public:
 
 private:
 	int _port;
-	std::string _serverName;
+	std::vector<std::string> _serverNames;
 	std::map<int, std::string> _errorPages;
 	std::vector<Location> locations;
 };
@@ -92,9 +92,6 @@ public:
 
 	void addReturnRedir(int errorCode, const std::string &redirectUrl);
 	const std::string & getReturnRedir(int errorCode) const;
-
-	void addLocation(const Location &location); // Function to add a nested Location object
-	const std::vector<Location>& getLocations() const; // Function to get nested Location objects
 
 	void display() const;
 
