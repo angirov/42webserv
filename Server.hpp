@@ -70,7 +70,8 @@ public:
     std::map<int, std::string> responces;
     std::map<int, time_t> last_times;
     std::map<int, bool> keep_alive;
-    std::map<int, vsIt> virtServerRefs;
+    std::map<int, std::vector<vsIt> > virtServerRefs;
+    std::map<int, int> clientRefs;
 
     Server(Config config);
     Server(std::list<int> ports_l);
@@ -89,8 +90,11 @@ public:
     void do_timing();
     void check_timeout();
     void set_last_time(int fd);
-    const vsIt& getVirtServerRef(int fd) const;
-    void setVirtServerRef(int fd, vsIt vs_it);
+
+    void createVirtServerRefs();
+    int getClientRef(int clientFd) const;
+    void setClientrRef(int clientFd, int serverFd);
+
     const std::vector<VirtServer> & getVirtServers() const;
     void run();
 };

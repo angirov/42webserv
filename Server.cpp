@@ -100,7 +100,6 @@ void Server::init_server_sockets()
         fcntl(fd, F_SETFL, O_NONBLOCK);
 
         server_socket_fds_l.push_back(fd);
-        setVirtServerRef(fd, vs_it);
     }
 
     max_server_fd = *std::max_element(server_socket_fds_l.begin(), server_socket_fds_l.end());
@@ -144,7 +143,7 @@ void Server::accept_new_conn(int fd)
         requests[connfd] = ""; // necessary because there could be values of old fd
         responces[connfd] = "";
         keep_alive[connfd] = true;
-        setVirtServerRef(fd, getVirtServerRef(fd));
+        setClientrRef(connfd, fd);
         set_last_time(connfd);
 
         lg.log(INFO, "Connection from " + std::string(inet_ntoa(clientaddr.sin_addr)) + ":" + lg.str(ntohs(clientaddr.sin_port)));
@@ -152,20 +151,36 @@ void Server::accept_new_conn(int fd)
     }
 }
 
-const vsIt& Server::getVirtServerRef(int fd) const {
-    std::map<int, vsIt>::const_iterator it = virtServerRefs.find(fd);
+void Server::createVirtServerRefs() {
+    std::multimap<int, vsIt> collector;
+    std::map<int, std::vector<vsIt> > virtServerRefs;
+    
+    const std::vector<VirtServer> & vs = getVirtServers();
+    std::vector<VirtServer>::const_iterator vs_it;
+    for (vs_it = vs.begin(); vs_it != vs.end(); ++vs_it) {
+        collector.insert(std::make_pair((*vs_it).getPort(), vs_it));
+    }
 
-    if (it != virtServerRefs.end()) {
+    std::multimap<int, vsIt>::iterator mmit;
+    for (mmit = collector.begin(); mmit != collector.end(); ++mmit) {
+        virtServerRefs[(*mmit).first].push_back((*mmit).second);
+    }
+}
+
+int Server::getClientRef(int clientFd) const {
+    std::map<int, int>::const_iterator it = clientRefs.find(clientFd);
+
+    if (it != clientRefs.end()) {
         return (*it).second;
     }
     else
     {
-        return notFoundVirtServer;
+        return -1;
     }
 }
 
-void Server::setVirtServerRef(int fd, vsIt vs_it) {
-    virtServerRefs[fd] = vs_it;
+void Server::setClientrRef(int clientFd, int serverFd) {
+    clientRefs[clientFd] = serverFd;
 }
 
 void Server::set_last_time(int fd)
@@ -177,6 +192,7 @@ void Server::set_last_time(int fd)
 
 void Server::run()
 {
+    createVirtServerRefs();
     init_server_sockets();
     while (1)
     {

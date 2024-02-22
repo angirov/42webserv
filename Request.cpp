@@ -128,8 +128,8 @@ const std::vector<std::string> &Request::getHeaderVals(std::string const key) co
     }
 }
 
-vsIt Request::findHost() {
-    const vsIt vs_it = server.getVirtServerRef(fd);
+vsIt Request::findHost() { // Does not make sense at all
+    const vsIt vs_it = server.getVirtServers().begin(); // server.getVirtServerRef(fd);
 
     const std::vector<std::string> names = (*vs_it).getServerNames();
     std::cout << "test" << std::endl;

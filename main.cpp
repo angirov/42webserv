@@ -63,7 +63,8 @@ int main(int argc, char **argv)
     Server server(config);
     server.displayServer();
     
-    server.setVirtServerRef(42, server.getVirtServers().begin());
+    server.setClientrRef(4242, 42);
+    
     Request req(server, 42, "GET /index.html HTTP/1.1\r\n"
                 "Host: vLadimir.org \r\n"
                 "Connection: Keep-Alive\r\n"
