@@ -153,7 +153,6 @@ void Server::accept_new_conn(int fd)
 
 void Server::createVirtServerRefs() {
     std::multimap<int, vsIt> collector;
-    std::map<int, std::vector<vsIt> > virtServerRefs;
     
     const std::vector<VirtServer> & vs = getVirtServers();
     std::vector<VirtServer>::const_iterator vs_it;
@@ -194,6 +193,8 @@ void Server::run()
 {
     createVirtServerRefs();
     init_server_sockets();
+    displayServer();
+
     while (1)
     {
         if (handTesting)
@@ -363,7 +364,7 @@ void Server::displayServer() const {
 	std::cout << "Timeout: " << _timeout << std::endl;
 	std::cout << "Max Clients: " << _maxClients << std::endl;
 	std::cout << "Client Max Body Size: " << _client_max_body_size << std::endl;
-
+    displayVirtServerRefs();
 	// Display VirtServer and Location objects using display() functions
 	for (size_t i = 0; i < virtServers.size(); ++i) {
 		virtServers[i].display();
@@ -372,4 +373,19 @@ void Server::displayServer() const {
 }
 const std::vector<VirtServer> & Server::getVirtServers() const {
 	return virtServers;
+}
+
+void Server::displayVirtServerRefs() const {
+    std::map<int, std::vector<vsIt> >::const_iterator it;
+    std::cout << "virtServerRefs: \n";
+    for (it = virtServerRefs.begin(); it != virtServerRefs.end(); ++it) {
+        std::cout << ">>>> Port: " << (*it).first << " Servers: ";
+        
+        std::vector<vsIt>::const_iterator vs_it;
+        for (vs_it = (*it).second.begin(); vs_it != (*it).second.end(); ++vs_it) {
+            const vsIt server_iter = *vs_it;
+            std::cout << *(*server_iter).getServerNames().begin() << "";
+        }
+        std::cout << std::endl;
+    }
 }
