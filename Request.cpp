@@ -3,6 +3,7 @@
 Request::Request(const Server & server, int fd, const std::string &request) : server(server), fd(fd), request(request)
 {
     parse();
+
     VirtServIt = findHost();
 }
 
@@ -103,7 +104,6 @@ void Request::print_request()
     print_headers(ss);
     ss << "body: " << body << std::endl;
     std::cout << ss.str() << std::endl;
-    std::cout  << "Host name: " << (*VirtServIt).getServerName() << std::endl;
     // printServer();
 }
 
@@ -129,21 +129,24 @@ const std::vector<std::string> &Request::getHeaderVals(std::string const key) co
 }
 
 vsIt Request::findHost() {
-    const std::vector<VirtServer> & vs = server.getVirtServers();
+    const vsIt vs_it = server.getVirtServerRef(fd);
+
+    const std::vector<std::string> names = (*vs_it).getServerNames();
+    std::cout << "test" << std::endl;
 
     const std::vector<std::string> hostVals = getHeaderVals("host");
+    std::string hostVal = *hostVals.begin();     // the first and HOPEFULLY the only header
     if (hostVals == notFoundStrVec) {
-        return vs.begin();
+        return vs_it;
     }
-    std::string hostVal = *hostVals.begin(); // the first and HOPEFULLY the only header
 
     if (hostVal.length() > 0) {
-        for (vsIt it = vs.begin(); it != vs.end(); ++it) {
-            std::cout << "getServerName " << (*it).getServerName() << std::endl;
-            if (toLower((*it).getServerName()) == toLower(hostVal)) {
-                return it;
+        std::vector<std::string>::const_iterator it;
+        for (it = names.begin(); it != names.end(); ++it) {
+            if (toLower(*it) == toLower(hostVal)) {
+                return vs_it;
             }
         }
     }
-    return vs.begin();
+    return vs_it;
 }

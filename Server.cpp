@@ -100,7 +100,7 @@ void Server::init_server_sockets()
         fcntl(fd, F_SETFL, O_NONBLOCK);
 
         server_socket_fds_l.push_back(fd);
-        virtServerRefs[fd] = vs_it;
+        setVirtServerRef(fd, vs_it);
     }
 
     max_server_fd = *std::max_element(server_socket_fds_l.begin(), server_socket_fds_l.end());
