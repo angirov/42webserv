@@ -65,12 +65,23 @@ void Server::init_server_sockets()
     {
         int fd;
         int port = (*vs_it).getPort();
+
+        // check if port is already listened to
+        std::list<int>::iterator serverFdIt;
+        for (serverFdIt = server_socket_fds_l.begin(); serverFdIt != server_socket_fds_l.end(); ++serverFdIt) {
+            if (getPortRef(*serverFdIt) == port) {
+                lg.log(DEBUG, "Server " + lg.str(vs_it) + ": Port " + lg.str(port) + " already bound by fd " + lg.str(*serverFdIt));
+                return;
+            }
+        }
+
         // create a socket fd
         if ((fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
         {
             perror("socket");
             exit(EXIT_FAILURE);
         };
+        setPortRef(fd, port);
 
         // eliminate addr already in use error
         if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR,
@@ -96,13 +107,12 @@ void Server::init_server_sockets()
             perror("listen");
             exit(EXIT_FAILURE);
         };
-        lg.log(INFO, "Server listening on port" + lg.str(port));
+        lg.log(INFO, "Server " + lg.str(vs_it) + " listening on port" + lg.str(port));
         fcntl(fd, F_SETFL, O_NONBLOCK);
 
         server_socket_fds_l.push_back(fd);
     }
 
-    max_server_fd = *std::max_element(server_socket_fds_l.begin(), server_socket_fds_l.end());
 }
 
 std::string Server::cout_list(std::list<int> l)
@@ -143,7 +153,7 @@ void Server::accept_new_conn(int fd)
         requests[connfd] = ""; // necessary because there could be values of old fd
         responces[connfd] = "";
         keep_alive[connfd] = true;
-        setClientrRef(connfd, fd);
+        setClientRef(connfd, fd);
         set_last_time(connfd);
 
         lg.log(INFO, "Connection from " + std::string(inet_ntoa(clientaddr.sin_addr)) + ":" + lg.str(ntohs(clientaddr.sin_port)));
@@ -178,8 +188,40 @@ int Server::getClientRef(int clientFd) const {
     }
 }
 
-void Server::setClientrRef(int clientFd, int serverFd) {
+void Server::setClientRef(int clientFd, int serverFd) {
     clientRefs[clientFd] = serverFd;
+}
+
+const std::vector<vsIt>& Server::getVirtServerRefs(int port) const {
+    std::map<int, std::vector<vsIt> >::const_iterator it = virtServerRefs.find(port);
+
+    if (it != virtServerRefs.end()) {
+        return (*it).second;
+    }
+    else
+    {
+        return notFoundVirtServerVec;
+    }
+}
+
+const std::vector<vsIt>& Server::clientFd2vsIt(int clientFd) const {
+    return getVirtServerRefs(getPortRef(getClientRef(clientFd)));
+}
+
+int Server::getPortRef(int serverFd) const {
+    std::map<int, int>::const_iterator it = portRefs.find(serverFd);
+
+    if (it != portRefs.end()) {
+        return (*it).second;
+    }
+    else
+    {
+        return -1;
+    }
+}
+
+void Server::setPortRef(int serverFd, int port) {
+    portRefs[serverFd] = port;
 }
 
 void Server::set_last_time(int fd)
@@ -193,6 +235,7 @@ void Server::run()
 {
     createVirtServerRefs();
     init_server_sockets();
+    max_server_fd = *std::max_element(server_socket_fds_l.begin(), server_socket_fds_l.end());
     displayServer();
 
     while (1)

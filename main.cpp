@@ -63,17 +63,17 @@ int main(int argc, char **argv)
     Server server(config);
     server.displayServer();
     
-    server.setClientrRef(4242, 42);
+    // server.setClientrRef(4242, 42);
     
-    Request req(server, 42, "GET /index.html HTTP/1.1\r\n"
-                "Host: vLadimir.org \r\n"
-                "Connection: Keep-Alive\r\n"
-                "RandomHeader: val1, val2, val3\r\n"
-                "RandomHeader2: \"val with multiple words\", \"value, with, commas\"\r\n"
-                "BODY BODY");
-    req.print_request();
+    // Request req(server, 42, "GET /index.html HTTP/1.1\r\n"
+    //             "Host: vLadimir.org \r\n"
+    //             "Connection: Keep-Alive\r\n"
+    //             "RandomHeader: val1, val2, val3\r\n"
+    //             "RandomHeader2: \"val with multiple words\", \"value, with, commas\"\r\n"
+    //             "BODY BODY");
+    // req.print_request();
 
-    // server.run();
+    server.run();
 
     return 0;
 }

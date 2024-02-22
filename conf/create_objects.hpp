@@ -7,13 +7,13 @@ void createObjects(Config &config) {
 	// Create VirtServer objects
 	std::vector<std::string> serverNames1;
 	serverNames1.push_back("Maximilian.com");
-	serverNames1.push_back("www.maximilian.com");
+	serverNames1.push_back("maximilian.local");
 	VirtServer server1(8080, serverNames1);
 
 	std::vector<std::string> serverNames2;
-	serverNames2.push_back("Vladimir.org");
+	serverNames2.push_back("Vladimir.LOCAL");
 	serverNames2.push_back("www.vladimir.org");
-	VirtServer server2(9090, serverNames2);
+	VirtServer server2(8080, serverNames2);
 
 	// Create Location objects for server1
 	Location location1("/path1/", "/root1/", "index1.html");
@@ -37,6 +37,9 @@ void createObjects(Config &config) {
 	// Add VirtServer objects to the Config
 	config.addVirtServer(server1);
 	config.addVirtServer(server2);
+	config.setTimeout(50);
+	config.setMaxClients(50);
+	config.setClientMaxBodySize(1000);
 }
 
 // Function to display config variables

@@ -128,25 +128,39 @@ const std::vector<std::string> &Request::getHeaderVals(std::string const key) co
     }
 }
 
-vsIt Request::findHost() { // Does not make sense at all
-    const vsIt vs_it = server.getVirtServers().begin(); // server.getVirtServerRef(fd);
-
-    const std::vector<std::string> names = (*vs_it).getServerNames();
-    std::cout << "test" << std::endl;
-
+std::string Request::getRequestHostHeader() const {
+        // the first and HOPEFULLY the only header of the request
     const std::vector<std::string> hostVals = getHeaderVals("host");
-    std::string hostVal = *hostVals.begin();     // the first and HOPEFULLY the only header
-    if (hostVals == notFoundStrVec) {
-        return vs_it;
-    }
+    std::stringstream hostVal(*hostVals.begin());
+    std::cout << "#### request header found: " << hostVal.str() << std::endl;
+    std::string domain;
+    std::getline(hostVal, domain, ':');
+    return domain;
+}
 
-    if (hostVal.length() > 0) {
-        std::vector<std::string>::const_iterator it;
-        for (it = names.begin(); it != names.end(); ++it) {
-            if (toLower(*it) == toLower(hostVal)) {
-                return vs_it;
+const vsIt Request::findHost() const { // Does not make sense at all
+    // we get list of VServers that listen to the server socket to which the client fd belongs
+    std::cout << "#### client fd: " << fd << std::endl;
+    std::cout << "#### server fd: " << server.getClientRef(fd) << std::endl;
+    std::cout << "#### port: " << server.getPortRef(server.getClientRef(fd)) << std::endl;
+    const std::vector<vsIt> vs_vec = server.clientFd2vsIt(fd); 
+
+    std::string domain = getRequestHostHeader();
+
+    // loop over the VServers and again over their names
+    std::vector<vsIt>::const_iterator vs_it;
+    for (vs_it = vs_vec.begin(); vs_it != vs_vec.end(); ++vs_it)
+    {
+        const vsIt server_iter = *vs_it;
+        const std::vector<std::string> names = (*server_iter).getServerNames();
+        std::vector<std::string>::const_iterator name_it;
+        for (name_it = names.begin(); name_it != names.end(); ++name_it) {
+            std::cout << "#### checking domain: " << *name_it << std::endl;
+            if (toLower(*name_it) == toLower(domain)) {
+                std::cout << "######## domain found: " << domain << std::endl;
+                return server_iter;
             }
         }
     }
-    return vs_it;
+    return *vs_vec.begin(); // default server is the first one
 }
