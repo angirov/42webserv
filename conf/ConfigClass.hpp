@@ -93,9 +93,6 @@ public:
 	void addReturnRedir(int errorCode, const std::string &redirectUrl);
 	const std::string & getReturnRedir(int errorCode) const;
 
-	void addLocation(const Location &location); // Function to add a nested Location object
-	const std::vector<Location>& getLocations() const; // Function to get nested Location objects
-
 	void display() const;
 
 private:
