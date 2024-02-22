@@ -96,6 +96,7 @@ void Request::print_request()
 {
     std::stringstream ss;
     ss << "fd: " << fd << std::endl;
+    ss << "resourcePath: " << resourcePath << std::endl;
     ss << "method: " << method << std::endl;
     ss << "url: " << url << std::endl;
     ss << "httpVersion: " << httpVersion << std::endl;
