@@ -55,18 +55,16 @@ Server::Server(Config config) {
     _client_max_body_size = config.getClientMaxBodySize();
 
     virtServers = config.getVirtServers();
-
-    for (size_t i = 0; i < virtServers.size(); ++i) {
-        ports_l.push_back(virtServers[i].getPort());
-    }
 }
 
-void Server::init_server_sockets(std::list<int> ports_l)
+void Server::init_server_sockets()
 {
-    std::list<int>::iterator it;
-    for (it = ports_l.begin(); it != ports_l.end(); ++it)
+    std::vector<VirtServer> const vsVec = getVirtServers();
+    // std::list<int>::iterator it;
+    for (vsIt vs_it = vsVec.begin(); vs_it != vsVec.end(); ++vs_it)
     {
         int fd;
+        int port = (*vs_it).getPort();
         // create a socket fd
         if ((fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
         {
@@ -86,7 +84,7 @@ void Server::init_server_sockets(std::list<int> ports_l)
         bzero((char *)&serveraddr, sizeof(serveraddr));
         serveraddr.sin_family = AF_INET;
         serveraddr.sin_addr.s_addr = htonl(INADDR_ANY);
-        serveraddr.sin_port = htons((unsigned short)*it);
+        serveraddr.sin_port = htons((unsigned short)port);
         if (bind(fd, (SA *)&serveraddr, sizeof(serveraddr)) < 0)
         {
             perror("bind");
@@ -98,10 +96,11 @@ void Server::init_server_sockets(std::list<int> ports_l)
             perror("listen");
             exit(EXIT_FAILURE);
         };
-        lg.log(INFO, "Server listening on port" + lg.str(*it));
+        lg.log(INFO, "Server listening on port" + lg.str(port));
         fcntl(fd, F_SETFL, O_NONBLOCK);
 
         server_socket_fds_l.push_back(fd);
+        virtServerRefs[fd] = vs_it;
     }
 
     max_server_fd = *std::max_element(server_socket_fds_l.begin(), server_socket_fds_l.end());
@@ -145,11 +144,28 @@ void Server::accept_new_conn(int fd)
         requests[connfd] = ""; // necessary because there could be values of old fd
         responces[connfd] = "";
         keep_alive[connfd] = true;
+        setVirtServerRef(fd, getVirtServerRef(fd));
         set_last_time(connfd);
 
         lg.log(INFO, "Connection from " + std::string(inet_ntoa(clientaddr.sin_addr)) + ":" + lg.str(ntohs(clientaddr.sin_port)));
         lg.log(DEBUG, "Adding fd " + lg.str(connfd) + " to the list. New list " + cout_list(client_fds_l));
     }
+}
+
+const vsIt& Server::getVirtServerRef(int fd) const {
+    std::map<int, vsIt>::const_iterator it = virtServerRefs.find(fd);
+
+    if (it != virtServerRefs.end()) {
+        return (*it).second;
+    }
+    else
+    {
+        return notFoundVirtServer;
+    }
+}
+
+void Server::setVirtServerRef(int fd, vsIt vs_it) {
+    virtServerRefs[fd] = vs_it;
 }
 
 void Server::set_last_time(int fd)
@@ -161,7 +177,7 @@ void Server::set_last_time(int fd)
 
 void Server::run()
 {
-    init_server_sockets(ports_l);
+    init_server_sockets();
     while (1)
     {
         if (handTesting)

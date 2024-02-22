@@ -28,6 +28,7 @@
 #include "Request.hpp"
 #include "Logger.hpp"
 #include "conf/ConfigClass.hpp"
+#include "utils.hpp"
 
 typedef struct sockaddr SA;
 
@@ -69,6 +70,7 @@ public:
     std::map<int, std::string> responces;
     std::map<int, time_t> last_times;
     std::map<int, bool> keep_alive;
+    std::map<int, vsIt> virtServerRefs;
 
     Server(Config config);
     Server(std::list<int> ports_l);
@@ -76,7 +78,7 @@ public:
     void init();
     void displayServer() const;
     void fill_fd_sets();
-    void init_server_sockets(std::list<int> ports_l);
+    void init_server_sockets();
     void accept_new_conn(int fd);
     std::string cout_list(std::list<int> const l);
     void handle_client_disconnect(std::list<int>::iterator &fd_itr);
@@ -87,6 +89,8 @@ public:
     void do_timing();
     void check_timeout();
     void set_last_time(int fd);
+    const vsIt& getVirtServerRef(int fd) const;
+    void setVirtServerRef(int fd, vsIt vs_it);
     const std::vector<VirtServer> & getVirtServers() const;
     void run();
 };

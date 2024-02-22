@@ -14,7 +14,6 @@
 #include "utils.hpp"
 
 typedef std::map<std::string, std::vector<std::string> > header_map;
-static const std::vector<std::string> notFoundStrVec;
 
 class Server;
 
