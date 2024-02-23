@@ -1,6 +1,3 @@
-#include <iostream>
-#include "ConfigClass.hpp"
-
 /*
 // Function to create objects
 void createObjects(Config &config) {
@@ -94,7 +91,7 @@ int main() {
 */
 
 #include <iostream>
-#include "ConfigClass.hpp"
+#include "../conf/ConfigClass.hpp"
 
 // Function to create objects
 void createObjects(Config &config) {
