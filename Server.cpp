@@ -4,7 +4,8 @@
 //                                                               // <<<<<<<<<<<<< CONFIG <<<<<<<<<<<<<<<<
 // };
 
-void Server::init() {
+void Server::init()
+{
     if (std::getenv("WEBSERV_HANDTESTING"))
         handTesting = true;
     else
@@ -48,7 +49,8 @@ Server::Server(std::list<int> ports_l) : ports_l(ports_l)
     init();
 }
 
-Server::Server(Config config) {
+Server::Server(Config config)
+{
     init();
     _timeout = config.getTimeout();
     _maxClients = config.getMaxClients();
@@ -59,21 +61,12 @@ Server::Server(Config config) {
 
 void Server::init_server_sockets()
 {
-    std::vector<VirtServer> const vsVec = getVirtServers();
+    std::set<int>::iterator it;
     // std::list<int>::iterator it;
-    for (vsIt vs_it = vsVec.begin(); vs_it != vsVec.end(); ++vs_it)
+    for (it = uniquePorts.begin(); it != uniquePorts.end(); ++it)
     {
         int fd;
-        int port = (*vs_it).getPort();
-
-        // check if port is already listened to
-        std::list<int>::iterator serverFdIt;
-        for (serverFdIt = server_socket_fds_l.begin(); serverFdIt != server_socket_fds_l.end(); ++serverFdIt) {
-            if (getPortRef(*serverFdIt) == port) {
-                lg.log(DEBUG, "Server " + lg.str(vs_it) + ": Port " + lg.str(port) + " already bound by fd " + lg.str(*serverFdIt));
-                return;
-            }
-        }
+        int port = *it;
 
         // create a socket fd
         if ((fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
@@ -107,12 +100,10 @@ void Server::init_server_sockets()
             perror("listen");
             exit(EXIT_FAILURE);
         };
-        lg.log(INFO, "Server " + lg.str(vs_it) + " listening on port" + lg.str(port));
         fcntl(fd, F_SETFL, O_NONBLOCK);
 
         server_socket_fds_l.push_back(fd);
     }
-
 }
 
 std::string Server::cout_list(std::list<int> l)
@@ -161,25 +152,31 @@ void Server::accept_new_conn(int fd)
     }
 }
 
-void Server::createVirtServerRefs() {
+void Server::createVirtServerRefs()
+{
     std::multimap<int, vsIt> collector;
-    
-    const std::vector<VirtServer> & vs = getVirtServers();
+
+    const std::vector<VirtServer> &vs = getVirtServers();
     std::vector<VirtServer>::const_iterator vs_it;
-    for (vs_it = vs.begin(); vs_it != vs.end(); ++vs_it) {
+    for (vs_it = vs.begin(); vs_it != vs.end(); ++vs_it)
+    {
         collector.insert(std::make_pair((*vs_it).getPort(), vs_it));
+        uniquePorts.insert((*vs_it).getPort());
     }
 
     std::multimap<int, vsIt>::iterator mmit;
-    for (mmit = collector.begin(); mmit != collector.end(); ++mmit) {
+    for (mmit = collector.begin(); mmit != collector.end(); ++mmit)
+    {
         virtServerRefs[(*mmit).first].push_back((*mmit).second);
     }
 }
 
-int Server::getClientRef(int clientFd) const {
+int Server::getClientRef(int clientFd) const
+{
     std::map<int, int>::const_iterator it = clientRefs.find(clientFd);
 
-    if (it != clientRefs.end()) {
+    if (it != clientRefs.end())
+    {
         return (*it).second;
     }
     else
@@ -188,14 +185,17 @@ int Server::getClientRef(int clientFd) const {
     }
 }
 
-void Server::setClientRef(int clientFd, int serverFd) {
+void Server::setClientRef(int clientFd, int serverFd)
+{
     clientRefs[clientFd] = serverFd;
 }
 
-const std::vector<vsIt>& Server::getVirtServerRefs(int port) const {
+const std::vector<vsIt> &Server::getVirtServerRefs(int port) const
+{
     std::map<int, std::vector<vsIt> >::const_iterator it = virtServerRefs.find(port);
 
-    if (it != virtServerRefs.end()) {
+    if (it != virtServerRefs.end())
+    {
         return (*it).second;
     }
     else
@@ -204,14 +204,17 @@ const std::vector<vsIt>& Server::getVirtServerRefs(int port) const {
     }
 }
 
-const std::vector<vsIt>& Server::clientFd2vsIt(int clientFd) const {
+const std::vector<vsIt> &Server::clientFd2vsIt(int clientFd) const
+{
     return getVirtServerRefs(getPortRef(getClientRef(clientFd)));
 }
 
-int Server::getPortRef(int serverFd) const {
+int Server::getPortRef(int serverFd) const
+{
     std::map<int, int>::const_iterator it = portRefs.find(serverFd);
 
-    if (it != portRefs.end()) {
+    if (it != portRefs.end())
+    {
         return (*it).second;
     }
     else
@@ -220,7 +223,8 @@ int Server::getPortRef(int serverFd) const {
     }
 }
 
-void Server::setPortRef(int serverFd, int port) {
+void Server::setPortRef(int serverFd, int port)
+{
     portRefs[serverFd] = port;
 }
 
@@ -249,7 +253,6 @@ void Server::run()
     }
 }
 
-
 void Server::check_timeout()
 {
     time_t now;
@@ -258,7 +261,8 @@ void Server::check_timeout()
     {
         double secs = difftime(now, last_times[*it]);
 
-        if (secs > timeout) {
+        if (secs > timeout)
+        {
             lg.log(DEBUG, "Timeout for " + lg.str(*it) + "; diff: " + lg.str((int)secs) + "; Timeout: " + lg.str(timeout));
             handle_client_disconnect(it);
         }
@@ -401,31 +405,35 @@ void Server::do_send()
     }
 }
 
-
-void Server::displayServer() const {
-	std::cout << "Displaying Server variables:\n";
-	std::cout << "Timeout: " << _timeout << std::endl;
-	std::cout << "Max Clients: " << _maxClients << std::endl;
-	std::cout << "Client Max Body Size: " << _client_max_body_size << std::endl;
+void Server::displayServer() const
+{
+    std::cout << "Displaying Server variables:\n";
+    std::cout << "Timeout: " << _timeout << std::endl;
+    std::cout << "Max Clients: " << _maxClients << std::endl;
+    std::cout << "Client Max Body Size: " << _client_max_body_size << std::endl;
     displayVirtServerRefs();
-	// Display VirtServer and Location objects using display() functions
-	for (size_t i = 0; i < virtServers.size(); ++i) {
-		virtServers[i].display();
-	}
-
+    // Display VirtServer and Location objects using display() functions
+    for (size_t i = 0; i < virtServers.size(); ++i)
+    {
+        virtServers[i].display();
+    }
 }
-const std::vector<VirtServer> & Server::getVirtServers() const {
-	return virtServers;
+const std::vector<VirtServer> &Server::getVirtServers() const
+{
+    return virtServers;
 }
 
-void Server::displayVirtServerRefs() const {
+void Server::displayVirtServerRefs() const
+{
     std::map<int, std::vector<vsIt> >::const_iterator it;
     std::cout << "virtServerRefs: \n";
-    for (it = virtServerRefs.begin(); it != virtServerRefs.end(); ++it) {
+    for (it = virtServerRefs.begin(); it != virtServerRefs.end(); ++it)
+    {
         std::cout << ">>>> Port: " << (*it).first << " Servers: ";
-        
+
         std::vector<vsIt>::const_iterator vs_it;
-        for (vs_it = (*it).second.begin(); vs_it != (*it).second.end(); ++vs_it) {
+        for (vs_it = (*it).second.begin(); vs_it != (*it).second.end(); ++vs_it)
+        {
             const vsIt server_iter = *vs_it;
             std::cout << *(*server_iter).getServerNames().begin() << "";
         }

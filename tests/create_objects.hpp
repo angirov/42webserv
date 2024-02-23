@@ -6,6 +6,11 @@
 void createObjects(Config &config)
 {
 	// Create VirtServer objects
+	std::vector<std::string> serverNames0;
+	serverNames0.push_back("whatever.com");
+	serverNames0.push_back("whatever.local");
+	VirtServer server0(7777, serverNames0);
+	
 	std::vector<std::string> serverNames1;
 	serverNames1.push_back("Maximilian.com");
 	serverNames1.push_back("maximilian.local");
@@ -14,9 +19,16 @@ void createObjects(Config &config)
 	std::vector<std::string> serverNames2;
 	serverNames2.push_back("Vladimir.LOCAL");
 	serverNames2.push_back("www.vladimir.org");
-	VirtServer server2(8081, serverNames2);
+	VirtServer server2(8080, serverNames2);
 
 	// Create Location objects for server1
+	Location location0("/path0/", "/root0/", "index0.html");
+	location0.setAutoIndex(true);
+	location0.addMethod("GET");
+	location0.addCGIExtension(".cgi");
+	location0.setUploadDir("/uploads/");
+	location0.addReturnRedir(300, "redirect0.html");
+	
 	Location location1("/path1/", "/root1/", "index1.html");
 	location1.setAutoIndex(true);
 	location1.addMethod("GET");
@@ -39,11 +51,13 @@ void createObjects(Config &config)
 	location3.addReturnRedir(303, "redirect3.html");
 
 	// Add locations to respective servers
+	server0.addLocation(location0);
 	server1.addLocation(location1);
 	server2.addLocation(location2);
 	server2.addLocation(location3);
 
 	// Add VirtServer objects to the Config
+	config.addVirtServer(server0);
 	config.addVirtServer(server1);
 	config.addVirtServer(server2);
 	config.setTimeout(50);

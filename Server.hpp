@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <iterator>
 #include <map>
+#include <set>
 #include <sys/select.h>
 #include <sstream>
 #include <cstring>
@@ -72,6 +73,7 @@ public:
     std::map<int, bool> keep_alive;
     std::map<int, int> clientRefs; // clientFd -> serverFd
 
+    std::set<int> uniquePorts;
     std::map<int, int > portRefs; // serverFd -> port
     std::map<int, std::vector<vsIt> > virtServerRefs; // port -> virt server it
 
