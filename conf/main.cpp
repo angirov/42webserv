@@ -143,7 +143,7 @@ void displayConfig(const Config &config) {
 
 std::string findLongestMatchingRoute(const std::string& routeToFind, const VirtServer& virtServer) {
 	const std::vector<Location>& locations = virtServer.getLocations();
-	std::string longestMatch;
+	std::string longestMatch = ""; // Initialize the longest match
 
 	for (size_t i = 0; i < locations.size(); ++i) {
 		const std::string& route = locations[i].getRoute();
@@ -152,21 +152,11 @@ std::string findLongestMatchingRoute(const std::string& routeToFind, const VirtS
 		}
 	}
 
-	return longestMatch.empty() ? "No matching route found." : longestMatch;
-}
-
-std::string findLongestMatchingRoute(const std::string& routeToFind, const Config& config, const std::string& serverName) {
-	const std::vector<VirtServer>& virtServers = config.getVirtServers();
-	for (size_t i = 0; i < virtServers.size(); ++i) {
-		const VirtServer& server = virtServers[i];
-		const std::vector<std::string>& serverNames = server.getServerNames();
-		for (size_t j = 0; j < serverNames.size(); ++j) {
-			if (serverNames[j] == serverName) {
-				return findLongestMatchingRoute(routeToFind, server);
-			}
-		}
+	if (longestMatch.empty()) {
+		return "Error: No matching route found"; // Return error message
 	}
-	return "Server not found";
+
+	return longestMatch; // Return the longest matching route
 }
 
 int main() {
@@ -190,14 +180,13 @@ int main() {
 			std::cout << "  Route: " << location.getRoute() << std::endl;
 		}
 
-		// Specify the server name to search for a matching route
-		std::string serverNameToSearch = "Vladimir.org"; // Example server name
-		std::string longestMatch = findLongestMatchingRoute("/blog/pizza/neapolitan/index.html", config, serverNameToSearch);
-		if (longestMatch != "No matching route found." && longestMatch != "Server not found") {
-			std::cout << "Longest matching route in server " << serverNameToSearch << ": " << longestMatch << std::endl;
+		std::string longestMatch = findLongestMatchingRoute("/blog/pizza/neapolitan/index.html", server);
+		if (!longestMatch.empty()) {
+			std::cout << "Longest matching route: " << longestMatch << std::endl;
 		} else {
-			std::cout << "No matching route found in server " << serverNameToSearch << "." << std::endl;
+			std::cout << "No matching route found." << std::endl;
 		}
 	}
+
 	return 0;
 }
