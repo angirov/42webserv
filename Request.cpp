@@ -6,6 +6,9 @@ Request::Request(const Server &server, int fd, const std::string &request) : ser
 
     VirtServIt = findHost();
     LocationIt = findRoute();
+
+    if (methodOk()) std::cout << "$$$$ Method: " << toStr(method) << " allowed" << std::endl;
+    else std::cout << "$$$$ Method: " << toStr(method) << " forbidden" << std::endl;
 }
 
 std::string Request::process()
@@ -185,4 +188,14 @@ const locIt Request::findRoute()
     route = (*locs.begin()).getRoute();
     // resourcePath =  extracts the name of the resource and sets it for this request
     return locs.begin(); // default???
+}
+
+bool Request::methodOk() {
+
+    // magic ...
+
+    if (method == MethodGET)
+        return true;
+    else
+        return false;
 }
