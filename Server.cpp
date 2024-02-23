@@ -55,24 +55,33 @@ Server::Server(Config config) {
     _client_max_body_size = config.getClientMaxBodySize();
 
     virtServers = config.getVirtServers();
-
-    for (size_t i = 0; i < virtServers.size(); ++i) {
-        ports_l.push_back(virtServers[i].getPort());
-    }
 }
 
-void Server::init_server_sockets(std::list<int> ports_l)
+void Server::init_server_sockets()
 {
-    std::list<int>::iterator it;
-    for (it = ports_l.begin(); it != ports_l.end(); ++it)
+    std::vector<VirtServer> const vsVec = getVirtServers();
+    // std::list<int>::iterator it;
+    for (vsIt vs_it = vsVec.begin(); vs_it != vsVec.end(); ++vs_it)
     {
         int fd;
+        int port = (*vs_it).getPort();
+
+        // check if port is already listened to
+        std::list<int>::iterator serverFdIt;
+        for (serverFdIt = server_socket_fds_l.begin(); serverFdIt != server_socket_fds_l.end(); ++serverFdIt) {
+            if (getPortRef(*serverFdIt) == port) {
+                lg.log(DEBUG, "Server " + lg.str(vs_it) + ": Port " + lg.str(port) + " already bound by fd " + lg.str(*serverFdIt));
+                return;
+            }
+        }
+
         // create a socket fd
         if ((fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
         {
             perror("socket");
             exit(EXIT_FAILURE);
         };
+        setPortRef(fd, port);
 
         // eliminate addr already in use error
         if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR,
@@ -86,7 +95,7 @@ void Server::init_server_sockets(std::list<int> ports_l)
         bzero((char *)&serveraddr, sizeof(serveraddr));
         serveraddr.sin_family = AF_INET;
         serveraddr.sin_addr.s_addr = htonl(INADDR_ANY);
-        serveraddr.sin_port = htons((unsigned short)*it);
+        serveraddr.sin_port = htons((unsigned short)port);
         if (bind(fd, (SA *)&serveraddr, sizeof(serveraddr)) < 0)
         {
             perror("bind");
@@ -98,13 +107,12 @@ void Server::init_server_sockets(std::list<int> ports_l)
             perror("listen");
             exit(EXIT_FAILURE);
         };
-        lg.log(INFO, "Server listening on port" + lg.str(*it));
+        lg.log(INFO, "Server " + lg.str(vs_it) + " listening on port" + lg.str(port));
         fcntl(fd, F_SETFL, O_NONBLOCK);
 
         server_socket_fds_l.push_back(fd);
     }
 
-    max_server_fd = *std::max_element(server_socket_fds_l.begin(), server_socket_fds_l.end());
 }
 
 std::string Server::cout_list(std::list<int> l)
@@ -145,11 +153,75 @@ void Server::accept_new_conn(int fd)
         requests[connfd] = ""; // necessary because there could be values of old fd
         responces[connfd] = "";
         keep_alive[connfd] = true;
+        setClientRef(connfd, fd);
         set_last_time(connfd);
 
         lg.log(INFO, "Connection from " + std::string(inet_ntoa(clientaddr.sin_addr)) + ":" + lg.str(ntohs(clientaddr.sin_port)));
         lg.log(DEBUG, "Adding fd " + lg.str(connfd) + " to the list. New list " + cout_list(client_fds_l));
     }
+}
+
+void Server::createVirtServerRefs() {
+    std::multimap<int, vsIt> collector;
+    
+    const std::vector<VirtServer> & vs = getVirtServers();
+    std::vector<VirtServer>::const_iterator vs_it;
+    for (vs_it = vs.begin(); vs_it != vs.end(); ++vs_it) {
+        collector.insert(std::make_pair((*vs_it).getPort(), vs_it));
+    }
+
+    std::multimap<int, vsIt>::iterator mmit;
+    for (mmit = collector.begin(); mmit != collector.end(); ++mmit) {
+        virtServerRefs[(*mmit).first].push_back((*mmit).second);
+    }
+}
+
+int Server::getClientRef(int clientFd) const {
+    std::map<int, int>::const_iterator it = clientRefs.find(clientFd);
+
+    if (it != clientRefs.end()) {
+        return (*it).second;
+    }
+    else
+    {
+        return -1;
+    }
+}
+
+void Server::setClientRef(int clientFd, int serverFd) {
+    clientRefs[clientFd] = serverFd;
+}
+
+const std::vector<vsIt>& Server::getVirtServerRefs(int port) const {
+    std::map<int, std::vector<vsIt> >::const_iterator it = virtServerRefs.find(port);
+
+    if (it != virtServerRefs.end()) {
+        return (*it).second;
+    }
+    else
+    {
+        return notFoundVirtServerVec;
+    }
+}
+
+const std::vector<vsIt>& Server::clientFd2vsIt(int clientFd) const {
+    return getVirtServerRefs(getPortRef(getClientRef(clientFd)));
+}
+
+int Server::getPortRef(int serverFd) const {
+    std::map<int, int>::const_iterator it = portRefs.find(serverFd);
+
+    if (it != portRefs.end()) {
+        return (*it).second;
+    }
+    else
+    {
+        return -1;
+    }
+}
+
+void Server::setPortRef(int serverFd, int port) {
+    portRefs[serverFd] = port;
 }
 
 void Server::set_last_time(int fd)
@@ -161,7 +233,11 @@ void Server::set_last_time(int fd)
 
 void Server::run()
 {
-    init_server_sockets(ports_l);
+    createVirtServerRefs();
+    init_server_sockets();
+    max_server_fd = *std::max_element(server_socket_fds_l.begin(), server_socket_fds_l.end());
+    displayServer();
+
     while (1)
     {
         if (handTesting)
@@ -331,7 +407,7 @@ void Server::displayServer() const {
 	std::cout << "Timeout: " << _timeout << std::endl;
 	std::cout << "Max Clients: " << _maxClients << std::endl;
 	std::cout << "Client Max Body Size: " << _client_max_body_size << std::endl;
-
+    displayVirtServerRefs();
 	// Display VirtServer and Location objects using display() functions
 	for (size_t i = 0; i < virtServers.size(); ++i) {
 		virtServers[i].display();
@@ -340,4 +416,19 @@ void Server::displayServer() const {
 }
 const std::vector<VirtServer> & Server::getVirtServers() const {
 	return virtServers;
+}
+
+void Server::displayVirtServerRefs() const {
+    std::map<int, std::vector<vsIt> >::const_iterator it;
+    std::cout << "virtServerRefs: \n";
+    for (it = virtServerRefs.begin(); it != virtServerRefs.end(); ++it) {
+        std::cout << ">>>> Port: " << (*it).first << " Servers: ";
+        
+        std::vector<vsIt>::const_iterator vs_it;
+        for (vs_it = (*it).second.begin(); vs_it != (*it).second.end(); ++vs_it) {
+            const vsIt server_iter = *vs_it;
+            std::cout << *(*server_iter).getServerNames().begin() << "";
+        }
+        std::cout << std::endl;
+    }
 }

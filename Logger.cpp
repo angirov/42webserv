@@ -148,3 +148,10 @@ std::string Logger::str(time_t n)
     ss << n;
     return ss.str();
 }
+
+
+
+std::string Logger::str(vsIt vs_it)
+{
+    return *(*vs_it).getServerNames().begin();
+}

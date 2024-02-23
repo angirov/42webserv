@@ -23,11 +23,12 @@
 
 #define LISTENQ 10
 #define BUFFERSIZE 10000
-#define BUFFERTEST 100
+#define BUFFERTEST 10000
 
 #include "Request.hpp"
 #include "Logger.hpp"
 #include "conf/ConfigClass.hpp"
+#include "utils.hpp"
 
 typedef struct sockaddr SA;
 
@@ -69,6 +70,10 @@ public:
     std::map<int, std::string> responces;
     std::map<int, time_t> last_times;
     std::map<int, bool> keep_alive;
+    std::map<int, int> clientRefs; // clientFd -> serverFd
+
+    std::map<int, int > portRefs; // serverFd -> port
+    std::map<int, std::vector<vsIt> > virtServerRefs; // port -> virt server it
 
     Server(Config config);
     Server(std::list<int> ports_l);
@@ -76,7 +81,7 @@ public:
     void init();
     void displayServer() const;
     void fill_fd_sets();
-    void init_server_sockets(std::list<int> ports_l);
+    void init_server_sockets();
     void accept_new_conn(int fd);
     std::string cout_list(std::list<int> const l);
     void handle_client_disconnect(std::list<int>::iterator &fd_itr);
@@ -87,6 +92,18 @@ public:
     void do_timing();
     void check_timeout();
     void set_last_time(int fd);
+
+    void createVirtServerRefs();
+    const std::vector<vsIt>& getVirtServerRefs(int port) const;
+    const std::vector<vsIt>& clientFd2vsIt(int clientFd) const;
+    void displayVirtServerRefs() const;
+    
+    int getPortRef(int serverFd) const; // -> port
+    void setPortRef(int serverFd, int port); // serverFd -> port
+
+    int getClientRef(int clientFd) const; // -> serverFd 
+    void setClientRef(int clientFd, int serverFd);
+
     const std::vector<VirtServer> & getVirtServers() const;
     void run();
 };

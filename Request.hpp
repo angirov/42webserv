@@ -14,7 +14,6 @@
 #include "utils.hpp"
 
 typedef std::map<std::string, std::vector<std::string> > header_map;
-static const std::vector<std::string> notFoundStrVec;
 
 class Server;
 
@@ -45,8 +44,8 @@ public:
     void parse();
 
     const std::vector<std::string> &getHeaderVals(std::string const key) const;
-    vsIt findHost();
-
+    const vsIt findHost() const;
+    std::string getRequestHostHeader() const;
     void print_headers(std::stringstream &ss);
     void print_request();
 
