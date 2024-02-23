@@ -17,7 +17,7 @@ void createObjects(Config &config)
 	VirtServer server2(8081, serverNames2);
 
 	// Create Location objects for server1
-	Location location1("/path1/", "/root1/", "index1.html");
+	Location location1("/blog/pizza/neapolitan/", "/root/", "index.html");
 	location1.setAutoIndex(true);
 	location1.addMethod("GET");
 	location1.addCGIExtension(".cgi");
