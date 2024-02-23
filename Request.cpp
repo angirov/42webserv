@@ -1,15 +1,16 @@
 #include "Request.hpp"
 
-Request::Request(const Server & server, int fd, const std::string &request) : server(server), fd(fd), request(request)
+Request::Request(const Server &server, int fd, const std::string &request) : server(server), fd(fd), request(request)
 {
     parse();
 
     VirtServIt = findHost();
+    LocationIt = findRoute();
 }
 
 std::string Request::process()
 {
-    parse();
+    // parse();
     print_request();
     std::string http200chunked = "HTTP/1.1 200 OK\r\n"
                                  "Content-Type: text/plain\r\n"
@@ -79,10 +80,10 @@ void Request::parse()
     body = rest.str();
 }
 
-void Request::print_headers(std::stringstream & ss)
+void Request::print_headers(std::stringstream &ss)
 {
     for (header_map::iterator it = headers.begin(); it != headers.end(); ++it)
-{
+    {
         ss << "Header: " << (*it).first << ";  values: [ " << std::endl;
         (*it).second; // str vec
         for (std::vector<std::string>::iterator val_it = (*it).second.begin(); val_it != (*it).second.end(); ++val_it)
@@ -104,6 +105,10 @@ void Request::print_request()
     print_headers(ss);
     ss << "body: " << body << std::endl;
     std::cout << ss.str() << std::endl;
+    std::cout << "===================" << std::endl;
+    std::cout << "Domain: " << domain << std::endl;
+    std::cout << "Route: " << route << std::endl;
+    std::cout << "===================" << std::endl;
     // printServer();
 }
 
@@ -128,8 +133,9 @@ const std::vector<std::string> &Request::getHeaderVals(std::string const key) co
     }
 }
 
-std::string Request::getRequestHostHeader() const {
-        // the first and HOPEFULLY the only header of the request
+std::string Request::getRequestHostHeader() const
+{
+    // the first and HOPEFULLY the only header of the request
     const std::vector<std::string> hostVals = getHeaderVals("host");
     std::stringstream hostVal(*hostVals.begin());
     std::cout << "#### request header found: " << hostVal.str() << std::endl;
@@ -138,14 +144,15 @@ std::string Request::getRequestHostHeader() const {
     return domain;
 }
 
-const vsIt Request::findHost() const { // Does not make sense at all
+const vsIt Request::findHost()
+{ // Does not make sense at all
     // we get list of VServers that listen to the server socket to which the client fd belongs
     std::cout << "#### client fd: " << fd << std::endl;
     std::cout << "#### server fd: " << server.getClientRef(fd) << std::endl;
     std::cout << "#### port: " << server.getPortRef(server.getClientRef(fd)) << std::endl;
-    const std::vector<vsIt> vs_vec = server.clientFd2vsIt(fd); 
+    const std::vector<vsIt> vs_vec = server.clientFd2vsIt(fd);
 
-    std::string domain = getRequestHostHeader();
+    std::string headerDomain = getRequestHostHeader();
 
     // loop over the VServers and again over their names
     std::vector<vsIt>::const_iterator vs_it;
@@ -154,13 +161,28 @@ const vsIt Request::findHost() const { // Does not make sense at all
         const vsIt server_iter = *vs_it;
         const std::vector<std::string> names = (*server_iter).getServerNames();
         std::vector<std::string>::const_iterator name_it;
-        for (name_it = names.begin(); name_it != names.end(); ++name_it) {
+        for (name_it = names.begin(); name_it != names.end(); ++name_it)
+        {
             std::cout << "#### checking domain: " << *name_it << std::endl;
-            if (toLower(*name_it) == toLower(domain)) {
-                std::cout << "######## domain found: " << domain << std::endl;
+            if (toLower(*name_it) == toLower(headerDomain))
+            {
+                domain = headerDomain;
+                std::cout << "######## domain found: " << headerDomain << std::endl;
                 return server_iter;
             }
         }
     }
+    domain = "";
     return *vs_vec.begin(); // default server is the first one
+}
+
+const locIt Request::findRoute()
+{
+    // url
+    VirtServer vs = *VirtServIt;
+    const std::vector<Location> locs = vs.getLocations();
+    // magic ...
+    route = (*locs.begin()).getRoute();
+    // resourcePath =  extracts the name of the resource and sets it for this request
+    return locs.begin(); // default???
 }

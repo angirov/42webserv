@@ -39,12 +39,16 @@ public:
     header_map headers; // conditions GET (changed since last request ), obligatory host header for virtual hosting, Connection: Keep-Alive default for http11 otherwise "close"
     std::string body;
 
+    std::string domain;
+    std::string route;
+
     void parse_first_line();
     void parse_header(std::string line);
     void parse();
 
     const std::vector<std::string> &getHeaderVals(std::string const key) const;
-    const vsIt findHost() const;
+    const vsIt findHost();
+    const locIt findRoute();
     std::string getRequestHostHeader() const;
     void print_headers(std::stringstream &ss);
     void print_request();

@@ -3,7 +3,7 @@
 #include "conf/ConfigClass.hpp"
 #include <filesystem>
 
-#include "conf/create_objects.hpp"
+#include "tests/create_objects.hpp"
 
 std::list<int> argv2ports(int argc, char **argv)
 {

@@ -1,9 +1,10 @@
 #pragma once
 #include <iostream>
-#include "ConfigClass.hpp"
+#include "../conf/ConfigClass.hpp"
 
 // Function to create objects
-void createObjects(Config &config) {
+void createObjects(Config &config)
+{
 	// Create VirtServer objects
 	std::vector<std::string> serverNames1;
 	serverNames1.push_back("Maximilian.com");
@@ -13,7 +14,7 @@ void createObjects(Config &config) {
 	std::vector<std::string> serverNames2;
 	serverNames2.push_back("Vladimir.LOCAL");
 	serverNames2.push_back("www.vladimir.org");
-	VirtServer server2(8080, serverNames2);
+	VirtServer server2(8081, serverNames2);
 
 	// Create Location objects for server1
 	Location location1("/path1/", "/root1/", "index1.html");
@@ -30,9 +31,17 @@ void createObjects(Config &config) {
 	location2.setUploadDir("/files/");
 	location2.addReturnRedir(302, "redirect2.html");
 
+	Location location3("/path3/", "/root3/", "index3.html");
+	location3.setAutoIndex(false);
+	location3.addMethod("POST");
+	location3.addCGIExtension(".php");
+	location3.setUploadDir("/files/");
+	location3.addReturnRedir(303, "redirect3.html");
+
 	// Add locations to respective servers
 	server1.addLocation(location1);
 	server2.addLocation(location2);
+	server2.addLocation(location3);
 
 	// Add VirtServer objects to the Config
 	config.addVirtServer(server1);
@@ -43,7 +52,8 @@ void createObjects(Config &config) {
 }
 
 // Function to display config variables
-void displayConfig(const Config &config) {
+void displayConfig(const Config &config)
+{
 	std::cout << "Displaying Config variables:\n";
 	std::cout << "Timeout: " << config.getTimeout() << std::endl;
 	std::cout << "Max Clients: " << config.getMaxClients() << std::endl;
