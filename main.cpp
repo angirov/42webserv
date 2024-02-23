@@ -45,33 +45,16 @@ int test_logger()
 
 int main(int argc, char **argv)
 {
-
-    // test_logger();
     if (argc != 2)
     {
         fprintf(stderr, "usage: %s <port>\n", argv[0]);
         exit(0);
     }
 
-
-    // std::list<int> ports_l = argv2ports(argc, argv);
-    // Server server(ports_l);
-
-
-	Config config;
-	createObjects(config);
+    Config config;
+    createObjects(config);
     Server server(config);
     server.displayServer();
-    
-    // server.setClientrRef(4242, 42);
-    
-    // Request req(server, 42, "GET /index.html HTTP/1.1\r\n"
-    //             "Host: vLadimir.org \r\n"
-    //             "Connection: Keep-Alive\r\n"
-    //             "RandomHeader: val1, val2, val3\r\n"
-    //             "RandomHeader2: \"val with multiple words\", \"value, with, commas\"\r\n"
-    //             "BODY BODY");
-    // req.print_request();
 
     server.run();
 
