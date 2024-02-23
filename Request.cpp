@@ -5,10 +5,18 @@ Request::Request(const Server &server, int fd, const std::string &request) : ser
     parse();
 
     VirtServIt = findHost();
+    std::cout << "===================" << std::endl;
+    std::cout << "Domain: " << domain << std::endl;
+
     LocationIt = findRoute();
+    std::cout << "Route: " << route << std::endl;
+    std::cout << "===================" << std::endl;
 
     if (methodOk()) std::cout << "$$$$ Method: " << toStr(method) << " allowed" << std::endl;
     else std::cout << "$$$$ Method: " << toStr(method) << " forbidden" << std::endl;
+
+    if (resourceAvailable()) std::cout << "$$$$ Resource: " << resourcePath << " available" << std::endl;
+    else std::cout << "$$$$ Resource: " << resourcePath << " NOT available" << std::endl;
 }
 
 std::string Request::process()
@@ -108,10 +116,7 @@ void Request::print_request()
     print_headers(ss);
     ss << "body: " << body << std::endl;
     std::cout << ss.str() << std::endl;
-    std::cout << "===================" << std::endl;
-    std::cout << "Domain: " << domain << std::endl;
-    std::cout << "Route: " << route << std::endl;
-    std::cout << "===================" << std::endl;
+
     // printServer();
 }
 
@@ -182,12 +187,14 @@ const vsIt Request::findHost()
 const locIt Request::findRoute()
 {
     // url
-    VirtServer vs = *VirtServIt;
+    const VirtServer & vs = *VirtServIt;
     const std::vector<Location> locs = vs.getLocations();
     // magic ...
-    route = (*locs.begin()).getRoute();
+    
+    const locIt loc_it = locs.begin();
+    route = (*loc_it).getRoute();
     // resourcePath =  extracts the name of the resource and sets it for this request
-    return locs.begin(); // default???
+    return loc_it; // default???
 }
 
 bool Request::methodOk() {
@@ -195,6 +202,26 @@ bool Request::methodOk() {
     // magic ...
 
     if (method == MethodGET)
+        return true;
+    else
+        return false;
+}
+
+bool Request::resourceAvailable() {
+    // assuming GET method, functionS that check 
+    // if the resource can be found  in the location root 
+    // if it is accessible for the server process. 
+    // if it is a regular file, it should be read, 
+    // if it is a directory, we check if listing is alowed for this location 
+    // and if yes it should be listed. 
+    // Expected Errors: file or dir is not found -> 404. 
+    // what should we do if the dir is not allowed to be listed?
+
+    const Location& loc = *LocationIt;
+    // magic ... find resourcePath in the filesystem
+    //     ...
+
+    if (loc.getAutoIndex())
         return true;
     else
         return false;
