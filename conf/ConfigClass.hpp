@@ -5,6 +5,7 @@
 #include <vector>
 #include <map>
 #include <iostream>
+#include "utils.hpp"
 
 class Location;
 class VirtServer;
@@ -82,7 +83,7 @@ public:
 	bool getAutoIndex() const;
 
 	void addMethod(const std::string &method);
-	const std::vector<std::string> & getMethods() const;
+	const std::vector<Method> & getMethods() const;
 
 	void addCGIExtension(const std::string &cgiExtension);
 	const std::vector<std::string> & getCGIExtensions() const;
@@ -100,7 +101,7 @@ private:
 	std::string _route;
 	std::string _locationRoot;
 	std::string _locationIndex;
-	std::vector<std::string> _methods;
+	std::vector<Method> _methods;
 	std::vector<std::string> _cgiExtension;
 	std::string _uploadDir;
 	bool _autoIndex;
