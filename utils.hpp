@@ -6,7 +6,10 @@
 #include <sstream>
 #include <iterator>
 #include <cctype> // for strip
-
+#include <sys/stat.h>
+#include <cstring> // for strerror
+#include <unistd.h> // for access()
+#include <cerrno>
 enum Method
 {
     MethodInvalid,
@@ -41,6 +44,9 @@ std::string strip(std::string input);
 std::string toLower(const std::string& input);
 std::string toUpper(const std::string& input);
 
+void truncateIfEndsWith(std::string& str, char c);
 bool url_match_root(std::string str, std::string pattern);
+bool isValidDirectory(const std::string& path);
+bool hasReadPermission(const std::string& path);
 
 #endif

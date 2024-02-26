@@ -79,3 +79,21 @@ bool url_match_root(std::string str, std::string pattern) {
     return (toLower(str).substr(0, pattern.length()) == toLower(pattern) 
         && (str[pattern.length()] == '/' || toLower(str) == toLower(pattern)));
 }
+
+bool isValidDirectory(const std::string& path) {
+    struct stat st;
+    if (stat(path.c_str(), &st) != 0) {
+        std::cerr << "Error accessing path: " << strerror(errno) << std::endl;
+        return false;
+    }
+    return S_ISDIR(st.st_mode);
+}
+
+bool hasReadPermission(const std::string& path) {
+    if (access(path.c_str(), R_OK) == 0) {
+        return true; // Read permission is granted
+    } else {
+        std::cerr << "Error accessing path: " << strerror(errno) << std::endl;
+        return false; // Read permission is not granted or an error occurred
+    }
+}

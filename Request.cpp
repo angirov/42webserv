@@ -23,8 +23,12 @@ Request::Request(const Server &server, int fd, const std::string &request) : ser
     if (methodOk()) std::cout << "$$$$ Method: " << toStr(method) << " allowed" << std::endl;
     else std::cout << "$$$$ Method: " << toStr(method) << " forbidden" << std::endl;
 
-    if (resourceAvailable()) std::cout << "$$$$ Resource: " << resourcePath << " available" << std::endl;
-    else std::cout << "$$$$ Resource: " << resourcePath << " NOT available" << std::endl;
+    if (method == MethodGET && resourceAvailable()) {
+        std::cout << "$$$$ Resource: " << url << " is available" << std::endl;
+    }
+    else {
+        std::cout << "$$$$ Resource: " << url << " NOT available" << std::endl;
+    }
 }
 
 std::string Request::process()
@@ -255,18 +259,27 @@ bool Request::resourceAvailable() {
     // assuming GET method, functionS that check
     // if the resource can be found  in the location root
     // if it is accessible for the server process.
-    // if it is a regular file, it should be read,
     // if it is a directory, we check if listing is alowed for this location
-    // and if yes it should be listed.
     // Expected Errors: file or dir is not found -> 404.
-    // what should we do if the dir is not allowed to be listed?
 
     const Location& loc = *LocationIt;
     // magic ... find resourcePath in the filesystem
     //     ...
+    std::string path = loc.getLocationRoot();
+    truncateIfEndsWith(path, '/');
 
-    if (loc.getAutoIndex())
-        return true;
+    struct stat st;
+    path += url;
+    std::cout << "DEBUG: resourceAvailable: checking path: " + path << std::endl;
+
+    if (stat(path.c_str(), &st) != 0) {
+        std::cerr << "Error accessing path: " << strerror(errno) << std::endl;
+        return false;
+    }
+    if ((S_ISDIR(st.st_mode) && (*LocationIt).getAutoIndex())
+        || S_ISREG(st.st_mode)) {
+        return hasReadPermission(path);
+    }
     else
         return false;
 }

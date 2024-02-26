@@ -2,6 +2,8 @@
 #include <iostream>
 #include "../conf/ConfigClass.hpp"
 
+std::string TRUE_ROOT("/home/wo/proj/42/42webserv/data");
+
 // Function to create objects
 void createObjects(Config &config)
 {
@@ -23,14 +25,14 @@ void createObjects(Config &config)
 
 	// Create Location objects for server1
 
-	Location location0("/path0/", "/root0/", "index0.html");
+	Location location0("/path0/", TRUE_ROOT + "/root0/", "index0.html");
 	location0.setAutoIndex(true);
 	location0.addMethod("GET");
 	location0.addCGIExtension(".cgi");
 	location0.setUploadDir("/uploads/");
 	location0.addReturnRedir(300, "redirect0.html");
 	
-	Location location1("/path1/", "/root1/", "index1.html");
+	Location location1("/path1/", TRUE_ROOT + "/root1/", "index1.html");
 
 	location1.setAutoIndex(true);
 	location1.addMethod("GET");
@@ -38,14 +40,14 @@ void createObjects(Config &config)
 	location1.setUploadDir("/uploads/");
 	location1.addReturnRedir(301, "redirect1.html");
 
-	Location location2("/path2/", "/root2/", "index2.html");
+	Location location2("/path2/", TRUE_ROOT + "/root2/", "index2.html");
 	location2.setAutoIndex(false);
 	location2.addMethod("POST");
 	location2.addCGIExtension(".php");
 	location2.setUploadDir("/files/");
 	location2.addReturnRedir(302, "redirect2.html");
 
-	Location location3("/path3/", "/root3/", "index3.html");
+	Location location3("/path3/", TRUE_ROOT + "/root3/", "index3.html");
 	location3.setAutoIndex(false);
 	location3.addMethod("POST");
 	location3.addCGIExtension(".php");
