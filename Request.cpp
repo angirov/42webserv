@@ -188,7 +188,7 @@ std::string findLongestMatchingRoute(const std::string& routeToFind, const VirtS
 	const std::vector<Location>& locations = virtServer.getLocations();
 	std::string longestMatch;
 
-	for (size_t i = 0; i < locations.size(); ++i) {
+	for (size_t i = 0; i < locations.size(); ++i) { // return location iterator inside longest matching route
 		const std::string& route = locations[i].getRoute();
 		if (routeToFind.find(route) == 0 && route.length() > longestMatch.length()) {
 			longestMatch = route;
