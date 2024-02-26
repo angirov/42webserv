@@ -48,7 +48,7 @@ public:
 
     const std::vector<std::string> &getHeaderVals(std::string const key) const;
     const vsIt findHost();
-    const locIt findRoute();
+    locIt findRoute();
     bool methodOk();
     bool resourceAvailable();
     std::string getRequestHostHeader() const;

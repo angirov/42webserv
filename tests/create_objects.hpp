@@ -22,6 +22,7 @@ void createObjects(Config &config)
 	VirtServer server2(8080, serverNames2);
 
 	// Create Location objects for server1
+
 	Location location0("/path0/", "/root0/", "index0.html");
 	location0.setAutoIndex(true);
 	location0.addMethod("GET");
@@ -30,6 +31,7 @@ void createObjects(Config &config)
 	location0.addReturnRedir(300, "redirect0.html");
 	
 	Location location1("/path1/", "/root1/", "index1.html");
+
 	location1.setAutoIndex(true);
 	location1.addMethod("GET");
 	location1.addCGIExtension(".cgi");

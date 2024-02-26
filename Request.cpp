@@ -184,17 +184,57 @@ const vsIt Request::findHost()
     return *vs_vec.begin(); // default server is the first one
 }
 
-const locIt Request::findRoute()
+std::string findLongestMatchingRoute(const std::string& routeToFind, const VirtServer& virtServer) {
+	const std::vector<Location>& locations = virtServer.getLocations();
+	std::string longestMatch;
+
+	for (size_t i = 0; i < locations.size(); ++i) { // return location iterator inside longest matching route
+		const std::string& route = locations[i].getRoute();
+		if (routeToFind.find(route) == 0 && route.length() > longestMatch.length()) {
+			longestMatch = route;
+		}
+	}
+
+	if (longestMatch.empty()) {
+		return "Error: No matching route found"; // Return error message or empty string?
+	}
+
+	return longestMatch; // Return the longest matching route
+}
+
+locIt Request::findRoute()
 {
-    // url
-    const VirtServer & vs = *VirtServIt;
-    const std::vector<Location> locs = vs.getLocations();
-    // magic ...
-    
-    const locIt loc_it = locs.begin();
-    route = (*loc_it).getRoute();
-    // resourcePath =  extracts the name of the resource and sets it for this request
-    return loc_it; // default???
+	// Get the URL from the request
+	std::string routeToFind = url;
+
+	// Get the current VirtServer object
+	const VirtServer & vs = *VirtServIt;
+
+	// Find the longest matching route
+	std::string longestMatch = findLongestMatchingRoute(routeToFind, vs);
+
+	// If no matching route found, handle the error
+	if (longestMatch.empty()) {
+		// Handle the error, e.g., return a default location iterator -> maybe resort to default server or error page.
+		std::cerr << "Error: No matching route found for URL: " << routeToFind << std::endl;
+		// Return a default locIt or handle the error as needed
+		return vs.getLocations().begin(); // Return the first location iterator
+	}
+
+	// Print the longest matching route
+	std::cout << "Longest matching route for URL " << routeToFind << " found: " << longestMatch << std::endl;
+
+	// Find the location iterator corresponding to the longest matching route
+	for (locIt loc_it = vs.getLocations().begin(); loc_it != vs.getLocations().end(); ++loc_it) {
+		if ((*loc_it).getRoute() == longestMatch) {
+			route = longestMatch;
+			return loc_it;
+		}
+	}
+	// Handle the case where the location iterator is not found
+	std::cerr << "Error: Matching route found but corresponding location iterator not found." << std::endl;
+	// Return an error or handle as needed.
+	return vs.getLocations().begin(); // Return the first location iterator
 }
 
 bool Request::methodOk() {
@@ -208,13 +248,13 @@ bool Request::methodOk() {
 }
 
 bool Request::resourceAvailable() {
-    // assuming GET method, functionS that check 
-    // if the resource can be found  in the location root 
-    // if it is accessible for the server process. 
-    // if it is a regular file, it should be read, 
-    // if it is a directory, we check if listing is alowed for this location 
-    // and if yes it should be listed. 
-    // Expected Errors: file or dir is not found -> 404. 
+    // assuming GET method, functionS that check
+    // if the resource can be found  in the location root
+    // if it is accessible for the server process.
+    // if it is a regular file, it should be read,
+    // if it is a directory, we check if listing is alowed for this location
+    // and if yes it should be listed.
+    // Expected Errors: file or dir is not found -> 404.
     // what should we do if the dir is not allowed to be listed?
 
     const Location& loc = *LocationIt;
