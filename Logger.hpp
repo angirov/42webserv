@@ -8,6 +8,7 @@
 #include <cstdlib> // For getenv
 #include <time.h>
 #include "utils.hpp"
+#include "conf/ConfigClass.hpp"
 
 enum LogLevel
 {

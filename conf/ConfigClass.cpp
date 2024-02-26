@@ -169,10 +169,14 @@ const std::string &Location::getRoute() const {
 }
 
 void Location::addMethod(const std::string &method) {
-	_methods.push_back(method);
+	Method method_enum = resolveMethod(method);
+	if (method_enum > MethodInvalid)
+		_methods.push_back(method_enum);
+	else
+		std::cout << "ERROR: invalid method: " << method << std::endl;
 }
 
-const std::vector<std::string> &Location::getMethods() const {
+const std::vector<Method> &Location::getMethods() const {
 	return _methods;
 }
 
@@ -236,9 +240,9 @@ void Location::display() const {
 	std::cout << "Location Root: " << getLocationRoot() << std::endl;
 	std::cout << "Location Index: " << getLocationIndex() << std::endl;
 	std::cout << "Methods: ";
-	const std::vector<std::string>& methods = getMethods();
+	const std::vector<Method>& methods = getMethods();
 	for (size_t i = 0; i < methods.size(); ++i) {
-		std::cout << methods[i];
+		std::cout << toStr(methods[i]);
 		if (i != methods.size() - 1) {
 			std::cout << ", ";
 		}
