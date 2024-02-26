@@ -66,3 +66,16 @@ std::string toUpper(const std::string& input) {
     }
     return result;
 }
+
+void truncateIfEndsWith(std::string& str, char c) {
+    if (!str.empty() && str[str.length() - 1] == c) {
+        str.erase(str.length() - 1);
+    }
+}
+
+bool url_match_root(std::string str, std::string pattern) {
+    truncateIfEndsWith(pattern, '/');
+
+    return (toLower(str).substr(0, pattern.length()) == toLower(pattern) 
+        && (str[pattern.length()] == '/' || toLower(str) == toLower(pattern)));
+}

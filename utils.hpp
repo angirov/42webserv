@@ -49,4 +49,6 @@ std::string strip(std::string input);
 std::string toLower(const std::string& input);
 std::string toUpper(const std::string& input);
 
+bool url_match_root(std::string str, std::string pattern);
+
 #endif
