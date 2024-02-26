@@ -27,6 +27,9 @@ public:
 	void addVirtServer(const VirtServer &virtServer); // Function to add a VirtServer object
 	const std::vector<VirtServer> &getVirtServers() const; // Function to get the vector of VirtServer objects
 
+	// Display method
+	void display() const;
+
 private:
 	int _timeout;
 	int _maxClients;

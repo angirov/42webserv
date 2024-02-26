@@ -44,6 +44,20 @@ void Config::addVirtServer(const VirtServer &virtServer) {
 	virtServers.push_back(virtServer); // Add a VirtServer object to the vector
 }
 
+// display Config implementation
+void Config::display() const {
+	std::cout << "Displaying Config variables:" << std::endl;
+	std::cout << "Timeout: " << getTimeout() << std::endl;
+	std::cout << "Max Clients: " << getMaxClients() << std::endl;
+	std::cout << "Client Max Body Size: " << getClientMaxBodySize() << std::endl;
+
+	// Display VirtServer objects
+	const std::vector<VirtServer>& servers = getVirtServers();
+	for (size_t i = 0; i < servers.size(); ++i) {
+		servers[i].display();
+	}
+}
+
 const std::vector<VirtServer>& Config::getVirtServers() const {
 	return virtServers; // Return the vector of VirtServer objects
 }
