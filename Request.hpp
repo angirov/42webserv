@@ -11,6 +11,7 @@
 #include <cctype> // for strip
 
 #include "Server.hpp"
+#include "conf/ConfigClass.hpp"
 #include "utils.hpp"
 
 typedef std::map<std::string, std::vector<std::string> > header_map;

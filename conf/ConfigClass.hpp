@@ -5,10 +5,16 @@
 #include <vector>
 #include <map>
 #include <iostream>
-#include "utils.hpp"
+#include "../utils.hpp"
 
 class Location;
 class VirtServer;
+typedef std::vector<VirtServer>::const_iterator vsIt;
+typedef std::vector<Location>::const_iterator locIt;
+
+static const vsIt notFoundVirtServer;
+static const std::vector<vsIt> notFoundVirtServerVec;
+static const std::vector<std::string> notFoundStrVec;
 
 class Config {
 public:

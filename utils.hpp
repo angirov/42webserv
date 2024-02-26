@@ -6,7 +6,6 @@
 #include <sstream>
 #include <iterator>
 #include <cctype> // for strip
-#include "conf/ConfigClass.hpp"
 
 enum Method
 {
@@ -29,13 +28,6 @@ enum StatusCode
     StatusCode200,
     StatusCode404
 };
-
-typedef std::vector<VirtServer>::const_iterator vsIt;
-typedef std::vector<Location>::const_iterator locIt;
-
-static const vsIt notFoundVirtServer;
-static const std::vector<vsIt> notFoundVirtServerVec;
-static const std::vector<std::string> notFoundStrVec;
 
 Method resolveMethod(std::string const & word);
 HTTPVersion resolveHTTPVersion(std::string const & word);

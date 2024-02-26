@@ -239,12 +239,16 @@ locIt Request::findRoute()
 
 bool Request::methodOk() {
 
-    // magic ...
-
-    if (method == MethodGET)
-        return true;
-    else
-        return false;
+    if (LocationIt != (*VirtServIt).getLocations().end()){
+        const std::vector<Method>& methodVec = (*LocationIt).getMethods();
+        std::vector<Method>::const_iterator method_iter;
+        for (method_iter = methodVec.begin(); method_iter != methodVec.end(); ++method_iter) {
+            if (*method_iter == method) {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 bool Request::resourceAvailable() {
