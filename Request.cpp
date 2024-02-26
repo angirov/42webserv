@@ -214,24 +214,12 @@ const vsIt Request::findHost()
 
 locIt Request::findRoute()
 {
-	// // Get the URL from the request
-	// std::string routeToFind = url;
-
-	// // Get the current VirtServer object
-
-	// // Find the longest matching route
-	// std::string longestMatch = findLongestMatchingRoute(routeToFind, vs);
-
-	// // If no matching route found, handle the error
-	// if (longestMatch.empty()) {
-	// 	// Handle the error, e.g., return a default location iterator -> maybe resort to default server or error page.
-	// 	std::cerr << "Error: No matching route found for URL: " << routeToFind << std::endl;
-	// 	// Return a default locIt or handle the error as needed
-	// 	return vs.getLocations().begin(); // Return the first location iterator
-	// }
-
-	// // Print the longest matching route
-	// std::cout << "Longest matching route for URL " << routeToFind << " found: " << longestMatch << std::endl;
+    /* unction compares URL (string) with all routes of a server (vector of strings) 
+    and finds the longest match (url starts with the route) 
+    and returns the iterator of location vector. 
+    if the location does not match any route, 
+    the end of the location vector is returned, 
+    which then can be checked if any route has found */
 
     locIt loc_it_longestroute = (*VirtServIt).getLocations().end(); // todo check if != end()
 
@@ -246,9 +234,6 @@ locIt Request::findRoute()
             };
 		}
 	}
-	// // Handle the case where the location iterator is not found
-	// std::cerr << "Error: Matching route found but corresponding location iterator not found." << std::endl;
-	// // Return an error or handle as needed.
 	return loc_it_longestroute;
 }
 
