@@ -36,7 +36,7 @@ Request::Request(const Server &server, int fd, const std::string &request) : ser
     return;
 }
 
-std::string Request::process()
+std::string Request::process_hard()
 {
     // parse();
     print_request();
@@ -58,6 +58,24 @@ std::string Request::process()
 
     return ss.str();
 }
+
+std::string Request::process()
+{
+    // parse();
+    std::string res_body = "<h1>Hard coded body</h1>\n";
+
+    std::string full_res = "HTTP/1.1 200 OK\r\n";
+    full_res += "Content-Type: text/plain\r\n";
+    full_res += ("Content-Length:");
+    full_res += server.lg.str((int)res_body.length());
+    full_res += "\r\n\r\n";
+    full_res += res_body;
+
+server.lg.log(DEBUG,"Request: Responce:\n " + full_res);
+
+    return full_res;
+}
+
 
 void Request::parse_first_line()
 {

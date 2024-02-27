@@ -61,6 +61,7 @@ public:
     void printServer() const;
 
     std::string process();
+    std::string process_hard();
 };
 
 class Response
