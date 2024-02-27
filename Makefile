@@ -13,14 +13,14 @@ server:
 	$(COMPILER) $(CFLAGS) ${SRCS} -o server
 
 servertest:
-	$(COMPILER) $(TESTFLAGS) ${SRCS_TEST} -o testserver
+	$(COMPILER) $(TESTFLAGS) ${SRCS_TEST} -o servertest
 
 clean:
 	rm -f server
 
 fclean: clean
 	rm -f client
-	rm -f testserver
+	rm -f servertest
 
 test: re
 	bash test.sh
