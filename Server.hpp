@@ -44,7 +44,7 @@ struct Server
     //////////////////////////////////////////////////////////////////////
 
     bool handTesting;
-    Logger lg;
+    mutable Logger lg;
     unsigned int buffsize;
     int timeout;
     time_t last_checked;

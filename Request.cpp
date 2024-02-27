@@ -4,31 +4,42 @@ Request::Request(const Server &server, int fd, const std::string &request) : ser
 {
     parse();
 
+    // Find the Virtual Host - by default the first one
     VirtServIt = findHost();
-    std::cout << "===================" << std::endl;
-    std::cout << "Domain: " << domain << std::endl;
+    server.lg.log(DEBUG,"Request: Domain: " + domain);
 
+    // Find the Location by route - if no route matches - the end of the vector returned
     LocationIt = findRoute();
     if (LocationIt != (*VirtServIt).getLocations().end()){
-        std::cout << "Route found: " << (*LocationIt).getRoute() << std::endl;
-        std::cout << "===================" << std::endl;
-
+        server.lg.log(DEBUG,"Request: Route found: " + (*LocationIt).getRoute());
     }
     else {
-        std::cout << "Route NOT found!" << std::endl;
-        std::cout << "===================" << std::endl;
+        server.lg.log(DEBUG,"Request: Route NOT found for url: " + url);
+        // set 404
+        return;
     }
 
 
-    if (methodOk()) std::cout << "$$$$ Method: " << toStr(method) << " allowed" << std::endl;
-    else std::cout << "$$$$ Method: " << toStr(method) << " forbidden" << std::endl;
+    if (methodOk()) 
+        server.lg.log(DEBUG,"Request: Method: " + toStr(method) + " allowed" );
+    else {
+        server.lg.log(DEBUG,"Request: Method: " + toStr(method) + " forbidden" );
+        // set 405;
+        return;
+    }
 
     if (method == MethodGET && resourceAvailable()) {
-        std::cout << "$$$$ Resource: " << url << " is available" << std::endl;
+        server.lg.log(DEBUG,"Request: Resource: " + url + " is available" );
+        // set 200;
+        return;
     }
     else {
-        std::cout << "$$$$ Resource: " << url << " NOT available" << std::endl;
+        server.lg.log(DEBUG,"Request: Resource: " + url + " NOT available" );
+        // set 404
+        return;
     }
+    server.lg.log(DEBUG,"Request: constructor DONE" );
+    return;
 }
 
 std::string Request::process()
@@ -127,7 +138,7 @@ void Request::print_request()
     ss << "httpVersion: " << httpVersion << std::endl;
     print_headers(ss);
     ss << "body: " << body << std::endl;
-    std::cout << ss.str() << std::endl;
+    server.lg.log(DEBUG,"Request:\n" + ss.str());
 
     // printServer();
 }
@@ -158,19 +169,20 @@ std::string Request::getRequestHostHeader() const
     // the first and HOPEFULLY the only header of the request
     const std::vector<std::string> hostVals = getHeaderVals("host");
     std::stringstream hostVal(*hostVals.begin());
-    std::cout << "#### request header found: " << hostVal.str() << std::endl;
+    server.lg.log(DEBUG,"Request: request header found: " + hostVal.str());
     std::string domain;
     std::getline(hostVal, domain, ':');
     return domain;
 }
 
 const vsIt Request::findHost()
-{ // Does not make sense at all
-    // we get list of VServers that listen to the server socket to which the client fd belongs
-    std::cout << "#### client fd: " << fd << std::endl;
-    std::cout << "#### server fd: " << server.getClientRef(fd) << std::endl;
-    std::cout << "#### port: " << server.getPortRef(server.getClientRef(fd)) << std::endl;
+{
+    // we get list of VServers that listen to the server socket 
+    // to which the client fd belongs
     const std::vector<vsIt> vs_vec = server.clientFd2vsIt(fd);
+    server.lg.log(DEBUG,"Request: client fd: " + server.lg.str(fd));
+    server.lg.log(DEBUG,"Request: server fd: " + server.lg.str(server.getClientRef(fd)));
+    server.lg.log(DEBUG,"Request: port: " + server.lg.str(server.getPortRef(server.getClientRef(fd))));
 
     std::string headerDomain = getRequestHostHeader();
 
@@ -183,11 +195,11 @@ const vsIt Request::findHost()
         std::vector<std::string>::const_iterator name_it;
         for (name_it = names.begin(); name_it != names.end(); ++name_it)
         {
-            std::cout << "#### checking domain: " << *name_it << std::endl;
+            server.lg.log(DEBUG,"Request: checking domain: " + *name_it);
             if (toLower(*name_it) == toLower(headerDomain))
             {
                 domain = headerDomain;
-                std::cout << "######## domain found: " << headerDomain << std::endl;
+                server.lg.log(DEBUG,"Request: domain found: " + headerDomain);
                 return server_iter;
             }
         }
@@ -262,18 +274,18 @@ bool Request::resourceAvailable() {
     // if it is a directory, we check if listing is alowed for this location
     // Expected Errors: file or dir is not found -> 404.
 
+    if (LocationIt == (*VirtServIt).getLocations().end())
+        return false;
     const Location& loc = *LocationIt;
-    // magic ... find resourcePath in the filesystem
-    //     ...
     std::string path = loc.getLocationRoot();
     truncateIfEndsWith(path, '/');
 
     struct stat st;
     path += url;
-    std::cout << "DEBUG: resourceAvailable: checking path: " + path << std::endl;
+    server.lg.log(DEBUG,"Request: resourceAvailable: checking path: " + path);
 
     if (stat(path.c_str(), &st) != 0) {
-        std::cerr << "Error accessing path: " << strerror(errno) << std::endl;
+        server.lg.log(ERROR, "Request: Error accessing path: " + std::string(strerror(errno)));
         return false;
     }
     if ((S_ISDIR(st.st_mode) && (*LocationIt).getAutoIndex())
