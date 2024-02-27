@@ -3,13 +3,13 @@
 
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include <unistd.h>
 #include <strings.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
-#include <errno.h>
+#include <cerrno>
 #include <list>
 #include <iostream>
 #include <algorithm>
@@ -19,8 +19,7 @@
 #include <sys/select.h>
 #include <sstream>
 #include <cstring>
-#include <cstdlib> // For getenv
-#include <time.h>
+#include <ctime>
 
 #define LISTENQ 10
 #define BUFFERSIZE 10000

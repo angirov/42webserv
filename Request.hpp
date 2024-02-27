@@ -16,7 +16,7 @@
 
 typedef std::map<std::string, std::vector<std::string> > header_map;
 
-class Server;
+struct Server;
 
 struct Request
 {
@@ -28,7 +28,7 @@ public:
     vsIt VirtServIt;
     locIt LocationIt;
 
-    // Connetion
+    // Connection
     bool connectionKeepAlive;
 
     std::istringstream request;
@@ -44,13 +44,13 @@ public:
     std::string route;
 
     void parse_first_line();
-    void parse_header(std::string line);
+    void parse_header(const std::string& line);
     void parse();
 
-    const std::vector<std::string> &getHeaderVals(std::string const key) const;
+    const std::vector<std::string> &getHeaderVals(std::string const &key) const;
     const vsIt findHost();
-    locIt findRoute();
-    bool methodOk();
+    locIt findRoute() const;
+    bool methodOk() const;
     bool checkForGET();
     std::string getRequestHostHeader() const;
     void print_headers(std::stringstream &ss);
@@ -63,7 +63,7 @@ public:
     std::string process();
 };
 
-class Responce
+class Response
 {
     HTTPVersion httpVersion;
     StatusCode statusCode; // with descriptions hardcoded
@@ -73,7 +73,7 @@ class Responce
 #endif
 
 // http11:
-// consistent connetions
+// consistent connections
 // mandatory server headers
-// bettter caching options
+// better caching options
 //

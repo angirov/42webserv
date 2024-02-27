@@ -74,7 +74,7 @@ void Request::parse_first_line()
     httpVersion = resolveHTTPVersion(word);
 }
 
-void Request::parse_header(std::string line)
+void Request::parse_header(const std::string& line)
 {
     std::stringstream lineStream(line);
     std::string key;
@@ -142,7 +142,7 @@ void Request::printServer() const
     server.displayServer();
 }
 
-const std::vector<std::string> &Request::getHeaderVals(std::string const key) const
+const std::vector<std::string> &Request::getHeaderVals(std::string const  &key) const
 {
 
     header_map::const_iterator it = headers.find(toLower(key));
@@ -222,7 +222,7 @@ const vsIt Request::findHost()
 // }
 
 
-locIt Request::findRoute()
+locIt Request::findRoute() const
 {
     /* unction compares URL (string) with all routes of a server (vector of strings) 
     and finds the longest match (url starts with the route) 
@@ -247,7 +247,7 @@ locIt Request::findRoute()
 	return loc_it_longestroute;
 }
 
-bool Request::methodOk() {
+bool Request::methodOk() const {
 
     if (LocationIt != (*VirtServIt).getLocations().end()){
         const std::vector<Method>& methodVec = (*LocationIt).getMethods();
@@ -274,7 +274,7 @@ bool Request::checkForGET() {
     std::string path = loc.getLocationRoot();
     truncateIfEndsWith(path, '/');
 
-    struct stat st;
+    struct stat st = {};
     path += url;
     server.lg.log(DEBUG,"Request: resourceAvailable: checking path: " + path);
 

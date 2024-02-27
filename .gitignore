@@ -41,5 +41,6 @@ client
 server
 ubuntu_cgi_tester
 ubuntu_tester
+servertest
 
 *.txt
