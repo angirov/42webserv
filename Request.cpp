@@ -59,21 +59,54 @@ std::string Request::process_hard()
     return ss.str();
 }
 
+std::string readFileToString(const std::string& filename) {
+    std::ifstream file(filename.c_str());
+    std::ostringstream oss;
+
+    if (file) {
+        oss << file.rdbuf();
+        return oss.str();
+    } else {
+        std::cerr << "Error opening file: " << filename << std::endl;
+        return ""; // Return an empty string if file cannot be opened
+    }
+}
+
+std::string Request::getMimeType(const std::string& extension) {
+    if (extension == "html" || extension == "htm") {
+        return "text/html";
+    } else if (extension == "css") {
+        return "text/css";
+    } else if (extension == "txt") {
+        return "text/txt";
+    } else {
+        // Default MIME type for unknown extensions
+        return "application/octet-stream";
+    }
+}
+
+std::string extractFileName(const std::string& fullPath);
+std::string extractExtension(const std::string& fileName);
+
 std::string Request::process_get200() {
-    std::string res_body = "<h1>Hard coded body for 200</h1>\n";
+    std::string path = getPath();
+    std::string res_body = readFileToString(path);
+    std::string type = getMimeType(extractExtension(extractFileName(path)));
 
     std::string full_res;
     full_res += "HTTP/1.1 200 OK\r\n";
-    full_res += "Content-Type: text/plain\r\n";
-    full_res += ("Content-Length:");
-    full_res += server.lg.str((int)res_body.length());
-    full_res += "\r\n";
+    full_res += "Content-Type: "    + type + "\r\n";
+    full_res += "Content-Length : " + server.lg.str((int)res_body.length()) + "\r\n";
     full_res += "\r\n";
     full_res += res_body;
 
 server.lg.log(DEBUG,"Request: Responce:\n " + full_res);
 
     return full_res;
+}
+
+std::string Request::process_get200dir() {
+    return "under construction process_get200dir";
 }
 
 std::string Request::process_get301()  {
@@ -101,6 +134,7 @@ std::string Request::process()
 {
     std::string res;
     if (statusCode == StatusCode200) res = process_get200();
+    if (statusCode == StatusCode200dir) res = process_get200dir();
     if (statusCode == StatusCode301) res = process_get301();
     if (statusCode == StatusCode403) res = process_get403();
     if (statusCode == StatusCode404) res = process_get404();
@@ -312,6 +346,18 @@ bool Request::methodOk() const {
     return false;
 }
 
+std::string Request::getPath() {
+
+    if (LocationIt == (*VirtServIt).getLocations().end())
+        return "";
+    const Location& loc = *LocationIt;
+    std::string path = loc.getLocationRoot();
+    truncateIfEndsWith(path, '/');
+
+    path += url;
+    return path;
+}
+
 bool Request::checkForGET() {
     // assuming GET method, functionS that check
     // if the resource can be found  in the location root
@@ -319,47 +365,44 @@ bool Request::checkForGET() {
     // if it is a directory, we check if listing is alowed for this location
     // Expected Errors: file or dir is not found -> 404.
 
-    if (LocationIt == (*VirtServIt).getLocations().end())
+    std::string path = getPath();
+    if (path.length() == 0)
         return false;
-    const Location& loc = *LocationIt;
-    std::string path = loc.getLocationRoot();
-    truncateIfEndsWith(path, '/');
-
-    struct stat st = {};
-    path += url;
     server.lg.log(DEBUG,"Request: resourceAvailable: checking path: " + path);
 
+    struct stat st = {};
     if (stat(path.c_str(), &st) != 0) {
         server.lg.log(DEBUG, "Request: Error accessing path (does NOT exist?): " + std::string(strerror(errno))); // = file does not exist
         statusCode = StatusCode404;
         server.lg.log(DEBUG, "Request: set Status 404"); // = file does not exist
         return false;
     }
+
     if (!hasReadPermission(path)) {
         statusCode = StatusCode500;
-        server.lg.log(DEBUG, "Request: Cannot read existing file. set Status 500"); // = file does not exist
+        server.lg.log(DEBUG, "Request: Cannot read existing file. set Status 500");
         return false;
     }
 
     if (S_ISDIR(st.st_mode)) {
         if ((*LocationIt).getAutoIndex() ){
-            statusCode = StatusCode200;
-            server.lg.log(DEBUG, "Request: dir can be indexed. set Status 200"); // = file does not exist
+            statusCode = StatusCode200dir;
+            server.lg.log(DEBUG, "Request: dir can be indexed. set Status 200");
             return true;
         } else {
             statusCode = StatusCode403;
-            server.lg.log(DEBUG, "Request: dir CANNOT be incexed. set Status 403"); // = file does not exist
+            server.lg.log(DEBUG, "Request: dir CANNOT be incexed. set Status 403");
             return false;
         }
-    } 
+    }
     else if (S_ISREG(st.st_mode)) {
         statusCode = StatusCode200;
-        server.lg.log(DEBUG, "Request: reg file. set Status 200"); // = file does not exist
+        server.lg.log(DEBUG, "Request: reg file. set Status 200");
         return true;
     }
     else {
         statusCode = StatusCode404;
-        server.lg.log(DEBUG, "Request: path is NEITHER reg file or dir. set Status 404"); // = file does not exist
+        server.lg.log(DEBUG, "Request: path is NEITHER reg file or dir. set Status 404");
         return false;
     }
 }

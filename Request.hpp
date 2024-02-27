@@ -56,6 +56,8 @@ public:
     std::string getRequestHostHeader() const;
     void print_headers(std::stringstream &ss);
     void print_request();
+    std::string getPath();
+    std::string getMimeType(const std::string& extension);
 
     // public:
     Request(const Server &server, int fd, const std::string &request);
@@ -65,6 +67,7 @@ public:
     std::string process_hard();
     std::string getStatusLine();
     std::string process_get200();
+    std::string process_get200dir();
     std::string process_get301();
     std::string process_get403();
     std::string process_get404();
