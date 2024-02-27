@@ -42,6 +42,7 @@ public:
 
     std::string domain;
     std::string route;
+    StatusCode statusCode;
 
     void parse_first_line();
     void parse_header(const std::string& line);
@@ -62,6 +63,13 @@ public:
 
     std::string process();
     std::string process_hard();
+    std::string getStatusLine();
+    std::string process_get200();
+    std::string process_get301();
+    std::string process_get403();
+    std::string process_get404();
+    std::string process_get405();
+    std::string process_get500();
 };
 
 class Response

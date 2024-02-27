@@ -29,7 +29,21 @@ enum StatusCode
 {
     StatusCodeInvalid,
     StatusCode200,
-    StatusCode404
+    // StatusCode201,
+    StatusCode301,
+    // StatusCode400, // not understand
+    StatusCode403,
+    StatusCode404,
+    StatusCode405,
+    StatusCode500,
+};
+
+enum ContentType
+{
+    ContentInvalid,
+    ContentPlain,
+    ContentHTML,
+    ContentCSS
 };
 
 Method resolveMethod(std::string const & word);

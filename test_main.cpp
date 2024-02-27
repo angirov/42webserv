@@ -64,9 +64,16 @@ int main(int argc, char **argv)
 	// bool: Auto index.
 	// std::vector<std::string>: Vector of HTTP methods.
 	std::vector<std::tuple<int, std::vector<std::string>, std::vector<std::tuple<std::string, std::string, std::string, bool, std::vector<std::string>>>>> serverConfigs = {
-			{7777, {"allmethods.local"}, { {"/methods/", "/data/root0/", "index.html", true, {"GET", "POST", "DELETE"}} }},
-			{8080, {"Maximilian.com", "maximilian.local"}, { {"/blog/pizza/", "/data/root1/", "index.html", true, {"GET"}}, {"/path2/", "/root2/upload/", "upload.html", false, {"POST"}} }},
-			{8080, {"Vladimir.LOCAL", "www.vladimir.org"}, { {"/travel/destination/", "/data/root3/", "index.html", false, {"GET", "POST"}} }}
+			{7777, {"allmethods.local"}, { 
+																{"/methods/", "/data/root0/", "index.html", true, {"GET", "POST", "DELETE"}} 
+															}},
+			{8080, {"Maximilian.com", "maximilian.local"}, {	
+																{"/blog/pizza/", "/data/root1/", "index.html", true, {"GET"}}, 
+																{"/path2/", "/root2/upload/", "upload.html", false, {"POST"}} 
+															}},
+			{8080, {"Vladimir.LOCAL", "www.vladimir.org"}, { 
+																{"/travel/destination/", "/data/root3/", "index.html", false, {"GET", "POST"}} 
+															}}
 	};
 
 	Config config;
