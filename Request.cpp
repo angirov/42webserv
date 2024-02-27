@@ -15,7 +15,7 @@ Request::Request(const Server &server, int fd, const std::string &request) : ser
     }
     else {
         server.lg.log(DEBUG,"Request: Route NOT found for url: " + url);
-        // set 404
+        statusCode = StatusCode404;
         return;
     }
 
@@ -24,7 +24,7 @@ Request::Request(const Server &server, int fd, const std::string &request) : ser
         server.lg.log(DEBUG,"Request: Method: " + toStr(method) + " allowed" );
     else {
         server.lg.log(DEBUG,"Request: Method: " + toStr(method) + " forbidden. set Status 405" );
-        // set 405;
+        statusCode = StatusCode405;
         return;
     }
 
@@ -36,7 +36,7 @@ Request::Request(const Server &server, int fd, const std::string &request) : ser
     return;
 }
 
-std::string Request::process()
+std::string Request::process_hard()
 {
     // parse();
     print_request();
@@ -58,6 +58,57 @@ std::string Request::process()
 
     return ss.str();
 }
+
+std::string Request::process_get200() {
+    std::string res_body = "<h1>Hard coded body for 200</h1>\n";
+
+    std::string full_res;
+    full_res += "HTTP/1.1 200 OK\r\n";
+    full_res += "Content-Type: text/plain\r\n";
+    full_res += ("Content-Length:");
+    full_res += server.lg.str((int)res_body.length());
+    full_res += "\r\n";
+    full_res += "\r\n";
+    full_res += res_body;
+
+server.lg.log(DEBUG,"Request: Responce:\n " + full_res);
+
+    return full_res;
+}
+
+std::string Request::process_get301()  {
+    return "under construction process_get301";
+}
+
+std::string Request::process_get403()  {
+    return "under construction process_get403";
+}
+
+std::string Request::process_get404()  {
+    return "under construction process_get404";
+}
+
+std::string Request::process_get405()  {
+    return "under construction process_get405";
+}
+
+std::string Request::process_get500()  {
+    return "under construction process_get500";
+}
+
+
+std::string Request::process()
+{
+    std::string res;
+    if (statusCode == StatusCode200) res = process_get200();
+    if (statusCode == StatusCode301) res = process_get301();
+    if (statusCode == StatusCode403) res = process_get403();
+    if (statusCode == StatusCode404) res = process_get404();
+    if (statusCode == StatusCode405) res = process_get405();
+    if (statusCode == StatusCode500) res = process_get500();
+    return res;
+}
+
 
 void Request::parse_first_line()
 {
@@ -280,35 +331,36 @@ bool Request::checkForGET() {
 
     if (stat(path.c_str(), &st) != 0) {
         server.lg.log(DEBUG, "Request: Error accessing path (does NOT exist?): " + std::string(strerror(errno))); // = file does not exist
-        // set 404 
+        statusCode = StatusCode404;
         server.lg.log(DEBUG, "Request: set Status 404"); // = file does not exist
         return false;
     }
     if (!hasReadPermission(path)) {
-        // set 500
+        statusCode = StatusCode500;
         server.lg.log(DEBUG, "Request: Cannot read existing file. set Status 500"); // = file does not exist
         return false;
     }
 
     if (S_ISDIR(st.st_mode)) {
         if ((*LocationIt).getAutoIndex() ){
-            // set 200
+            statusCode = StatusCode200;
             server.lg.log(DEBUG, "Request: dir can be indexed. set Status 200"); // = file does not exist
             return true;
         } else {
-            // set 403
+            statusCode = StatusCode403;
             server.lg.log(DEBUG, "Request: dir CANNOT be incexed. set Status 403"); // = file does not exist
             return false;
         }
     } 
     else if (S_ISREG(st.st_mode)) {
-        // set 200;
+        statusCode = StatusCode200;
         server.lg.log(DEBUG, "Request: reg file. set Status 200"); // = file does not exist
         return true;
     }
     else {
-        // set 404;
+        statusCode = StatusCode404;
         server.lg.log(DEBUG, "Request: path is NEITHER reg file or dir. set Status 404"); // = file does not exist
         return false;
     }
 }
+
