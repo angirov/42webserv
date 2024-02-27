@@ -23,22 +23,16 @@ Request::Request(const Server &server, int fd, const std::string &request) : ser
     if (methodOk()) 
         server.lg.log(DEBUG,"Request: Method: " + toStr(method) + " allowed" );
     else {
-        server.lg.log(DEBUG,"Request: Method: " + toStr(method) + " forbidden" );
+        server.lg.log(DEBUG,"Request: Method: " + toStr(method) + " forbidden. set Status 405" );
         // set 405;
         return;
     }
 
-    if (method == MethodGET && resourceAvailable()) {
-        server.lg.log(DEBUG,"Request: Resource: " + url + " is available" );
-        // set 200;
+    if (method == MethodGET){
+        checkForGET();
         return;
     }
-    else {
-        server.lg.log(DEBUG,"Request: Resource: " + url + " NOT available" );
-        // set 404
-        return;
-    }
-    server.lg.log(DEBUG,"Request: constructor DONE" );
+    server.lg.log(DEBUG,"Request: constructor DONE only for GET" );
     return;
 }
 
@@ -267,7 +261,7 @@ bool Request::methodOk() {
     return false;
 }
 
-bool Request::resourceAvailable() {
+bool Request::checkForGET() {
     // assuming GET method, functionS that check
     // if the resource can be found  in the location root
     // if it is accessible for the server process.
@@ -285,13 +279,36 @@ bool Request::resourceAvailable() {
     server.lg.log(DEBUG,"Request: resourceAvailable: checking path: " + path);
 
     if (stat(path.c_str(), &st) != 0) {
-        server.lg.log(ERROR, "Request: Error accessing path: " + std::string(strerror(errno)));
+        server.lg.log(DEBUG, "Request: Error accessing path (does NOT exist?): " + std::string(strerror(errno))); // = file does not exist
+        // set 404 
+        server.lg.log(DEBUG, "Request: set Status 404"); // = file does not exist
         return false;
     }
-    if ((S_ISDIR(st.st_mode) && (*LocationIt).getAutoIndex())
-        || S_ISREG(st.st_mode)) {
-        return hasReadPermission(path);
-    }
-    else
+    if (!hasReadPermission(path)) {
+        // set 500
+        server.lg.log(DEBUG, "Request: Cannot read existing file. set Status 500"); // = file does not exist
         return false;
+    }
+
+    if (S_ISDIR(st.st_mode)) {
+        if ((*LocationIt).getAutoIndex() ){
+            // set 200
+            server.lg.log(DEBUG, "Request: dir can be indexed. set Status 200"); // = file does not exist
+            return true;
+        } else {
+            // set 403
+            server.lg.log(DEBUG, "Request: dir CANNOT be incexed. set Status 403"); // = file does not exist
+            return false;
+        }
+    } 
+    else if (S_ISREG(st.st_mode)) {
+        // set 200;
+        server.lg.log(DEBUG, "Request: reg file. set Status 200"); // = file does not exist
+        return true;
+    }
+    else {
+        // set 404;
+        server.lg.log(DEBUG, "Request: path is NEITHER reg file or dir. set Status 404"); // = file does not exist
+        return false;
+    }
 }

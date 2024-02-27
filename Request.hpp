@@ -51,7 +51,7 @@ public:
     const vsIt findHost();
     locIt findRoute();
     bool methodOk();
-    bool resourceAvailable();
+    bool checkForGET();
     std::string getRequestHostHeader() const;
     void print_headers(std::stringstream &ss);
     void print_request();
