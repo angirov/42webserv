@@ -51,10 +51,22 @@ int main(int argc, char **argv)
 	}
 
 	// Define configurations for virtual servers
+	// ORDER
+	// int: Port number.
+	// std::vector<std::string>: Vector of server names.
+
+	// Vector of tuples representing location configurations.
+	// You can add multiple Locations at once, see Server maximilian.local
+
+	// std::string: Route.
+	// std::string: Location root.
+	// std::string: Location index.
+	// bool: Auto index.
+	// std::vector<std::string>: Vector of HTTP methods.
 	std::vector<std::tuple<int, std::vector<std::string>, std::vector<std::tuple<std::string, std::string, std::string, bool, std::vector<std::string>>>>> serverConfigs = {
-			{7777, {"whatever.com", "whatever.local"}, { {"/path0/", "/root0/", "index0.html", true, {"GET", "POST", "DELETE"}} }},
-			{8080, {"Maximilian.com", "maximilian.local"}, { {"/path1/", "/root1/", "index1.html", true, {"GET", "POST"}}, {"/path2/", "/root2/", "index2.html", false, {"GET", "POST"}} }},
-			{8080, {"Vladimir.LOCAL", "www.vladimir.org"}, { {"/path3/", "/root3/", "index3.html", true, {"GET", "POST"}} }}
+			{7777, {"allmethods.local"}, { {"/methods/", "/data/root0/", "index.html", true, {"GET", "POST", "DELETE"}} }},
+			{8080, {"Maximilian.com", "maximilian.local"}, { {"/blog/pizza/", "/data/root1/", "index.html", true, {"GET"}}, {"/path2/", "/root2/upload/", "upload.html", false, {"POST"}} }},
+			{8080, {"Vladimir.LOCAL", "www.vladimir.org"}, { {"/travel/destination/", "/data/root3/", "index.html", false, {"GET", "POST"}} }}
 	};
 
 	Config config;
