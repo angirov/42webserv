@@ -69,7 +69,7 @@ void Request::parse_first_line()
     httpVersion = resolveHTTPVersion(word);
 }
 
-void Request::parse_header(std::string line)
+void Request::parse_header(const std::string& line)
 {
     std::stringstream lineStream(line);
     std::string key;
@@ -137,7 +137,7 @@ void Request::printServer() const
     server.displayServer();
 }
 
-const std::vector<std::string> &Request::getHeaderVals(std::string const key) const
+const std::vector<std::string> &Request::getHeaderVals(std::string const  &key) const
 {
 
     header_map::const_iterator it = headers.find(toLower(key));
@@ -164,7 +164,7 @@ std::string Request::getRequestHostHeader() const
     return domain;
 }
 
-const vsIt Request::findHost()
+vsIt Request::findHost()
 { // Does not make sense at all
     // we get list of VServers that listen to the server socket to which the client fd belongs
     std::cout << "#### client fd: " << fd << std::endl;
@@ -216,7 +216,7 @@ const vsIt Request::findHost()
 // }
 
 
-locIt Request::findRoute()
+locIt Request::findRoute() const
 {
     /* unction compares URL (string) with all routes of a server (vector of strings) 
     and finds the longest match (url starts with the route) 
@@ -241,7 +241,7 @@ locIt Request::findRoute()
 	return loc_it_longestroute;
 }
 
-bool Request::methodOk() {
+bool Request::methodOk() const {
 
     if (LocationIt != (*VirtServIt).getLocations().end()){
         const std::vector<Method>& methodVec = (*LocationIt).getMethods();
@@ -255,7 +255,7 @@ bool Request::methodOk() {
     return false;
 }
 
-bool Request::resourceAvailable() {
+bool Request::resourceAvailable() const {
     // assuming GET method, functionS that check
     // if the resource can be found  in the location root
     // if it is accessible for the server process.
@@ -268,7 +268,7 @@ bool Request::resourceAvailable() {
     std::string path = loc.getLocationRoot();
     truncateIfEndsWith(path, '/');
 
-    struct stat st;
+    struct stat st = {};
     path += url;
     std::cout << "DEBUG: resourceAvailable: checking path: " + path << std::endl;
 
