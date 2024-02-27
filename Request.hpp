@@ -47,11 +47,11 @@ public:
     void parse_header(const std::string& line);
     void parse();
 
-    const std::vector<std::string> &getHeaderVals(std::string const& key) const;
-    vsIt findHost();
+    const std::vector<std::string> &getHeaderVals(std::string const &key) const;
+    const vsIt findHost();
     locIt findRoute() const;
     bool methodOk() const;
-    bool resourceAvailable() const;
+    bool checkForGET();
     std::string getRequestHostHeader() const;
     void print_headers(std::stringstream &ss);
     void print_request();

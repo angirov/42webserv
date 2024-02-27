@@ -4,31 +4,36 @@ Request::Request(const Server &server, int fd, const std::string &request) : ser
 {
     parse();
 
+    // Find the Virtual Host - by default the first one
     VirtServIt = findHost();
-    std::cout << "===================" << std::endl;
-    std::cout << "Domain: " << domain << std::endl;
+    server.lg.log(DEBUG,"Request: Domain: " + domain);
 
+    // Find the Location by route - if no route matches - the end of the vector returned
     LocationIt = findRoute();
     if (LocationIt != (*VirtServIt).getLocations().end()){
-        std::cout << "Route found: " << (*LocationIt).getRoute() << std::endl;
-        std::cout << "===================" << std::endl;
-
+        server.lg.log(DEBUG,"Request: Route found: " + (*LocationIt).getRoute());
     }
     else {
-        std::cout << "Route NOT found!" << std::endl;
-        std::cout << "===================" << std::endl;
+        server.lg.log(DEBUG,"Request: Route NOT found for url: " + url);
+        // set 404
+        return;
     }
 
 
-    if (methodOk()) std::cout << "$$$$ Method: " << toStr(method) << " allowed" << std::endl;
-    else std::cout << "$$$$ Method: " << toStr(method) << " forbidden" << std::endl;
-
-    if (method == MethodGET && resourceAvailable()) {
-        std::cout << "$$$$ Resource: " << url << " is available" << std::endl;
-    }
+    if (methodOk()) 
+        server.lg.log(DEBUG,"Request: Method: " + toStr(method) + " allowed" );
     else {
-        std::cout << "$$$$ Resource: " << url << " NOT available" << std::endl;
+        server.lg.log(DEBUG,"Request: Method: " + toStr(method) + " forbidden. set Status 405" );
+        // set 405;
+        return;
     }
+
+    if (method == MethodGET){
+        checkForGET();
+        return;
+    }
+    server.lg.log(DEBUG,"Request: constructor DONE only for GET" );
+    return;
 }
 
 std::string Request::process()
@@ -127,7 +132,7 @@ void Request::print_request()
     ss << "httpVersion: " << httpVersion << std::endl;
     print_headers(ss);
     ss << "body: " << body << std::endl;
-    std::cout << ss.str() << std::endl;
+    server.lg.log(DEBUG,"Request:\n" + ss.str());
 
     // printServer();
 }
@@ -158,19 +163,20 @@ std::string Request::getRequestHostHeader() const
     // the first and HOPEFULLY the only header of the request
     const std::vector<std::string> hostVals = getHeaderVals("host");
     std::stringstream hostVal(*hostVals.begin());
-    std::cout << "#### request header found: " << hostVal.str() << std::endl;
+    server.lg.log(DEBUG,"Request: request header found: " + hostVal.str());
     std::string domain;
     std::getline(hostVal, domain, ':');
     return domain;
 }
 
-vsIt Request::findHost()
-{ // Does not make sense at all
-    // we get list of VServers that listen to the server socket to which the client fd belongs
-    std::cout << "#### client fd: " << fd << std::endl;
-    std::cout << "#### server fd: " << server.getClientRef(fd) << std::endl;
-    std::cout << "#### port: " << server.getPortRef(server.getClientRef(fd)) << std::endl;
+const vsIt Request::findHost()
+{
+    // we get list of VServers that listen to the server socket 
+    // to which the client fd belongs
     const std::vector<vsIt> vs_vec = server.clientFd2vsIt(fd);
+    server.lg.log(DEBUG,"Request: client fd: " + server.lg.str(fd));
+    server.lg.log(DEBUG,"Request: server fd: " + server.lg.str(server.getClientRef(fd)));
+    server.lg.log(DEBUG,"Request: port: " + server.lg.str(server.getPortRef(server.getClientRef(fd))));
 
     std::string headerDomain = getRequestHostHeader();
 
@@ -183,11 +189,11 @@ vsIt Request::findHost()
         std::vector<std::string>::const_iterator name_it;
         for (name_it = names.begin(); name_it != names.end(); ++name_it)
         {
-            std::cout << "#### checking domain: " << *name_it << std::endl;
+            server.lg.log(DEBUG,"Request: checking domain: " + *name_it);
             if (toLower(*name_it) == toLower(headerDomain))
             {
                 domain = headerDomain;
-                std::cout << "######## domain found: " << headerDomain << std::endl;
+                server.lg.log(DEBUG,"Request: domain found: " + headerDomain);
                 return server_iter;
             }
         }
@@ -255,31 +261,54 @@ bool Request::methodOk() const {
     return false;
 }
 
-bool Request::resourceAvailable() const {
+bool Request::checkForGET() {
     // assuming GET method, functionS that check
     // if the resource can be found  in the location root
     // if it is accessible for the server process.
     // if it is a directory, we check if listing is alowed for this location
     // Expected Errors: file or dir is not found -> 404.
 
+    if (LocationIt == (*VirtServIt).getLocations().end())
+        return false;
     const Location& loc = *LocationIt;
-    // magic ... find resourcePath in the filesystem
-    //     ...
     std::string path = loc.getLocationRoot();
     truncateIfEndsWith(path, '/');
 
     struct stat st = {};
     path += url;
-    std::cout << "DEBUG: resourceAvailable: checking path: " + path << std::endl;
+    server.lg.log(DEBUG,"Request: resourceAvailable: checking path: " + path);
 
     if (stat(path.c_str(), &st) != 0) {
-        std::cerr << "Error accessing path: " << strerror(errno) << std::endl;
+        server.lg.log(DEBUG, "Request: Error accessing path (does NOT exist?): " + std::string(strerror(errno))); // = file does not exist
+        // set 404 
+        server.lg.log(DEBUG, "Request: set Status 404"); // = file does not exist
         return false;
     }
-    if ((S_ISDIR(st.st_mode) && (*LocationIt).getAutoIndex())
-        || S_ISREG(st.st_mode)) {
-        return hasReadPermission(path);
-    }
-    else
+    if (!hasReadPermission(path)) {
+        // set 500
+        server.lg.log(DEBUG, "Request: Cannot read existing file. set Status 500"); // = file does not exist
         return false;
+    }
+
+    if (S_ISDIR(st.st_mode)) {
+        if ((*LocationIt).getAutoIndex() ){
+            // set 200
+            server.lg.log(DEBUG, "Request: dir can be indexed. set Status 200"); // = file does not exist
+            return true;
+        } else {
+            // set 403
+            server.lg.log(DEBUG, "Request: dir CANNOT be incexed. set Status 403"); // = file does not exist
+            return false;
+        }
+    } 
+    else if (S_ISREG(st.st_mode)) {
+        // set 200;
+        server.lg.log(DEBUG, "Request: reg file. set Status 200"); // = file does not exist
+        return true;
+    }
+    else {
+        // set 404;
+        server.lg.log(DEBUG, "Request: path is NEITHER reg file or dir. set Status 404"); // = file does not exist
+        return false;
+    }
 }
