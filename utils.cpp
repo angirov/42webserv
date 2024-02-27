@@ -97,3 +97,24 @@ bool hasReadPermission(const std::string& path) {
         return false; // Read permission is not granted or an error occurred
     }
 }
+
+std::string extractFileName(const std::string& fullPath) {
+    // Find the position of the last occurrence of the directory separator
+    size_t lastSeparatorPos = fullPath.find_last_of("/\\");
+    
+    // If the separator is found, extract the substring after it (the file name)
+    if (lastSeparatorPos != std::string::npos) {
+        return fullPath.substr(lastSeparatorPos + 1);
+    }
+    
+    // If no separator is found, return the full path as the file name
+    return fullPath;
+}
+
+std::string extractExtension(const std::string& fileName) {
+    size_t dotPos = fileName.find_last_of('.');
+    if (dotPos != std::string::npos) {
+        return fileName.substr(dotPos + 1);
+    }
+    return ""; // Return an empty string if no extension found
+}

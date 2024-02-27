@@ -29,6 +29,7 @@ enum StatusCode
 {
     StatusCodeInvalid,
     StatusCode200,
+    StatusCode200dir,
     // StatusCode201,
     StatusCode301,
     // StatusCode400, // not understand
@@ -41,6 +42,7 @@ enum StatusCode
 enum ContentType
 {
     ContentInvalid,
+    ContentOctetStream,
     ContentPlain,
     ContentHTML,
     ContentCSS
@@ -62,5 +64,7 @@ void truncateIfEndsWith(std::string& str, char c);
 bool url_match_root(std::string str, std::string pattern);
 bool isValidDirectory(const std::string& path);
 bool hasReadPermission(const std::string& path);
+std::string extractFileName(const std::string& fullPath);
+std::string extractExtension(const std::string& fileName);
 
 #endif
