@@ -69,6 +69,7 @@ public:
     std::string process_get200();
     std::string process_get200dir();
     std::string process_get301();
+    std::string process_get301dir();
     std::string process_get403();
     std::string process_get404();
     std::string process_get405();

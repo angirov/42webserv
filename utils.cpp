@@ -118,3 +118,23 @@ std::string extractExtension(const std::string& fileName) {
     }
     return ""; // Return an empty string if no extension found
 }
+
+std::vector<std::string> listFilesInDirectory(const std::string& directoryPath) {
+    std::vector<std::string> files;
+    DIR *dir; // DIR = A type representing a directory stream.
+    struct dirent *ent;
+    if ((dir = opendir(directoryPath.c_str())) != NULL) {
+        while ((ent = readdir(dir)) != NULL) {
+            if (ent->d_type == DT_REG) {
+                files.push_back(ent->d_name);
+            } else if (ent->d_type == DT_DIR) {
+                if (strcmp(ent->d_name, ".") != 0 && strcmp(ent->d_name, "..") != 0) {
+                    files.push_back(ent->d_name);
+                }
+            }
+        }
+        closedir(dir);
+    }
+
+    return files;
+}
