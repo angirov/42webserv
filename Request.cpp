@@ -10,29 +10,32 @@ Request::Request(const Server &server, int fd, const std::string &request) : ser
 
     // Find the Location by route - if no route matches - the end of the vector returned
     LocationIt = findRoute();
-    if (LocationIt != (*VirtServIt).getLocations().end()){
-        server.lg.log(DEBUG,"Request: Route found: " + (*LocationIt).getRoute());
+    if (LocationIt != (*VirtServIt).getLocations().end())
+    {
+        server.lg.log(DEBUG, "Request: Route found: " + (*LocationIt).getRoute());
     }
-    else {
-        server.lg.log(DEBUG,"Request: Route NOT found for url: " + url);
+    else
+    {
+        server.lg.log(DEBUG, "Request: Route NOT found for url: " + url);
         statusCode = StatusCode404;
         return;
     }
 
-
-    if (methodOk()) 
-        server.lg.log(DEBUG,"Request: Method: " + toStr(method) + " allowed" );
-    else {
-        server.lg.log(DEBUG,"Request: Method: " + toStr(method) + " forbidden. set Status 405" );
+    if (methodOk())
+        server.lg.log(DEBUG, "Request: Method: " + toStr(method) + " allowed");
+    else
+    {
+        server.lg.log(DEBUG, "Request: Method: " + toStr(method) + " forbidden. set Status 405");
         statusCode = StatusCode405;
         return;
     }
 
-    if (method == MethodGET){
+    if (method == MethodGET)
+    {
         checkForGET();
         return;
     }
-    server.lg.log(DEBUG,"Request: constructor DONE only for GET" );
+    server.lg.log(DEBUG, "Request: constructor DONE only for GET");
     return;
 }
 
@@ -59,76 +62,141 @@ std::string Request::process_hard()
     return ss.str();
 }
 
-std::string readFileToString(const std::string& filename) {
+std::string readFileToString(const std::string &filename)
+{
     std::ifstream file(filename.c_str());
     std::ostringstream oss;
 
-    if (file) {
+    if (file)
+    {
         oss << file.rdbuf();
         return oss.str();
-    } else {
+    }
+    else
+    {
         std::cerr << "Error opening file: " << filename << std::endl;
         return ""; // Return an empty string if file cannot be opened
     }
 }
 
-std::string Request::getMimeType(const std::string& extension) {
-    if (extension == "html" || extension == "htm") {
+std::string Request::getMimeType(const std::string &extension)
+{
+    if (extension == "html" || extension == "htm")
+    {
         return "text/html";
-    } else if (extension == "css") {
+    }
+    else if (extension == "css")
+    {
         return "text/css";
-    } else if (extension == "txt") {
+    }
+    else if (extension == "txt")
+    {
         return "text/txt";
-    } else {
+    }
+    else
+    {
         // Default MIME type for unknown extensions
         return "application/octet-stream";
     }
 }
 
-std::string extractFileName(const std::string& fullPath);
-std::string extractExtension(const std::string& fileName);
+std::string extractFileName(const std::string &fullPath);
+std::string extractExtension(const std::string &fileName);
 
-std::string Request::process_get200() {
+std::string Request::process_get200()
+{
     std::string path = getPath();
     std::string res_body = readFileToString(path);
     std::string type = getMimeType(extractExtension(extractFileName(path)));
 
     std::string full_res;
     full_res += "HTTP/1.1 200 OK\r\n";
-    full_res += "Content-Type: "    + type + "\r\n";
+    full_res += "Content-Type: " + type + "\r\n";
     full_res += "Content-Length : " + server.lg.str((int)res_body.length()) + "\r\n";
     full_res += "\r\n";
     full_res += res_body;
 
-server.lg.log(DEBUG,"Request: Responce:\n " + full_res);
+    server.lg.log(DEBUG, "Request: Responce:\n " + full_res);
 
     return full_res;
 }
 
-std::string Request::process_get200dir() {
-    return "under construction process_get200dir";
+std::string Request::process_get200dir()
+{
+    std::string res_body;
+
+    res_body += "<html>\n<head><title>Index of " + url + "</title></head>\n"
+                "<body>\n<h1>Index of " + url + "</h1><hr><pre><a href=\"../\">../</a>\n";
+
+    DIR *dir; // DIR = A type representing a directory stream.
+    struct dirent *ent;
+    if ((dir = opendir(getPath().c_str())) != NULL) {
+        while ((ent = readdir(dir)) != NULL) {
+            std::string name(ent->d_name);
+            if (ent->d_type == DT_REG) {
+                res_body += "<a href=\"" + name + "\">" + name + "</a>\n";
+            } else if (ent->d_type == DT_DIR) {
+                if (strcmp(ent->d_name, ".") != 0 && strcmp(ent->d_name, "..") != 0) {
+                    res_body += "<a href=\"" + name + "/\">" + name + "/</a>\n";
+                }
+            }
+        }
+        closedir(dir);
+    }
+
+    res_body += "</pre><hr></body>\n</html>\n";
+
+    std::string full_res;
+    full_res += "HTTP/1.1 200 OK\r\n";
+    full_res += "Content-Type: text/html\r\n";
+    full_res += "Content-Length : " + server.lg.str((int)res_body.length()) + "\r\n";
+    full_res += "\r\n";
+    full_res += res_body;
+
+    return full_res;
 }
 
-std::string Request::process_get301()  {
+std::string Request::process_get301dir()
+{
+    std::string res_body; // = "<!DOCTYPE html>"
+    res_body += "<html>\n<head><title>301 Moved Permanently</title></head>\n<body>";
+    res_body += "<center><h1>301 Moved Permanently</h1></center>";
+    res_body += "<hr><center>The Best WebServ42</center>\n</body>\n</html>";
+    std::string full_res;
+    full_res += "HTTP/1.1 301 Moved Permanently\r\n";
+    full_res += "Content-Type: text/html\r\n";
+    full_res += "Content-Length : " + server.lg.str((int)res_body.length()) + "\r\n";
+    full_res += "Location: " + url + "/\r\n";
+    full_res += "\r\n";
+    full_res += res_body;
+
+    return full_res;
+}
+
+std::string Request::process_get301()
+{
     return "under construction process_get301";
 }
 
-std::string Request::process_get403()  {
+std::string Request::process_get403()
+{
     return "under construction process_get403";
 }
 
-std::string Request::process_get404()  {
+std::string Request::process_get404()
+{
     return "under construction process_get404";
 }
 
-std::string Request::process_get405()  {
+std::string Request::process_get405()
+{
     return "under construction process_get405";
 }
 
-std::string Request::process_get500()  {
+std::string Request::process_get500()
+{
     return "under construction process_get500";
 }
-
 
 std::string Request::process()
 {
@@ -217,7 +285,7 @@ void Request::print_request()
     ss << "httpVersion: " << httpVersion << std::endl;
     print_headers(ss);
     ss << "body: " << body << std::endl;
-    server.lg.log(DEBUG,"Request:\n" + ss.str());
+    server.lg.log(DEBUG, "Request:\n" + ss.str());
 
     // printServer();
 }
@@ -227,7 +295,7 @@ void Request::printServer() const
     server.displayServer();
 }
 
-const std::vector<std::string> &Request::getHeaderVals(std::string const  &key) const
+const std::vector<std::string> &Request::getHeaderVals(std::string const &key) const
 {
 
     header_map::const_iterator it = headers.find(toLower(key));
@@ -248,7 +316,7 @@ std::string Request::getRequestHostHeader() const
     // the first and HOPEFULLY the only header of the request
     const std::vector<std::string> hostVals = getHeaderVals("host");
     std::stringstream hostVal(*hostVals.begin());
-    server.lg.log(DEBUG,"Request: request header found: " + hostVal.str());
+    server.lg.log(DEBUG, "Request: request header found: " + hostVal.str());
     std::string domain;
     std::getline(hostVal, domain, ':');
     return domain;
@@ -256,12 +324,12 @@ std::string Request::getRequestHostHeader() const
 
 const vsIt Request::findHost()
 {
-    // we get list of VServers that listen to the server socket 
+    // we get list of VServers that listen to the server socket
     // to which the client fd belongs
     const std::vector<vsIt> vs_vec = server.clientFd2vsIt(fd);
-    server.lg.log(DEBUG,"Request: client fd: " + server.lg.str(fd));
-    server.lg.log(DEBUG,"Request: server fd: " + server.lg.str(server.getClientRef(fd)));
-    server.lg.log(DEBUG,"Request: port: " + server.lg.str(server.getPortRef(server.getClientRef(fd))));
+    server.lg.log(DEBUG, "Request: client fd: " + server.lg.str(fd));
+    server.lg.log(DEBUG, "Request: server fd: " + server.lg.str(server.getClientRef(fd)));
+    server.lg.log(DEBUG, "Request: port: " + server.lg.str(server.getPortRef(server.getClientRef(fd))));
 
     std::string headerDomain = getRequestHostHeader();
 
@@ -274,11 +342,11 @@ const vsIt Request::findHost()
         std::vector<std::string>::const_iterator name_it;
         for (name_it = names.begin(); name_it != names.end(); ++name_it)
         {
-            server.lg.log(DEBUG,"Request: checking domain: " + *name_it);
+            server.lg.log(DEBUG, "Request: checking domain: " + *name_it);
             if (toLower(*name_it) == toLower(headerDomain))
             {
                 domain = headerDomain;
-                server.lg.log(DEBUG,"Request: domain found: " + headerDomain);
+                server.lg.log(DEBUG, "Request: domain found: " + headerDomain);
                 return server_iter;
             }
         }
@@ -306,39 +374,45 @@ const vsIt Request::findHost()
 // 	return longestMatch; // Return the longest matching route
 // }
 
-
 locIt Request::findRoute() const
 {
-    /* unction compares URL (string) with all routes of a server (vector of strings) 
-    and finds the longest match (url starts with the route) 
-    and returns the iterator of location vector. 
-    if the location does not match any route, 
-    the end of the location vector is returned, 
+    /* unction compares URL (string) with all routes of a server (vector of strings)
+    and finds the longest match (url starts with the route)
+    and returns the iterator of location vector.
+    if the location does not match any route,
+    the end of the location vector is returned,
     which then can be checked if any route has found */
 
     locIt loc_it_longestroute = (*VirtServIt).getLocations().end(); // todo check if != end()
 
-	const VirtServer & vs = *VirtServIt;
+    const VirtServer &vs = *VirtServIt;
     std::string longestMatch;
-	// Find the location iterator corresponding to the longest matching route
-	for (locIt loc_it = vs.getLocations().begin(); loc_it != vs.getLocations().end(); ++loc_it) {
-		if (url_match_root(url, (*loc_it).getRoute())) {
-			if ((*loc_it).getRoute() > longestMatch) {
+    // Find the location iterator corresponding to the longest matching route
+    for (locIt loc_it = vs.getLocations().begin(); loc_it != vs.getLocations().end(); ++loc_it)
+    {
+        if (url_match_root(url, (*loc_it).getRoute()))
+        {
+            if ((*loc_it).getRoute() > longestMatch)
+            {
                 longestMatch = (*loc_it).getRoute();
                 loc_it_longestroute = loc_it;
             };
-		}
-	}
-	return loc_it_longestroute;
+        }
+    }
+    return loc_it_longestroute;
 }
 
-bool Request::methodOk() const {
+bool Request::methodOk() const
+{
 
-    if (LocationIt != (*VirtServIt).getLocations().end()){
-        const std::vector<Method>& methodVec = (*LocationIt).getMethods();
+    if (LocationIt != (*VirtServIt).getLocations().end())
+    {
+        const std::vector<Method> &methodVec = (*LocationIt).getMethods();
         std::vector<Method>::const_iterator method_iter;
-        for (method_iter = methodVec.begin(); method_iter != methodVec.end(); ++method_iter) {
-            if (*method_iter == method) {
+        for (method_iter = methodVec.begin(); method_iter != methodVec.end(); ++method_iter)
+        {
+            if (*method_iter == method)
+            {
                 return true;
             }
         }
@@ -346,11 +420,12 @@ bool Request::methodOk() const {
     return false;
 }
 
-std::string Request::getPath() {
+std::string Request::getPath()
+{
 
     if (LocationIt == (*VirtServIt).getLocations().end())
         return "";
-    const Location& loc = *LocationIt;
+    const Location &loc = *LocationIt;
     std::string path = loc.getLocationRoot();
     truncateIfEndsWith(path, '/');
 
@@ -358,7 +433,8 @@ std::string Request::getPath() {
     return path;
 }
 
-bool Request::checkForGET() {
+bool Request::checkForGET()
+{
     // assuming GET method, functionS that check
     // if the resource can be found  in the location root
     // if it is accessible for the server process.
@@ -368,42 +444,58 @@ bool Request::checkForGET() {
     std::string path = getPath();
     if (path.length() == 0)
         return false;
-    server.lg.log(DEBUG,"Request: resourceAvailable: checking path: " + path);
+    server.lg.log(DEBUG, "Request: resourceAvailable: checking path: " + path);
 
     struct stat st = {};
-    if (stat(path.c_str(), &st) != 0) {
+    if (stat(path.c_str(), &st) != 0)
+    {
         server.lg.log(DEBUG, "Request: Error accessing path (does NOT exist?): " + std::string(strerror(errno))); // = file does not exist
         statusCode = StatusCode404;
         server.lg.log(DEBUG, "Request: set Status 404"); // = file does not exist
         return false;
     }
 
-    if (!hasReadPermission(path)) {
+    if (!hasReadPermission(path))
+    {
         statusCode = StatusCode500;
         server.lg.log(DEBUG, "Request: Cannot read existing file. set Status 500");
         return false;
     }
 
-    if (S_ISDIR(st.st_mode)) {
-        if ((*LocationIt).getAutoIndex() ){
-            statusCode = StatusCode200dir;
-            server.lg.log(DEBUG, "Request: dir can be indexed. set Status 200");
-            return true;
-        } else {
+    if (S_ISDIR(st.st_mode))
+    {
+        if ((*LocationIt).getAutoIndex())
+        {
+            if (url[url.length() - 1] == '/')
+            { // if last char of url == /
+                statusCode = StatusCode200dir;
+                server.lg.log(DEBUG, "Request: dir can be indexed. set Status 200");
+                return true;
+            }
+            else
+            {
+                statusCode = StatusCode301dir;
+                server.lg.log(DEBUG, "Request: dir can be indexed but needs a trailing / set Status 301dir");
+                return true;
+            }
+        }
+        else
+        {
             statusCode = StatusCode403;
             server.lg.log(DEBUG, "Request: dir CANNOT be incexed. set Status 403");
             return false;
         }
     }
-    else if (S_ISREG(st.st_mode)) {
+    else if (S_ISREG(st.st_mode))
+    {
         statusCode = StatusCode200;
         server.lg.log(DEBUG, "Request: reg file. set Status 200");
         return true;
     }
-    else {
+    else
+    {
         statusCode = StatusCode404;
         server.lg.log(DEBUG, "Request: path is NEITHER reg file or dir. set Status 404");
         return false;
     }
 }
-

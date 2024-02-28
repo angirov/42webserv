@@ -5,11 +5,15 @@
 #include <iostream>
 #include <sstream>
 #include <iterator>
+#include <vector>
 #include <cctype> // for strip
 #include <sys/stat.h>
-#include <cstring> // for strerror
+#include <cstring> // for strerror, strcpy and strcat
 #include <unistd.h> // for access()
 #include <cerrno>
+#include <cstdlib> // For realpath
+#include <dirent.h>
+
 enum Method
 {
     MethodInvalid,
@@ -32,6 +36,7 @@ enum StatusCode
     StatusCode200dir,
     // StatusCode201,
     StatusCode301,
+    StatusCode301dir,
     // StatusCode400, // not understand
     StatusCode403,
     StatusCode404,
@@ -66,5 +71,6 @@ bool isValidDirectory(const std::string& path);
 bool hasReadPermission(const std::string& path);
 std::string extractFileName(const std::string& fullPath);
 std::string extractExtension(const std::string& fileName);
+std::vector<std::string> listFilesInDirectory(const std::string& directoryPath);
 
 #endif
