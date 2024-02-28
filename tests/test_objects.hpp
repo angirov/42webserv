@@ -13,23 +13,30 @@ void displayConfig(const Config &config)
 }
 
 // Function to create objects with configurable parameters
-void createObjects(Config &config, const std::vector<std::tuple<int, std::vector<std::string>, std::vector<std::tuple<std::string, std::string, std::string, bool, std::vector<std::string>>>>>& serverConfigs)
+void createObjects(Config &config, const std::vector<std::tuple<int, std::vector<std::string>, std::map<int, std::string>, std::vector<std::tuple<std::string, std::string, std::string, bool, std::vector<std::string>, std::map<int, std::string>, std::vector<std::string>, std::string>>>>& serverConfigs)
 {
 	for (const auto& serverConfig : serverConfigs) {
 		int port;
 		std::vector<std::string> serverNames;
-		std::vector<std::tuple<std::string, std::string, std::string, bool, std::vector<std::string>>> locationConfigs;
+		std::map<int, std::string> errorPages;
+		std::vector<std::tuple<std::string, std::string, std::string, bool, std::vector<std::string>, std::map<int, std::string>, std::vector<std::string>, std::string>> locationConfigs;
 
-		std::tie(port, serverNames, locationConfigs) = serverConfig;
+		std::tie(port, serverNames, errorPages, locationConfigs) = serverConfig;
 
 		VirtServer server(port, serverNames);
 
-		for (const auto& locationConfig : locationConfigs) {
-			std::string path, root, defaultPage;
-			bool autoIndex;
-			std::vector<std::string> methods;
+		// Set error pages for the server
+		for (const auto& errorPage : errorPages) {
+			server.setErrorPage(errorPage.first, errorPage.second);
+		}
 
-			std::tie(path, root, defaultPage, autoIndex, methods) = locationConfig;
+		for (const auto& locationConfig : locationConfigs) {
+			std::string path, root, defaultPage, uploadDir;
+			bool autoIndex;
+			std::vector<std::string> methods, cgiExtensions;
+			std::map<int, std::string> returnRedir;
+
+			std::tie(path, root, defaultPage, autoIndex, methods, returnRedir, cgiExtensions, uploadDir) = locationConfig;
 
 			Location location(path, root, defaultPage);
 			location.setAutoIndex(autoIndex);
@@ -37,9 +44,20 @@ void createObjects(Config &config, const std::vector<std::tuple<int, std::vector
 				location.addMethod(method);
 			}
 
+			// Set additional location variables
+			for (const auto& redirect : returnRedir) {
+				location.setReturnRedir(redirect.first, redirect.second);
+			}
+			for (const auto& cgiExtension : cgiExtensions) {
+				location.addCGIExtension(cgiExtension);
+			}
+			location.setUploadDir(uploadDir);
+
 			server.addLocation(location);
 		}
 
 		config.addVirtServer(server);
 	}
 }
+
+
