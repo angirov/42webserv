@@ -225,13 +225,18 @@ void VirtServer::display() const {
 
 	// Display error pages
 	std::cout << "\nError Pages:\n";
-	std::cout << "404 Error Page: " << getErrorPage(404) << std::endl;
+	std::map<int, std::string>::const_iterator errorPageIt = _errorPages.begin();
+	for (; errorPageIt != _errorPages.end(); ++errorPageIt) {
+		std::cout << errorPageIt->first << " Error Page: " << errorPageIt->second << std::endl;
+	}
 
 	// Display locations
+	std::cout << "\nLocations:\n";
 	for (size_t i = 0; i < locations.size(); ++i) {
 		locations[i].display();
 	}
 }
+
 
 void Location::display() const {
 	// Display Location variables
@@ -259,4 +264,8 @@ void Location::display() const {
 	}
 	std::cout << std::endl;
 	std::cout << "Upload Dir: " << getUploadDir() << std::endl;
+	std::map<int, std::string>::const_iterator errorRedirectIt = _returnRedir.begin();
+	for (; errorRedirectIt != _returnRedir.end(); ++errorRedirectIt) {
+		std::cout << errorRedirectIt->first << " Error Redirect: " << errorRedirectIt->second << std::endl;
+	}
 }
