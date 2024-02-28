@@ -93,7 +93,7 @@ const std::vector<std::string> & VirtServer::getServerNames() const {
 	return _serverNames;
 }
 
-void VirtServer::addErrorPage(int errorCode, const std::string &errorPage) {
+void VirtServer::setErrorPage(int errorCode, const std::string &errorPage) {
 	_errorPages[errorCode] = errorPage;
 }
 
@@ -196,17 +196,20 @@ const std::string& Location::getUploadDir() const {
 	return _uploadDir;
 }
 
-void Location::addReturnRedir(int errorCode, const std::string &redirectUrl) {
+// Setter function for adding redirect URL for a specific error code
+void Location::setReturnRedir(int errorCode, const std::string &redirectUrl) {
 	_returnRedir[errorCode] = redirectUrl;
 }
 
-const std::string &Location::getReturnRedir(int errorCode) const {
+// Getter function to retrieve redirect URL for a specific error code
+const std::string& Location::getReturnRedir(int errorCode) const {
 	std::map<int, std::string>::const_iterator it = _returnRedir.find(errorCode);
 	if (it != _returnRedir.end()) {
 		return it->second;
+	} else {
+		static const std::string emptyString = "";
+		return emptyString;
 	}
-	static const std::string emptyString = "";
-	return emptyString;
 }
 
 void VirtServer::display() const {

@@ -57,7 +57,7 @@ public:
 	void setServerNames(const std::vector<std::string> &serverNames);
 	const std::vector<std::string> & getServerNames() const;
 
-	void addErrorPage(int errorCode, const std::string &errorPage);
+	void setErrorPage(int errorCode, const std::string &errorPage);
 	const std::string & getErrorPage(int errorCode) const;
 
 	void addLocation(const Location &location);
@@ -100,8 +100,8 @@ public:
 	void setUploadDir(const std::string &uploadDir);
 	const std::string & getUploadDir() const;
 
-	void addReturnRedir(int errorCode, const std::string &redirectUrl);
-	const std::string & getReturnRedir(int errorCode) const;
+	void setReturnRedir(int errorCode, const std::string &redirectUrl);
+	const std::string& getReturnRedir(int errorCode) const;
 
 	void display() const;
 
