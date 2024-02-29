@@ -13,6 +13,8 @@
 #include <cerrno>
 #include <cstdlib> // For realpath
 #include <dirent.h>
+#include <fstream>
+#include <ctime>
 
 enum Method
 {
@@ -42,6 +44,7 @@ enum StatusCode
     StatusCode404,
     StatusCode405,
     StatusCode500,
+    StatusCodePOST
 };
 
 enum ContentType
@@ -72,5 +75,10 @@ bool hasReadPermission(const std::string& path);
 std::string extractFileName(const std::string& fullPath);
 std::string extractExtension(const std::string& fileName);
 std::vector<std::string> listFilesInDirectory(const std::string& directoryPath);
+void writeStringToBinaryFile(const std::string& str, const std::string& filename);
+std::string generateTimeStamp();
+std::string getDifference(const std::string& first, const std::string& second);
+std::string appendIfNotEndsWith(const std::string &str, char c);
+std::string getDifference(const std::string& route, const std::string& url);
 
 #endif

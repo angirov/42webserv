@@ -3,10 +3,11 @@
 Request::Request(const Server &server, int fd, const std::string &request) : server(server), fd(fd), request(request)
 {
     parse();
+    print_request();
 
     // Find the Virtual Host - by default the first one
     VirtServIt = findHost();
-    server.lg.log(DEBUG,"Request: Domain: " + domain);
+    server.lg.log(DEBUG, "Request: Domain: " + domain);
 
     // Find the Location by route - if no route matches - the end of the vector returned
     LocationIt = findRoute();
@@ -34,6 +35,11 @@ Request::Request(const Server &server, int fd, const std::string &request) : ser
     {
         checkForGET();
         return;
+    }
+    else if (method == MethodPOST)
+    {
+        server.lg.log(DEBUG, "Request: set Status POST"); // = file does not exist
+        statusCode = StatusCodePOST;
     }
     server.lg.log(DEBUG, "Request: constructor DONE only for GET");
     return;
@@ -198,6 +204,21 @@ std::string Request::process_get500()
     return "under construction process_get500";
 }
 
+std::string Request::process_POST()
+{
+    std::string upload_path = appendIfNotEndsWith(UPLOAD_PATH, '/');
+    server.lg.log(DEBUG, "Request: upload_path: " + upload_path);
+    std::string file_name = getDifference((*LocationIt).getRoute(), url);
+    if (file_name == "" || file_name == "/") {
+        server.lg.log(DEBUG, "Request: no name submitted. Generateing name...");
+        file_name = "upload_" + generateTimeStamp();
+    }
+    server.lg.log(DEBUG, "Request: file_name: " + file_name);
+    std::string filepath = upload_path + file_name;
+    writeStringToBinaryFile(body, filepath);
+    return "HTTP/1.1 201 OK\r\n\r\n";
+}
+
 std::string Request::process()
 {
     std::string res;
@@ -208,6 +229,7 @@ std::string Request::process()
     if (statusCode == StatusCode404) res = process_get404();
     if (statusCode == StatusCode405) res = process_get405();
     if (statusCode == StatusCode500) res = process_get500();
+    if (statusCode == StatusCodePOST) res = process_POST();
     return res;
 }
 
@@ -227,7 +249,7 @@ void Request::parse_first_line()
     httpVersion = resolveHTTPVersion(word);
 }
 
-void Request::parse_header(const std::string& line)
+void Request::parse_header(const std::string &line)
 {
     std::stringstream lineStream(line);
     std::string key;
@@ -284,9 +306,10 @@ void Request::print_request()
     ss << "url: " << url << std::endl;
     ss << "httpVersion: " << httpVersion << std::endl;
     print_headers(ss);
-    ss << "body: " << body << std::endl;
-    server.lg.log(DEBUG, "Request:\n" + ss.str());
-
+    ss << "============== body: ==============\n"
+       << body << std::endl;
+    server.lg.log(DEBUG, "Prining parsed request:\n" + ss.str());
+    server.lg.log(DEBUG, "\n============== DONE prining rarsed request ==============\n");
     // printServer();
 }
 

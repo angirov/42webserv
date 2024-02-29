@@ -13,7 +13,7 @@
 #include "Server.hpp"
 #include "conf/ConfigClass.hpp"
 #include "utils.hpp"
-
+#define UPLOAD_PATH "/home/wo/proj/42/42webserv/data/uploads/"
 typedef std::map<std::string, std::vector<std::string> > header_map;
 
 struct Server;
@@ -74,6 +74,7 @@ public:
     std::string process_get404();
     std::string process_get405();
     std::string process_get500();
+    std::string process_POST();
 };
 
 class Response
