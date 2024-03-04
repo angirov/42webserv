@@ -57,6 +57,7 @@ public:
     void print_headers(std::stringstream &ss);
     void print_request();
     std::string getPath();
+    bool isCgiExtention(std::string ext);
     std::string getMimeType(const std::string& extension);
 
     // public:

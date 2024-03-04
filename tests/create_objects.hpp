@@ -28,7 +28,8 @@ void createObjects(Config &config)
 	Location location0("/path0/", TRUE_ROOT + "/root0/", "index0.html");
 	location0.setAutoIndex(true);
 	location0.addMethod("GET");
-	location0.addCGIExtension(".cgi");
+	location0.addCGIExtension("cgi");
+	location0.addCGIExtension("igc");
 	location0.setUploadDir("/uploads/");
 	location0.addReturnRedir(300, "redirect0.html");
 	

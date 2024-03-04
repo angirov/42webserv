@@ -44,7 +44,8 @@ enum StatusCode
     StatusCode404,
     StatusCode405,
     StatusCode500,
-    StatusCodePOST
+    StatusCodePOST,
+    StatusCodeCGI
 };
 
 enum ContentType

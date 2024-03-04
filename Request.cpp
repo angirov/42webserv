@@ -38,10 +38,11 @@ Request::Request(const Server &server, int fd, const std::string &request) : ser
     }
     else if (method == MethodPOST)
     {
+        // should check if upload folder is set otherwise return 500
         server.lg.log(DEBUG, "Request: set Status POST"); // = file does not exist
         statusCode = StatusCodePOST;
     }
-    server.lg.log(DEBUG, "Request: constructor DONE only for GET");
+    server.lg.log(DEBUG, "Request: constructor DONE only for GET, POST");
     return;
 }
 
@@ -456,6 +457,22 @@ std::string Request::getPath()
     return path;
 }
 
+
+bool Request::isCgiExtention(std::string ext)
+{
+    if (LocationIt == (*VirtServIt).getLocations().end())
+        return "";
+    const Location &loc = *LocationIt;
+    const std::vector<std::string> exts = loc.getCGIExtensions();
+    std::vector<std::string>::const_iterator it;
+    for (it = exts.begin(); it != exts.end(); ++it) {
+        if (*it == ext) {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool Request::checkForGET()
 {
     // assuming GET method, functionS that check
@@ -511,8 +528,14 @@ bool Request::checkForGET()
     }
     else if (S_ISREG(st.st_mode))
     {
-        statusCode = StatusCode200;
-        server.lg.log(DEBUG, "Request: reg file. set Status 200");
+        if (isCgiExtention(extractExtension(extractFileName(path)))) {
+            statusCode = StatusCodeCGI;
+            server.lg.log(DEBUG, "Request: reg file. set Status CGI");
+        }
+        else {
+            statusCode = StatusCode200;
+            server.lg.log(DEBUG, "Request: reg file. set Status 200");
+        }
         return true;
     }
     else
