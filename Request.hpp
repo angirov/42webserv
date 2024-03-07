@@ -9,6 +9,10 @@
 #include <list>
 #include <iterator>
 #include <cctype> // for strip
+#include <sys/wait.h>
+
+#define READ_FD     0
+#define WRITE_FD    1
 
 #include "Server.hpp"
 #include "conf/ConfigClass.hpp"
@@ -76,6 +80,7 @@ public:
     std::string process_get405();
     std::string process_get500();
     std::string process_POST();
+    std::string process_CGI();
 };
 
 class Response

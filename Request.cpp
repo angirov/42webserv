@@ -217,7 +217,53 @@ std::string Request::process_POST()
     server.lg.log(DEBUG, "Request: file_name: " + file_name);
     std::string filepath = upload_path + file_name;
     writeStringToBinaryFile(body, filepath);
-    return "HTTP/1.1 201 OK\r\n\r\n";
+    return "HTTP/1.1 201 \r\nOK\r\n\r\n";
+    // todo: the rest of the post responce
+}
+
+#define CGI_BUFF_SIZE 5
+
+std::string Request::process_CGI() {
+    server.lg.log(DEBUG, "Request: start processing CGI...");
+    int fd[2];
+    pipe(fd);
+    char * message = (char *)"Hello from child";
+
+
+    int id = fork();
+    if (id == 0) {
+        close(fd[READ_FD]);
+        std::cerr << "Child is starting\n";
+        dup2(fd[WRITE_FD], STDOUT_FILENO);
+        close(fd[WRITE_FD]);
+        int err = execlp("ping", "ping", "-c", "1", "google.com", NULL);
+        if (err == -1) {
+            write(STDOUT_FILENO, message, strlen(message) + 1);
+            // std::cout << message << std::endl;
+            std::cerr << "Child done writing\n";
+            close(STDOUT_FILENO);
+            exit(0);
+        }
+    }
+    close(fd[WRITE_FD]);
+    wait(NULL);
+    char buff[CGI_BUFF_SIZE];
+    std::string str;
+    int read_ret;
+    while (1) {
+        memset(buff, 0, CGI_BUFF_SIZE);
+        read_ret = read(fd[READ_FD], buff, CGI_BUFF_SIZE - 1);
+        if (read_ret > 0) {
+            str += std::string(buff, CGI_BUFF_SIZE);
+            server.lg.log(DEBUG, "Request: reading CGI return (" + server.lg.str(read_ret) + "): " + str);
+        }
+        else {
+            server.lg.log(DEBUG, "Request: read_ret " + server.lg.str(read_ret));
+            break;
+        }
+    }
+    std::cout << ">>> " << str << std::endl;
+    return "HTTP/1.1 200 OK (CGI)\r\n\r\n";
 }
 
 std::string Request::process()
@@ -231,8 +277,10 @@ std::string Request::process()
     if (statusCode == StatusCode405) res = process_get405();
     if (statusCode == StatusCode500) res = process_get500();
     if (statusCode == StatusCodePOST) res = process_POST();
+    if (statusCode == StatusCodeCGI) res = process_CGI();
     return res;
 }
+
 
 
 void Request::parse_first_line()
@@ -545,3 +593,4 @@ bool Request::checkForGET()
         return false;
     }
 }
+
