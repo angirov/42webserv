@@ -227,8 +227,13 @@ std::string Request::process_CGI() {
     server.lg.log(DEBUG, "Request: start processing CGI...");
     int fd[2];
     pipe(fd);
-    char * message = (char *)"Hello from child";
-
+    char * message = (char *)"EXECVE failed";
+    char * cgi_argv[3];
+    char * executable = (char *)"/usr/bin/python3";
+    char * script = (char *)"/home/wo/proj/42/42webserv/hello.py";
+    cgi_argv[0] = executable;
+    cgi_argv[1] = script;
+    cgi_argv[2] = NULL;
 
     int id = fork();
     if (id == 0) {
@@ -236,11 +241,9 @@ std::string Request::process_CGI() {
         std::cerr << "Child is starting\n";
         dup2(fd[WRITE_FD], STDOUT_FILENO);
         close(fd[WRITE_FD]);
-        int err = execlp("ping", "ping", "-c", "1", "google.com", NULL);
+        int err = execve(cgi_argv[0], cgi_argv, NULL);
         if (err == -1) {
-            write(STDOUT_FILENO, message, strlen(message) + 1);
-            // std::cout << message << std::endl;
-            std::cerr << "Child done writing\n";
+            write(STDERR_FILENO, message, strlen(message) + 1);
             close(STDOUT_FILENO);
             exit(0);
         }
@@ -252,9 +255,9 @@ std::string Request::process_CGI() {
     int read_ret;
     while (1) {
         memset(buff, 0, CGI_BUFF_SIZE);
-        read_ret = read(fd[READ_FD], buff, CGI_BUFF_SIZE - 1);
+        read_ret = read(fd[READ_FD], buff, CGI_BUFF_SIZE);
         if (read_ret > 0) {
-            str += std::string(buff, CGI_BUFF_SIZE);
+            str += std::string(buff, read_ret);
             server.lg.log(DEBUG, "Request: reading CGI return (" + server.lg.str(read_ret) + "): " + str);
         }
         else {
@@ -263,7 +266,7 @@ std::string Request::process_CGI() {
         }
     }
     std::cout << ">>> " << str << std::endl;
-    return "HTTP/1.1 200 OK (CGI)\r\n\r\n";
+    return "HTTP/1.1 200 OK (CGI)\r\n" + str;
 }
 
 std::string Request::process()
