@@ -1,12 +1,13 @@
 #include "Parser.hpp"
 
 int main(int argc, char* argv[]) {
-	if (argc != 2) {
-		std::cerr << "Usage: " << argv[0] << " <config_file>" << std::endl;
-		return 1;
+	std::string configFile;
+	if (argc == 2) {
+		configFile = argv[1];
+	} else {
+		configFile = "../conf/default.conf"; // Default configuration file path
 	}
 
-	std::string configFile = argv[1];
 	Config config; // Create a Config object
 	Parser parser(configFile); // Create a Parser object with the filename
 
@@ -23,10 +24,6 @@ int main(int argc, char* argv[]) {
 	}
 
 	// Display the global settings
-	std::cout << "Using display function" << std::endl;
-	config.display();
-
-	// Display the values of global settings for more detail
 	std::cout << "Displaying Global Settings:" << std::endl;
 	std::cout << "Timeout: " << config.getTimeout() << std::endl;
 	std::cout << "Max Clients: " << config.getMaxClients() << std::endl;
@@ -43,7 +40,7 @@ int main(int argc, char* argv[]) {
 		for (size_t j = 0; j < serverNames.size(); ++j) {
 			std::cout << serverNames[j];
 			if (j != serverNames.size() - 1) {
-				std::cout << ", ";
+				std::cout << " HERE COMES ANOTHER SERVER NAME, ";
 			}
 		}
 		std::cout << std::endl;
