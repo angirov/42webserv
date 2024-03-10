@@ -20,6 +20,7 @@ private:
 
 	bool parseGlobalSettings(const std::string& line, Config& config);
 	bool parseServerBlock(Config& config, std::ifstream& file);
+	std::string trim(const std::string& str);
 };
 
 #endif // PARSER_HPP

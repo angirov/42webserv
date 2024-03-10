@@ -22,13 +22,18 @@ int main(int argc, char* argv[]) {
 		return 1;
 	}
 
-	// Display the values of global settings
+	// Display the global settings
+	std::cout << "Using display function" << std::endl;
+	config.display();
+
+	// Display the values of global settings for more detail
 	std::cout << "Displaying Global Settings:" << std::endl;
 	std::cout << "Timeout: " << config.getTimeout() << std::endl;
 	std::cout << "Max Clients: " << config.getMaxClients() << std::endl;
 	std::cout << "Client Max Body Size: " << config.getClientMaxBodySize() << std::endl;
 
 	// Display the parsed virtual servers
+	std::cout << "Displaying Virtual Server Settings:" << std::endl;
 	const std::vector<VirtServer>& virtServers = config.getVirtServers();
 	for (size_t i = 0; i < virtServers.size(); ++i) {
 		std::cout << "Virtual Server " << i + 1 << ":\n";
@@ -42,6 +47,15 @@ int main(int argc, char* argv[]) {
 			}
 		}
 		std::cout << std::endl;
+
+		// Display error pages
+		std::cout << "Error Pages:" << std::endl;
+		for (int errorCode = 400; errorCode < 600; ++errorCode) {
+			const std::string& errorPage = virtServers[i].getErrorPage(errorCode);
+			if (!errorPage.empty()) {
+				std::cout << "Error " << errorCode << ": " << errorPage << std::endl;
+			}
+		}
 	}
 
 	return 0;

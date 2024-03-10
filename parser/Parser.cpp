@@ -144,57 +144,71 @@ bool Parser::parseServerBlock(Config& config, std::ifstream& file) {
 	std::vector<std::string> serverNames;
 	std::map<int, std::string> errorPages;
 
-	// Flag to indicate whether we are inside a server block
-	bool insideServerBlock = false;
-	bool foundServerInfo = false; // Flag to track if any server information was found
+	bool foundListen = false;
+	bool foundServerName = false;
+	bool foundErrorPage = false;
 
 	while (std::getline(file, line)) {
+		// Trim leading and trailing whitespace from the line
+		line = trim(line);
+
 		// Check if we reached the end of the server block
 		if (line.find("</server>") != std::string::npos) {
-			insideServerBlock = false;
 			break; // End of server block, break out of loop
 		}
 
 		// Parse key-value pairs inside the server block only
-		if (insideServerBlock) {
-			size_t colonPos = line.find(':');
-			if (colonPos != std::string::npos) {
-				std::string key = line.substr(0, colonPos);
-				std::string value = line.substr(colonPos + 1);
-				// Remove semicolon if present
-				if (!value.empty() && value[value.size() - 1] == ';') {
-					value.erase(value.size() - 1);
-				}
+		size_t colonPos = line.find(':');
+		if (colonPos != std::string::npos) {
+			std::string key = line.substr(0, colonPos);
+			std::string value = line.substr(colonPos + 1);
+			// Remove semicolon if present
+			if (!value.empty() && value[value.size() - 1] == ';') {
+				value.erase(value.size() - 1);
+			}
 
-				if (key == "listen") {
-					port = atoi(value.c_str());
-				} else if (key == "server_name") {
-					serverNames.push_back(value);
-					foundServerInfo = true;
-				} else if (key == "error_page") {
-					// Assuming 404 error code for simplicity
-					errorPages[404] = value;
-				}
+			if (key == "listen") {
+				port = atoi(value.c_str());
+				foundListen = true;
+			} else if (key == "server_name") {
+				serverNames.push_back(value);
+				foundServerName = true;
+			} else if (key == "error_page") {
+				// TODO: This needs to change, discuss implementation.
+				errorPages[404] = value;
+				foundErrorPage = true;
 			}
 		}
+	}
 
-		// Check if we are inside a server block
-		if (line.find("<server>") != std::string::npos) {
-			insideServerBlock = true;
-		}
+	// Check if all essential variables are parsed
+	if (!foundListen || !foundServerName || !foundErrorPage) {
+		std::cerr << "Error: Missing essential variables in server block" << std::endl;
+		return false;
 	}
 
 	// Create a new VirtServer object with parsed values
-	if (foundServerInfo) { // Only add the server if at least server name is provided
-		VirtServer virtServer(port, serverNames);
-		for (std::map<int, std::string>::const_iterator it = errorPages.begin(); it != errorPages.end(); ++it) {
-			virtServer.setErrorPage(it->first, it->second);
-		}
-
-		// Add the filled VirtServer object to the Config object
-		config.addVirtServer(virtServer);
+	VirtServer virtServer(port, serverNames);
+	for (std::map<int, std::string>::const_iterator it = errorPages.begin(); it != errorPages.end(); ++it) {
+		virtServer.setErrorPage(it->first, it->second);
 	}
 
-	// Return true if at least one essential piece of information was found
-	return foundServerInfo;
+	// Add the filled VirtServer object to the Config object
+	config.addVirtServer(virtServer);
+
+	// Return true indicating successful parsing
+	return true;
 }
+
+// Helper function to trim leading and trailing whitespace from a string
+std::string Parser::trim(const std::string& str) {
+	size_t start = 0, end = str.length();
+	while (start < end && std::isspace(str[start])) {
+		start++;
+	}
+	while (end > start && std::isspace(str[end - 1])) {
+		end--;
+	}
+	return str.substr(start, end - start);
+}
+
