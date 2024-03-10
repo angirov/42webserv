@@ -36,7 +36,6 @@ bool Parser::hasSyntaxErrors() const {
 	return false;
 }
 
-
 bool Parser::parseFile(Config& config) {
 	std::ifstream file(filename.c_str());
 	if (!file.is_open()) {
@@ -45,12 +44,24 @@ bool Parser::parseFile(Config& config) {
 	}
 
 	std::string line;
+	int lineNumber = 0;
 	while (std::getline(file, line)) {
-		// Parse global settings
-		if (!parseGlobalSettings(line, config)) {
-			std::cerr << "Error: Failed to parse line: " << line << std::endl;
-			file.close();
-			return false;
+		++lineNumber;
+		// Check if the line contains the start of a server block
+		if (line.find("<server>") != std::string::npos) {
+			// Parse the server block
+			if (!parseServerBlock(config, file)) {
+				std::cerr << "Error: Failed to parse server block at line " << lineNumber << std::endl;
+				file.close();
+				return false;
+			}
+		} else {
+			// Parse global settings
+			if (!parseGlobalSettings(line, config)) {
+				std::cerr << "Error: Failed to parse line " << lineNumber << ": " << line << std::endl;
+				file.close();
+				return false;
+			}
 		}
 	}
 
@@ -58,7 +69,12 @@ bool Parser::parseFile(Config& config) {
 	return true;
 }
 
+
 bool Parser::parseGlobalSettings(const std::string& line, Config& config) {
+	// Skip empty lines
+	if (line.empty()) {
+		return true;
+	}
 	// Trim leading and trailing whitespace from the line
 	size_t start = 0;
 	while (start < line.size() && std::isspace(line[start])) {
@@ -119,4 +135,66 @@ bool Parser::parseGlobalSettings(const std::string& line, Config& config) {
 	}
 
 	return false; // Line does not contain global settings
+}
+
+
+bool Parser::parseServerBlock(Config& config, std::ifstream& file) {
+	std::string line;
+	int port = 0;
+	std::vector<std::string> serverNames;
+	std::map<int, std::string> errorPages;
+
+	// Flag to indicate whether we are inside a server block
+	bool insideServerBlock = false;
+	bool foundServerInfo = false; // Flag to track if any server information was found
+
+	while (std::getline(file, line)) {
+		// Check if we reached the end of the server block
+		if (line.find("</server>") != std::string::npos) {
+			insideServerBlock = false;
+			break; // End of server block, break out of loop
+		}
+
+		// Parse key-value pairs inside the server block only
+		if (insideServerBlock) {
+			size_t colonPos = line.find(':');
+			if (colonPos != std::string::npos) {
+				std::string key = line.substr(0, colonPos);
+				std::string value = line.substr(colonPos + 1);
+				// Remove semicolon if present
+				if (!value.empty() && value[value.size() - 1] == ';') {
+					value.erase(value.size() - 1);
+				}
+
+				if (key == "listen") {
+					port = atoi(value.c_str());
+				} else if (key == "server_name") {
+					serverNames.push_back(value);
+					foundServerInfo = true;
+				} else if (key == "error_page") {
+					// Assuming 404 error code for simplicity
+					errorPages[404] = value;
+				}
+			}
+		}
+
+		// Check if we are inside a server block
+		if (line.find("<server>") != std::string::npos) {
+			insideServerBlock = true;
+		}
+	}
+
+	// Create a new VirtServer object with parsed values
+	if (foundServerInfo) { // Only add the server if at least server name is provided
+		VirtServer virtServer(port, serverNames);
+		for (std::map<int, std::string>::const_iterator it = errorPages.begin(); it != errorPages.end(); ++it) {
+			virtServer.setErrorPage(it->first, it->second);
+		}
+
+		// Add the filled VirtServer object to the Config object
+		config.addVirtServer(virtServer);
+	}
+
+	// Return true if at least one essential piece of information was found
+	return foundServerInfo;
 }
