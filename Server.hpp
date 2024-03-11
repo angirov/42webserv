@@ -90,6 +90,7 @@ public:
     void do_select();
     int find_maxFd();
     void do_read(std::list<int>::iterator &fd_itr);
+    void do_write(int fd);
     void do_send();
     void do_timing();
     void check_timeout();
@@ -108,8 +109,8 @@ public:
 
     void addToWriting(int value);
     void rmFromWriting(int value);
-    int Server::maxOfList(std::list<int> & l) const;
-
+    std::list<int> getReadingFds();
+    int maxOfList(std::list<int> & l) const;
     const std::vector<VirtServer> & getVirtServers() const;
     void run();
 };

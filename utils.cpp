@@ -201,3 +201,20 @@ std::string getDifference(const std::string& route, const std::string& url) {
         return "";
     }
 }
+
+std::list<int> deductLists(const std::list<int>& list1, const std::list<int>& list2) {
+    std::list<int> resultList;
+    for (std::list<int>::const_iterator it1 = list1.begin(); it1 != list1.end(); ++it1) {
+        bool found = false;
+        for (std::list<int>::const_iterator it2 = list2.begin(); it2 != list2.end(); ++it2) {
+            if (*it1 == *it2) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            resultList.push_back(*it1);
+        }
+    }
+    return resultList;
+}

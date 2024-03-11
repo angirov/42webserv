@@ -6,6 +6,7 @@
 #include <sstream>
 #include <iterator>
 #include <vector>
+#include <list>
 #include <cctype> // for strip
 #include <sys/stat.h>
 #include <cstring> // for strerror, strcpy and strcat
@@ -81,5 +82,5 @@ std::string generateTimeStamp();
 std::string getDifference(const std::string& first, const std::string& second);
 std::string appendIfNotEndsWith(const std::string &str, char c);
 std::string getDifference(const std::string& route, const std::string& url);
-
+std::list<int> deductLists(const std::list<int>& list1, const std::list<int>& list2);
 #endif
