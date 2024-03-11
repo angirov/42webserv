@@ -59,7 +59,7 @@ public:
     struct sockaddr_in serveraddr;
 
     std::list<int> ports_l;
-    std::list<int> reading_fds_l;
+    std::list<int> client_fds_l;
     std::list<int> writing_fds_l;
     int max_server_fd;
     fd_set read_fd_set;
@@ -106,16 +106,9 @@ public:
     int getClientRef(int clientFd) const; // -> serverFd 
     void setClientRef(int clientFd, int serverFd);
 
-    void transferToWriting(int value) {
-        reading_fds_l.remove(value);
-        writing_fds_l.push_back(value);
-    }
-
-    // Function to transfer an integer from 'writing' list back to 'reading' list
-    void returnToReading(int value) {
-        reading_fds_l.remove(value);
-        writing_fds_l.push_back(value);
-    }
+    void addToWriting(int value);
+    void rmFromWriting(int value);
+    int Server::maxOfList(std::list<int> & l) const;
 
     const std::vector<VirtServer> & getVirtServers() const;
     void run();
