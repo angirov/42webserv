@@ -140,7 +140,7 @@ void Server::accept_new_conn(int fd)
     else
     {
         fcntl(connfd, F_SETFL, O_NONBLOCK); // the socket is set as non blocking. for macOS only. should be changed for Linux
-        client_fds_l.push_back(connfd);
+        reading_fds_l.push_back(connfd);
         requests[connfd] = ""; // necessary because there could be values of old fd
         responces[connfd] = "";
         keep_alive[connfd] = true;
@@ -148,7 +148,7 @@ void Server::accept_new_conn(int fd)
         set_last_time(connfd);
 
         lg.log(INFO, "Connection from " + std::string(inet_ntoa(clientaddr.sin_addr)) + ":" + lg.str(ntohs(clientaddr.sin_port)));
-        lg.log(DEBUG, "Adding fd " + lg.str(connfd) + " to the list. New list " + cout_list(client_fds_l));
+        lg.log(DEBUG, "Adding fd " + lg.str(connfd) + " to the list. New list: " + cout_list(reading_fds_l));
     }
 }
 
@@ -257,7 +257,7 @@ void Server::check_timeout()
 {
     time_t now;
     time(&now);
-    for (std::list<int>::iterator it = client_fds_l.begin(); it != client_fds_l.end(); ++it)
+    for (std::list<int>::iterator it = reading_fds_l.begin(); it != reading_fds_l.end(); ++it)
     {
         double secs = difftime(now, last_times[*it]);
 
@@ -312,13 +312,13 @@ void Server::fill_fd_sets()
     }
 
     // Insert Read FDs
-    for (std::list<int>::iterator it = client_fds_l.begin(); it != client_fds_l.end(); ++it)
+    for (std::list<int>::iterator it = reading_fds_l.begin(); it != reading_fds_l.end(); ++it)
     {
         FD_SET(*it, &read_fd_set);
     }
 
     // Insert Write FDs
-    for (std::list<int>::iterator it = client_fds_l.begin(); it != client_fds_l.end(); ++it)
+    for (std::list<int>::iterator it = reading_fds_l.begin(); it != reading_fds_l.end(); ++it)
     {
         FD_SET(*it, &write_fd_set);
     }
@@ -327,8 +327,8 @@ void Server::fill_fd_sets()
 int Server::find_maxFd()
 {
     int maxFd;
-    std::list<int>::iterator max_client_fd_itr = std::max_element(client_fds_l.begin(), client_fds_l.end());
-    if (max_client_fd_itr != client_fds_l.end())
+    std::list<int>::iterator max_client_fd_itr = std::max_element(reading_fds_l.begin(), reading_fds_l.end());
+    if (max_client_fd_itr != reading_fds_l.end())
     {
         maxFd = std::max(max_server_fd, *max_client_fd_itr);
     }
@@ -347,7 +347,7 @@ void Server::do_select()
     lg.log(DEBUG, "Select returned: " + lg.str(ret) +
                       " Max FD is " + lg.str(maxFd) +
                       " Server Fds: " + cout_list(server_socket_fds_l) +
-                      " Client Fds: " + cout_list(client_fds_l));
+                      " Client Fds: " + cout_list(reading_fds_l));
 
     if (ret > 0)
     {
@@ -361,7 +361,7 @@ void Server::do_select()
         }
 
         // Check Client FDs for READING
-        for (std::list<int>::iterator it = client_fds_l.begin(); it != client_fds_l.end(); ++it)
+        for (std::list<int>::iterator it = reading_fds_l.begin(); it != reading_fds_l.end(); ++it)
         {
             lg.log(DEBUG, "Checking fd " + lg.str(*it));
             if (!FD_ISSET(*it, &read_fd_set))
@@ -376,13 +376,13 @@ void Server::handle_client_disconnect(std::list<int>::iterator &fd_itr)
 {
     close(*fd_itr);
     lg.log(DEBUG, "Removing fd " + lg.str(*fd_itr) + " from the list. ");
-    fd_itr = client_fds_l.erase(fd_itr);
-    lg.log(DEBUG, "New list: " + cout_list(client_fds_l));
+    fd_itr = reading_fds_l.erase(fd_itr);
+    lg.log(DEBUG, "New list: " + cout_list(reading_fds_l));
 }
 
 void Server::do_send()
 {
-    for (std::list<int>::iterator it = client_fds_l.begin(); it != client_fds_l.end(); ++it)
+    for (std::list<int>::iterator it = reading_fds_l.begin(); it != reading_fds_l.end(); ++it)
     {
         // Check if any requests are fully read and process them
         // Should be independent of the return value of select but consider the last state of the read set
