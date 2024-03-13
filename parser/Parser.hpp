@@ -13,14 +13,19 @@ class Parser {
 public:
 	Parser(const std::string& filename) : filename(filename) {}
 
+	bool parseGlobalSettings(const std::string& line, Config& config);
+	bool parseServerBlock(Config& config, std::ifstream& file);
+	bool parseLocationBlock(VirtServer& virtServer, std::ifstream& file);
+
 	bool hasSyntaxErrors();
 	bool parseFile(Config& config);
 
+	std::string trim(const std::string& str);
+	bool isNumeric(const std::string& str);
+	void splitString(const std::string& input, char delimiter, std::vector<std::string>& tokens) const;
+
 private:
 	std::string filename;
-
-	bool parseGlobalSettings(const std::string& line, Config& config);
-	bool parseServerBlock(Config& config, std::ifstream& file);
 
 	bool hasDuplicateSettings() const;
 	bool hasMissingSemicolons() const;
@@ -29,8 +34,6 @@ private:
 
 	bool isValidServerNameFormat(const std::string& value) ;
 
-	std::string trim(const std::string& str);
-	bool isNumeric(const std::string& str);
 };
 
 #endif // PARSER_HPP

@@ -21,6 +21,20 @@ bool Parser::isNumeric(const std::string& str) {
 	}
 	return true;
 }
+// Helper function splitString
+void Parser::splitString(const std::string& input, char delimiter, std::vector<std::string>& tokens) const {
+	std::string::size_type start = 0;
+	std::string::size_type end = input.find(delimiter);
+
+	while (end != std::string::npos) {
+		tokens.push_back(input.substr(start, end - start));
+		start = end + 1;
+		end = input.find(delimiter, start);
+	}
+
+	tokens.push_back(input.substr(start));
+}
+
 
 bool Parser::isValidServerNameFormat(const std::string& value) {
 	std::istringstream iss(value);
@@ -134,7 +148,7 @@ bool Parser::hasSyntaxErrors() {
 		return true;
 	}
 	bool syntaxErrors =
-			hasDuplicateSettings() ||
+			// hasDuplicateSettings() ||
 			hasMissingSemicolons() ||
 			hasWrongGlobalSettings(file) ||
 			hasIncorrectServerBlocks(file);
@@ -338,6 +352,13 @@ bool Parser::parseServerBlock(Config& config, std::ifstream& file) {
 				// TODO: This needs to change, discuss implementation.
 				errorPages[404] = value;
 				foundErrorPage = true;
+			} else if (key == "<location>") { // Check for location block
+				VirtServer virtServer(port, serverNames);
+				if (!parseLocationBlock(virtServer, file)) {
+					return false; // Failed to parse location block
+				}
+				// Add the filled VirtServer object to the Config object
+				config.addVirtServer(virtServer);
 			}
 		}
 	}
@@ -360,3 +381,105 @@ bool Parser::parseServerBlock(Config& config, std::ifstream& file) {
 	// Return true indicating successful parsing
 	return true;
 }
+
+bool Parser::parseLocationBlock(VirtServer& virtServer, std::ifstream& file) {
+	std::string line;
+	std::string route;
+	std::string locationRoot;
+	std::string locationIndex;
+	std::vector<std::string> methods;
+	std::map<int, std::string> returnRedir;
+	bool autoIndex = false;
+	std::vector<std::string> cgiExtensions;
+	std::string uploadDir;
+
+	while (std::getline(file, line)) {
+		// Trim leading and trailing whitespace from the line
+		line = trim(line);
+
+		// Check if we reached the end of the location block
+		if (line.find("</location>") != std::string::npos) {
+			break; // End of location block, break out of loop
+		}
+
+		// Parse key-value pairs inside the location block
+		size_t colonPos = line.find(':');
+		if (colonPos != std::string::npos) {
+			std::string key = line.substr(0, colonPos);
+			std::string value = line.substr(colonPos + 1);
+
+			// Trim leading and trailing whitespace from the key and value
+			key = trim(key);
+			value = trim(value);
+
+			// Check the key and set the corresponding value
+			if (key == "route") {
+				route = value;
+			} else if (key == "root") {
+				locationRoot = value;
+			} else if (key == "index") {
+				locationIndex = value;
+			} else if (key == "methods") {
+				// Remove any trailing semicolon from the value
+				if (!value.empty() && value[value.size() - 1] == ';') {
+					value.erase(value.size() - 1);
+				}
+				// Split the value by commas and add each method to the methods vector
+				std::istringstream iss(value);
+				std::string method;
+				while (std::getline(iss, method, ',')) {
+					methods.push_back(trim(method));
+				}
+			} else if (key == "return") {
+				// Parse the return value for error codes and redirect URLs
+				// Assuming format: errorCode,redirectUrl;
+				size_t commaPos = value.find(',');
+				if (commaPos != std::string::npos) {
+					int errorCode = atoi(value.substr(0, commaPos).c_str());
+					std::string redirectUrl = value.substr(commaPos + 1);
+					returnRedir[errorCode] = redirectUrl;
+				}
+			} else if (key == "autoindex") {
+				autoIndex = (value == "on") ? true : false;
+			} else if (key == "cgi") {
+				// Split the value by commas and add each CGI extension to the cgiExtensions vector
+				std::istringstream iss(value);
+				std::string cgiExtension;
+				while (std::getline(iss, cgiExtension, ',')) {
+					cgiExtensions.push_back(trim(cgiExtension));
+				}
+			} else if (key == "uploadDir") {
+				uploadDir = value;
+			}
+		}
+	}
+
+	// Check if any key-value pairs were parsed
+	if (route.empty() && locationRoot.empty() && locationIndex.empty() && methods.empty() && returnRedir.empty() && cgiExtensions.empty() && uploadDir.empty()) {
+		// No valid key-value pairs were parsed, indicating the end of the location block or an empty location block
+		return false;
+	}
+
+	// Create a Location object with parsed values
+	Location location(route, locationRoot, locationIndex);
+	for (size_t i = 0; i < methods.size(); ++i) {
+		location.addMethod(methods[i]);
+	}
+	std::map<int, std::string>::const_iterator it;
+	for (it = returnRedir.begin(); it != returnRedir.end(); ++it) {
+		location.setReturnRedir(it->first, it->second);
+	}
+	for (size_t i = 0; i < cgiExtensions.size(); ++i) {
+		location.addCGIExtension(cgiExtensions[i]);
+	}
+	location.setUploadDir(uploadDir);
+	location.setAutoIndex(autoIndex);
+
+	// Add the filled Location object to the VirtServer
+	virtServer.addLocation(location);
+
+	return true;
+}
+
+
+
