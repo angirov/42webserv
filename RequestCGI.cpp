@@ -91,19 +91,29 @@ size_t getHTTPBodySize(const std::string& httpResponse) {
 std::string Request::process_CGI()
 {
     server.lg.log(DEBUG, "Request: start processing CGI...");
-    int fd[2];
-    pipe(fd);
+    server.lg.log(DEBUG, "CGI: body: " + body);
+    int fdOut[2];
+    pipe(fdOut);
+
+    FILE	*filedIn = tmpfile();
+    int	fdIn = fileno(filedIn);
+    write(fdIn, body.c_str(), body.size());
+    lseek(fdIn, 0, SEEK_SET);
 
     int id = fork();
     if (id == 0)
     {
+        std::cerr << "Child is starting\n";
+        close(fdOut[READ_FD]);
+
         char ** cgi_argv = makeCgiArgv();
         char ** env_arr = makeCgiEnv();
 
-        close(fd[READ_FD]);
-        std::cerr << "Child is starting\n";
-        dup2(fd[WRITE_FD], STDOUT_FILENO);
-        close(fd[WRITE_FD]);
+        dup2(fdOut[WRITE_FD], STDOUT_FILENO);
+        dup2(fdIn, STDIN_FILENO);
+
+        close(fdOut[WRITE_FD]);
+        close(fdIn);
 
         int err = execve(cgi_argv[0], cgi_argv, env_arr);
 
@@ -113,10 +123,12 @@ std::string Request::process_CGI()
             freeCharPtrArr(env_arr);
             write(STDERR_FILENO, "EXECVE failed\n", 14);
             close(STDOUT_FILENO);
+            close(STDIN_FILENO);
             exit(0);
         }
     }
-    close(fd[WRITE_FD]);
+    close(fdOut[WRITE_FD]);
+    close(fdIn);
     wait(NULL);
     char buff[CGI_BUFF_SIZE];
     std::string cgi_res;
@@ -124,7 +136,7 @@ std::string Request::process_CGI()
     while (1)
     {
         memset(buff, 0, CGI_BUFF_SIZE);
-        read_ret = read(fd[READ_FD], buff, CGI_BUFF_SIZE);
+        read_ret = read(fdOut[READ_FD], buff, CGI_BUFF_SIZE);
         if (read_ret > 0)
         {
             cgi_res += std::string(buff, read_ret);
