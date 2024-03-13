@@ -221,42 +221,63 @@ std::string Request::process_POST()
     // todo: the rest of the post responce
 }
 
-#define CGI_BUFF_SIZE 5
 
-std::string Request::process_CGI() {
+char ** Request::makeCgiEnv()
+{
+        std::vector<std::string> cgi_env;
+        cgi_env.push_back("TEST0=val0");
+        cgi_env.push_back("TEST1=val1");
+        cgi_env.push_back("TEST2=val2");
+
+        char ** env_arr = (char **)calloc(cgi_env.size() + 1, sizeof(char *));
+        std::size_t i = 0;
+        while (i < cgi_env.size()) {
+            env_arr[i] = (char *)cgi_env[i].c_str();
+            i++;
+        }
+        env_arr[i] = NULL;
+        return env_arr;
+}
+
+char ** Request::makeCgiArgv()
+{
+        char * executable = (char *)"/usr/bin/python3";
+        char * script = (char *)"/home/wo/proj/42/42webserv/hello.py";
+
+        char ** cgi_argv = (char **)calloc(3, sizeof(char *));
+        cgi_argv[0] = executable;
+        cgi_argv[1] = script;
+        cgi_argv[2] = NULL;
+
+        return cgi_argv;
+}
+
+#define CGI_BUFF_SIZE 10000
+
+std::string Request::process_CGI()
+{
     server.lg.log(DEBUG, "Request: start processing CGI...");
     int fd[2];
     pipe(fd);
     char * message = (char *)"EXECVE failed";
 
-    char * executable = (char *)"/usr/bin/python3";
-    char * script = (char *)"/home/wo/proj/42/42webserv/hello.py";
-
-    char * cgi_argv[3];
-    cgi_argv[0] = executable;
-    cgi_argv[1] = script;
-    cgi_argv[2] = NULL;
-
-    std::vector<std::string> cgi_env;
-    cgi_env.push_back("TEST0=val0");
-    cgi_env.push_back("TEST1=val1");
-    cgi_env.push_back("TEST2=val2");
-
-    char * env_arr[1000]; // should be malloced
-    std::size_t i = 0;
-    while (i < cgi_env.size()) {
-        env_arr[i] = (char *)cgi_env[i].c_str();
-        i++;
-    }
-    env_arr[i] = NULL;
     int id = fork();
-    if (id == 0) {
+    if (id == 0)
+    {
+        char ** cgi_argv = makeCgiArgv();
+        char ** env_arr = makeCgiEnv();
+
         close(fd[READ_FD]);
         std::cerr << "Child is starting\n";
         dup2(fd[WRITE_FD], STDOUT_FILENO);
         close(fd[WRITE_FD]);
+
         int err = execve(cgi_argv[0], cgi_argv, env_arr);
-        if (err == -1) {
+
+        if (err == -1)
+        {
+            free(cgi_argv);
+            free(env_arr);
             write(STDERR_FILENO, message, strlen(message) + 1);
             close(STDOUT_FILENO);
             exit(0);
@@ -267,14 +288,17 @@ std::string Request::process_CGI() {
     char buff[CGI_BUFF_SIZE];
     std::string str;
     int read_ret;
-    while (1) {
+    while (1)
+    {
         memset(buff, 0, CGI_BUFF_SIZE);
         read_ret = read(fd[READ_FD], buff, CGI_BUFF_SIZE);
-        if (read_ret > 0) {
+        if (read_ret > 0)
+        {
             str += std::string(buff, read_ret);
             server.lg.log(DEBUG, "Request: reading CGI return (" + server.lg.str(read_ret) + "): " + str);
         }
-        else {
+        else
+        {
             server.lg.log(DEBUG, "Request: read_ret " + server.lg.str(read_ret));
             break;
         }
