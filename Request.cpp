@@ -38,9 +38,17 @@ Request::Request(const Server &server, int fd, const std::string &request) : ser
     }
     else if (method == MethodPOST)
     {
-        // should check if upload folder is set otherwise return 500
-        server.lg.log(DEBUG, "Request: set Status POST"); // = file does not exist
-        statusCode = StatusCodePOST;
+        if (isDirHasWritePermission((*LocationIt).getUploadDir())) {
+            server.lg.log(DEBUG, "Request: set Status POST"); // = file does not exist
+            statusCode = StatusCodePOST;
+            return;
+        }
+        else
+        {
+            server.lg.log(DEBUG, "Request: POST upload dir is bad - set 500"); // = file does not exist
+            statusCode = StatusCodePost500;
+            return;
+        }
     }
     server.lg.log(DEBUG, "Request: constructor DONE only for GET, POST");
     return;
@@ -205,9 +213,14 @@ std::string Request::process_get500()
     return "under construction process_get500";
 }
 
+std::string Request::process_post500()
+{
+    return "under construction process_post500";
+}
+
 std::string Request::process_POST()
 {
-    std::string upload_path = appendIfNotEndsWith(UPLOAD_PATH, '/');
+    std::string upload_path = appendIfNotEndsWith((*LocationIt).getUploadDir(), '/');
     server.lg.log(DEBUG, "Request: upload_path: " + upload_path);
     std::string file_name = getDifference((*LocationIt).getRoute(), url);
     if (file_name == "" || file_name == "/") {
@@ -232,6 +245,7 @@ std::string Request::process()
     if (statusCode == StatusCode405) res = process_get405();
     if (statusCode == StatusCode500) res = process_get500();
     if (statusCode == StatusCodePOST) res = process_POST();
+    if (statusCode == StatusCodePost500) res = process_post500();
     if (statusCode == StatusCodeCGI) res = process_CGI();
     return res;
 }

@@ -84,6 +84,7 @@ public:
     std::string process_get405();
     std::string process_get500();
     std::string process_POST();
+    std::string process_post500();
     std::string process_CGI();
     char ** makeCgiArgv();
     char ** makeCgiEnv();

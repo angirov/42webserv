@@ -98,6 +98,22 @@ bool hasReadPermission(const std::string& path) {
     }
 }
 
+bool isDirHasWritePermission(const std::string& path) {
+    struct stat info;
+    if (stat(path.c_str(), &info) != 0) {
+        // Error accessing file/directory
+        return false;
+    }
+    if (S_ISDIR(info.st_mode)) {
+        // Check if it's a directory
+        if (access(path.c_str(), W_OK) == 0) {
+            // Check if the process has writing permission
+            return true;
+        }
+    }
+    return false;
+}
+
 std::string extractFileName(const std::string& fullPath) {
     // Find the position of the last occurrence of the directory separator
     size_t lastSeparatorPos = fullPath.find_last_of("/\\");
