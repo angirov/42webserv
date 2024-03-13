@@ -358,11 +358,11 @@ void Server::do_select()
     int ret;
     int maxFd = find_maxFd();
     ret = select(maxFd + 1, &read_fd_set, &write_fd_set, NULL, &tv);
-    lg.log(DEBUG, "Select returned: " + lg.str(ret) +
-                      " Max FD is " + lg.str(maxFd) +
-                      " Server Fds: " + cout_list(server_socket_fds_l) +
-                      " Reading Fds: " + cout_list(getReadingFds()) +
-                      " Writing Fds: " + cout_list(writing_fds_l));
+    // lg.log(DEBUG, "Select returned: " + lg.str(ret) +
+    //                   " Max FD is " + lg.str(maxFd) +
+    //                   " Server Fds: " + cout_list(server_socket_fds_l) +
+    //                   " Reading Fds: " + cout_list(getReadingFds()) +
+    //                   " Writing Fds: " + cout_list(writing_fds_l));
 
     if (ret > 0)
     {
@@ -394,7 +394,7 @@ void Server::do_select()
             it = writing_fds_l.erase(it);
         }
     }
-    lg.log(DEBUG, "Done select");
+    // lg.log(DEBUG, "Done select");
 }
 
 void Server::do_send()

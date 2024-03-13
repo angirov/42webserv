@@ -75,6 +75,18 @@ void freeCharPtrArr(char ** arr) {
         free(arr);
     }
 }
+size_t getHTTPBodySize(const std::string& httpResponse) {
+    // Find the position of the double CRLF ("\r\n\r\n") that separates the header and body
+    size_t bodyStart = httpResponse.find("\r\n\r\n");
+
+    // If double CRLF is not found, return 0 (no body)
+    if (bodyStart == std::string::npos)
+        return 0;
+
+    // Calculate the size of the body by subtracting the body start position
+    // from the total length of the HTTP response
+    return httpResponse.size() - (bodyStart + 4); // 4 is the length of "\r\n\r\n"
+}
 
 std::string Request::process_CGI()
 {
@@ -107,7 +119,7 @@ std::string Request::process_CGI()
     close(fd[WRITE_FD]);
     wait(NULL);
     char buff[CGI_BUFF_SIZE];
-    std::string str;
+    std::string cgi_res;
     int read_ret;
     while (1)
     {
@@ -115,8 +127,8 @@ std::string Request::process_CGI()
         read_ret = read(fd[READ_FD], buff, CGI_BUFF_SIZE);
         if (read_ret > 0)
         {
-            str += std::string(buff, read_ret);
-            server.lg.log(DEBUG, "Request: reading CGI return (" + server.lg.str(read_ret) + "): " + str);
+            cgi_res += std::string(buff, read_ret);
+            server.lg.log(DEBUG, "Request: reading CGI return (" + server.lg.str(read_ret) + "): " + cgi_res);
         }
         else
         {
@@ -124,8 +136,12 @@ std::string Request::process_CGI()
             break;
         }
     }
-    std::cout << ">>> " << str << std::endl;
-    return "HTTP/1.1 200 OK (CGI)\r\n" + str;
+    std::string full_res;
+    full_res += "HTTP/1.1 200 OK (CGI)\r\n";
+    full_res += "Content-Length: " + server.lg.str((int)getHTTPBodySize(cgi_res)) + "\r\n";
+    full_res +=  cgi_res;
+
+    return  full_res;
 }
 
 bool Request::isCgiExtention(std::string ext)

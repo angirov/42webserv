@@ -200,7 +200,7 @@ std::string Request::process_get403()
 
 std::string Request::process_get404()
 {
-    return "under construction process_get404";
+    return "HTTP/1.1 200 OK (CGI)\r\n\r\n";
 }
 
 std::string Request::process_get405()
