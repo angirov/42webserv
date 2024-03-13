@@ -17,22 +17,23 @@ char ** Request::makeCgiEnv()
         return env_arr;
 }
 
-void printCharArr(char ** arr) {
-    printf("CGI: printing array...\n");
-    while(arr) {
-        printf("%s\n", *arr);
-        arr++;
-    }
-}
-
 char ** Request::makeCgiArgv()
 {
     char ** cgi_argv = (char **)calloc(3, sizeof(char *));
-    cgi_argv[0] = (char *)PY_EXEC;
+    cgi_argv[0] = strdup(PY_EXEC);
     cgi_argv[1] = strdup(getPath().c_str());
     cgi_argv[2] = NULL;
 
     return cgi_argv;
+}
+
+void freeCharPtrArr(char ** arr) {
+    if (arr) {
+        for(int i=0; arr[i]; i++) {
+            free(arr[i]);
+        }
+        free(arr);
+    }
 }
 
 std::string Request::process_CGI()
@@ -40,28 +41,25 @@ std::string Request::process_CGI()
     server.lg.log(DEBUG, "Request: start processing CGI...");
     int fd[2];
     pipe(fd);
-    char * message = (char *)"EXECVE failed";
 
     int id = fork();
     if (id == 0)
     {
         char ** cgi_argv = makeCgiArgv();
         char ** env_arr = makeCgiEnv();
-        // printCharArr(cgi_argv);
-        // printCharArr(env_arr);
 
         close(fd[READ_FD]);
         std::cerr << "Child is starting\n";
         dup2(fd[WRITE_FD], STDOUT_FILENO);
         close(fd[WRITE_FD]);
 
-        int err = execve(cgi_argv[0], cgi_argv, env_arr);
+        int err = execve(cgi_argv[1], cgi_argv, env_arr);
 
         if (err == -1)
         {
-            free(cgi_argv);
-            free(env_arr);
-            write(STDERR_FILENO, message, strlen(message) + 1);
+            freeCharPtrArr(cgi_argv);
+            freeCharPtrArr(env_arr);
+            write(STDERR_FILENO, "EXECVE failed\n", 14);
             close(STDOUT_FILENO);
             exit(0);
         }
