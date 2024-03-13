@@ -40,7 +40,7 @@ int main(int argc, char* argv[]) {
 		for (size_t j = 0; j < serverNames.size(); ++j) {
 			std::cout << serverNames[j];
 			if (j != serverNames.size() - 1) {
-				std::cout << " HERE COMES ANOTHER SERVER NAME, ";
+				std::cout << ", ";
 			}
 		}
 		std::cout << std::endl;
@@ -52,6 +52,52 @@ int main(int argc, char* argv[]) {
 			if (!errorPage.empty()) {
 				std::cout << "Error " << errorCode << ": " << errorPage << std::endl;
 			}
+		}
+
+		// Display locations
+		std::cout << "Locations:" << std::endl;
+		const std::vector<Location>& locations = virtServers[i].getLocations();
+		for (size_t k = 0; k < locations.size(); ++k) {
+			std::cout << "Location " << k + 1 << ":\n";
+			std::cout << "Route: " << locations[k].getRoute() << std::endl;
+			std::cout << "Root: " << locations[k].getLocationRoot() << std::endl;
+			std::cout << "Index: " << locations[k].getLocationIndex() << std::endl;
+			std::cout << "Auto Index: " << (locations[k].getAutoIndex() ? "On" : "Off") << std::endl;
+
+			// Display methods
+			std::cout << "Methods: ";
+			const std::vector<Method>& methods = locations[k].getMethods();
+			for (size_t m = 0; m < methods.size(); ++m) {
+				std::cout << toStr(methods[m]);
+				if (m != methods.size() - 1) {
+					std::cout << ", ";
+				}
+			}
+			std::cout << std::endl;
+
+			// Display CGI extensions
+			std::cout << "CGI Extensions: ";
+			const std::vector<std::string>& cgiExtensions = locations[k].getCGIExtensions();
+			for (size_t n = 0; n < cgiExtensions.size(); ++n) {
+				std::cout << cgiExtensions[n];
+				if (n != cgiExtensions.size() - 1) {
+					std::cout << ", ";
+				}
+			}
+			std::cout << std::endl;
+
+			// Display upload directory
+			std::cout << "Upload Directory: " << locations[k].getUploadDir() << std::endl;
+
+			// Display error redirects
+			for (int errorCode = 400; errorCode < 600; ++errorCode) {
+				const std::string& redirectUrl = locations[k].getReturnRedir(errorCode);
+				if (!redirectUrl.empty()) {
+					std::cout << "Error " << errorCode << " Redirect: " << redirectUrl << std::endl;
+				}
+			}
+
+			std::cout << std::endl;
 		}
 	}
 

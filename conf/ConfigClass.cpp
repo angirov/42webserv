@@ -62,14 +62,14 @@ const std::vector<VirtServer>& Config::getVirtServers() const {
 	return virtServers; // Return the vector of VirtServer objects
 }
 
+// Default constructor
+VirtServer::VirtServer() : _port(0) {}
+
 // Constructor
-VirtServer::VirtServer(int port, const std::vector<std::string> &serverNames) {
-	_port = port;
-	_serverNames = serverNames;
-}
+VirtServer::VirtServer(int port, const std::vector<std::string>& serverNames) : _port(port), _serverNames(serverNames) {}
 
 // Copy Constructor
-VirtServer::VirtServer(const VirtServer &other) {
+VirtServer::VirtServer(const VirtServer& other) {
 	_port = other._port;
 	_serverNames = other._serverNames;
 	_errorPages = other._errorPages;

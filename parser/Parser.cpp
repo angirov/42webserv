@@ -311,37 +311,46 @@ bool Parser::parseServerBlock(Config& config, std::ifstream& file) {
 	bool foundServerName = false;
 	bool foundErrorPage = false;
 
+	VirtServer virtServer; // Create an empty VirtServer object to store parsed server data
+
 	while (std::getline(file, line)) {
-		// Trim leading and trailing whitespace from the line
 		line = trim(line);
 
-		// Check if we reached the end of the server block
 		if (line.find("</server>") != std::string::npos) {
-			break; // End of server block, break out of loop
-		}
-
-		// Parse key-value pairs inside the server block only
-		size_t colonPos = line.find(':');
-		if (colonPos != std::string::npos) {
-			std::string key = line.substr(0, colonPos);
-			std::string value = line.substr(colonPos + 1);
-			// Remove semicolon if present
-			if (!value.empty() && value[value.size() - 1] == ';') {
-				value.erase(value.size() - 1);
+			// Add the filled VirtServer object to the Config object
+			if (!foundListen || !foundServerName || !foundErrorPage) {
+				std::cerr << "Error: Missing essential variables in server block" << std::endl;
+				return false;
 			}
 
-			// Trim leading and trailing whitespace from the value
-			value = trim(value);
+			virtServer.setPort(port);
+			virtServer.setServerNames(serverNames);
+			for (std::map<int, std::string>::const_iterator it = errorPages.begin(); it != errorPages.end(); ++it) {
+				virtServer.setErrorPage(it->first, it->second);
+			}
+			config.addVirtServer(virtServer); // Add the filled VirtServer object to the Config object
+
+			return true;
+		}
+
+		// Check if the line contains the start of a location block
+		if (line.find("<location>") != std::string::npos) {
+			std::cout << "Encountered location block, parsing..." << std::endl;
+			// Parse the location block and add it to the current VirtServer object
+			if (!parseLocationBlock(virtServer, file)) {
+				return false;
+			}
+		}
+
+		size_t colonPos = line.find(':');
+		if (colonPos != std::string::npos) {
+			std::string key = trim(line.substr(0, colonPos));
+			std::string value = trim(line.substr(colonPos + 1));
 
 			if (key == "listen") {
 				port = atoi(value.c_str());
 				foundListen = true;
 			} else if (key == "server_name") {
-				// Validate the format of server names
-				if (!isValidServerNameFormat(value)) {
-					return false;
-				}
-				// Split multiple server names separated by commas
 				std::istringstream iss(value);
 				std::string serverName;
 				while (std::getline(iss, serverName, ',')) {
@@ -349,38 +358,21 @@ bool Parser::parseServerBlock(Config& config, std::ifstream& file) {
 				}
 				foundServerName = true;
 			} else if (key == "error_page") {
-				// TODO: This needs to change, discuss implementation.
-				errorPages[404] = value;
-				foundErrorPage = true;
-			} else if (key == "<location>") { // Check for location block
-				VirtServer virtServer(port, serverNames);
-				if (!parseLocationBlock(virtServer, file)) {
-					return false; // Failed to parse location block
+				size_t commaPos = value.find(',');
+				if (commaPos != std::string::npos) {
+					int errorCode = atoi(value.substr(0, commaPos).c_str());
+					std::string pageURL = value.substr(commaPos + 1);
+					errorPages[errorCode] = pageURL;
 				}
-				// Add the filled VirtServer object to the Config object
-				config.addVirtServer(virtServer);
+				foundErrorPage = true;
 			}
 		}
 	}
 
-	// Check if all essential variables are parsed
-	if (!foundListen || !foundServerName || !foundErrorPage) {
-		std::cerr << "Error: Missing essential variables in server block" << std::endl;
-		return false;
-	}
-
-	// Create a new VirtServer object with parsed values
-	VirtServer virtServer(port, serverNames);
-	for (std::map<int, std::string>::const_iterator it = errorPages.begin(); it != errorPages.end(); ++it) {
-		virtServer.setErrorPage(it->first, it->second);
-	}
-
-	// Add the filled VirtServer object to the Config object
-	config.addVirtServer(virtServer);
-
-	// Return true indicating successful parsing
-	return true;
+	std::cerr << "Error: Server block not properly terminated" << std::endl;
+	return false; // Server block not properly terminated
 }
+
 
 bool Parser::parseLocationBlock(VirtServer& virtServer, std::ifstream& file) {
 	std::string line;
@@ -393,12 +385,15 @@ bool Parser::parseLocationBlock(VirtServer& virtServer, std::ifstream& file) {
 	std::vector<std::string> cgiExtensions;
 	std::string uploadDir;
 
+	std::cout << "Parsing location block..." << std::endl;
+
 	while (std::getline(file, line)) {
 		// Trim leading and trailing whitespace from the line
 		line = trim(line);
 
 		// Check if we reached the end of the location block
 		if (line.find("</location>") != std::string::npos) {
+			std::cout << "End of location block" << std::endl;
 			break; // End of location block, break out of loop
 		}
 
