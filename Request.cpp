@@ -237,21 +237,25 @@ std::string Request::process_CGI() {
     cgi_argv[1] = script;
     cgi_argv[2] = NULL;
 
-    char * text_env0 = (char *)"TEST0=val0";
-    char * text_env1 = (char *)"TEST1=val1";
-    char * text_env2 = (char *)"TEST2=val2";
-    char *cgi_env[100];
-    cgi_env[0] = text_env0;
-    cgi_env[1] = text_env1;
-    cgi_env[2] = text_env2;
-    cgi_env[3] = NULL;
+    std::vector<std::string> cgi_env;
+    cgi_env.push_back("TEST0=val0");
+    cgi_env.push_back("TEST1=val1");
+    cgi_env.push_back("TEST2=val2");
+
+    char * env_arr[1000]; // should be malloced
+    std::size_t i = 0;
+    while (i < cgi_env.size()) {
+        env_arr[i] = (char *)cgi_env[i].c_str();
+        i++;
+    }
+    env_arr[i] = NULL;
     int id = fork();
     if (id == 0) {
         close(fd[READ_FD]);
         std::cerr << "Child is starting\n";
         dup2(fd[WRITE_FD], STDOUT_FILENO);
         close(fd[WRITE_FD]);
-        int err = execve(cgi_argv[0], cgi_argv, cgi_env);
+        int err = execve(cgi_argv[0], cgi_argv, env_arr);
         if (err == -1) {
             write(STDERR_FILENO, message, strlen(message) + 1);
             close(STDOUT_FILENO);
