@@ -29,7 +29,7 @@ void createObjects(Config &config)
 	location0.setAutoIndex(true);
 	location0.addMethod("GET");
 	location0.addCGIExtension("cgi");
-	location0.addCGIExtension("igc");
+	location0.addCGIExtension("py");
 	location0.setUploadDir("/uploads/");
 	location0.addReturnRedir(300, "redirect0.html");
 	

@@ -1,20 +1,60 @@
 #include "Request.hpp"
 
+void Request::setCgiEnvVar(std::string varName, std::string varVal) {
+    cgi_env.push_back(varName + "=" + varVal);
+}
+
+std::string headerVals(std::vector<std::string> headerValVec) {
+    std::string res;
+    for (std::vector<std::string>::iterator it = headerValVec.begin(); it != headerValVec.end(); ++it)
+    {
+        if (it != headerValVec.begin()) 
+            res += ",";
+        res += *it;
+    }
+    return res;
+}
+
 char ** Request::makeCgiEnv()
 {
-        std::vector<std::string> cgi_env;
-        cgi_env.push_back("TEST0=val0");
-        cgi_env.push_back("TEST1=val1");
-        cgi_env.push_back("TEST2=val2");
+/////////////////////////////////////////////////////////////////////////////////////
 
-        char ** env_arr = (char **)calloc(cgi_env.size() + 1, sizeof(char *));
-        std::size_t i = 0;
-        while (i < cgi_env.size()) {
-            env_arr[i] = strdup(cgi_env[i].c_str());
-            i++;
-        }
-        env_arr[i] = NULL;
-        return env_arr;
+    if(method == MethodPOST)
+    {
+        setCgiEnvVar("CONTENT_LENGTH", "###todo###");
+        setCgiEnvVar("CONTENT_TYPE",   "###todo###");
+    }
+
+    setCgiEnvVar("SERVER_SOFTWARE",    "42webserv");
+    setCgiEnvVar("SERVER_PROTOCOL",    "HTTP/1.1");
+    setCgiEnvVar("GATEWAY_INTERFACE",  "CGI/1.1");
+    setCgiEnvVar("REDIRECT_STATUS",    "200");
+
+    setCgiEnvVar("SCRIPT_NAME",        extractFileName(getPath()));
+    setCgiEnvVar("SCRIPT_FILENAME",    getPath());
+    setCgiEnvVar("PATH_INFO",          getPath());
+    setCgiEnvVar("PATH_TRANSLATED",    getPath());
+    setCgiEnvVar("REQUEST_URI",        url);
+    setCgiEnvVar("SERVER_NAME",        domain);
+    setCgiEnvVar("SERVER_PORT",        server.lg.str(server.getPortRef(server.getClientRef(fd))));
+    setCgiEnvVar("REQUEST_METHOD",     toStr(method));
+
+    for (header_map::iterator it = headers.begin(); it != headers.end(); ++it)
+    {
+        std::string name = it->first;
+        std::transform(name.begin(), name.end(), name.begin(), ::toupper);
+        std::string key = "HTTP_" + name;
+        setCgiEnvVar(key, headerVals(it->second));
+    }
+
+    char ** env_arr = (char **)calloc(cgi_env.size() + 1, sizeof(char *));
+    std::size_t i = 0;
+    while (i < cgi_env.size()) {
+        env_arr[i] = strdup(cgi_env[i].c_str());
+        i++;
+    }
+    env_arr[i] = NULL;
+    return env_arr;
 }
 
 char ** Request::makeCgiArgv()
@@ -53,7 +93,7 @@ std::string Request::process_CGI()
         dup2(fd[WRITE_FD], STDOUT_FILENO);
         close(fd[WRITE_FD]);
 
-        int err = execve(cgi_argv[1], cgi_argv, env_arr);
+        int err = execve(cgi_argv[0], cgi_argv, env_arr);
 
         if (err == -1)
         {

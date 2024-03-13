@@ -50,6 +50,8 @@ public:
     std::string route;
     StatusCode statusCode;
 
+    std::vector<std::string> cgi_env;
+
     void parse_first_line();
     void parse_header(const std::string& line);
     void parse();
@@ -85,7 +87,7 @@ public:
     std::string process_CGI();
     char ** makeCgiArgv();
     char ** makeCgiEnv();
-
+    void setCgiEnvVar(std::string varName, std::string varVal);
 };
 
 class Response
