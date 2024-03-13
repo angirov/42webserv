@@ -2,14 +2,12 @@
 
 // Helper function to trim leading and trailing whitespace from a string
 std::string Parser::trim(const std::string& str) {
-	size_t start = 0, end = str.length();
-	while (start < end && std::isspace(str[start])) {
-		++start;
+	size_t start = str.find_first_not_of(" \t\r\n");
+	size_t end = str.find_last_not_of(" \t\r\n");
+	if (start == std::string::npos || end == std::string::npos) {
+		return "";
 	}
-	while (end > start && std::isspace(str[end - 1])) {
-		--end;
-	}
-	return str.substr(start, end - start);
+	return str.substr(start, end - start + 1);
 }
 
 // Helper function isNumeric
@@ -21,6 +19,7 @@ bool Parser::isNumeric(const std::string& str) {
 	}
 	return true;
 }
+
 // Helper function splitString
 void Parser::splitString(const std::string& input, char delimiter, std::vector<std::string>& tokens) const {
 	std::string::size_type start = 0;
@@ -34,7 +33,6 @@ void Parser::splitString(const std::string& input, char delimiter, std::vector<s
 
 	tokens.push_back(input.substr(start));
 }
-
 
 bool Parser::isValidServerNameFormat(const std::string& value) {
 	std::istringstream iss(value);
@@ -130,13 +128,11 @@ bool Parser::hasIncorrectServerBlocks(std::ifstream& file) {
 			inServerBlock = false;
 		}
 	}
-
 	if (inServerBlock) {
 		std::cerr << "Syntax Error: Missing closing </server> tag" << std::endl;
 		file.close();
 		return true;
 	}
-
 	file.close();
 	return false;
 }
@@ -300,7 +296,6 @@ bool Parser::parseGlobalSettings(const std::string& line, Config& config) {
 	return false; // Line does not contain global settings
 }
 
-
 bool Parser::parseServerBlock(Config& config, std::ifstream& file) {
 	std::string line;
 	int port = 0;
@@ -308,8 +303,6 @@ bool Parser::parseServerBlock(Config& config, std::ifstream& file) {
 	std::map<int, std::string> errorPages;
 
 	bool foundListen = false;
-	bool foundServerName = false;
-	bool foundErrorPage = false;
 
 	VirtServer virtServer; // Create an empty VirtServer object to store parsed server data
 
@@ -317,9 +310,9 @@ bool Parser::parseServerBlock(Config& config, std::ifstream& file) {
 		line = trim(line);
 
 		if (line.find("</server>") != std::string::npos) {
-			// Add the filled VirtServer object to the Config object
-			if (!foundListen || !foundServerName || !foundErrorPage) {
-				std::cerr << "Error: Missing essential variables in server block" << std::endl;
+			// Check if Port is set
+			if (!foundListen) {
+				std::cerr << "Error: Missing Port in server block" << std::endl;
 				return false;
 			}
 
@@ -328,14 +321,13 @@ bool Parser::parseServerBlock(Config& config, std::ifstream& file) {
 			for (std::map<int, std::string>::const_iterator it = errorPages.begin(); it != errorPages.end(); ++it) {
 				virtServer.setErrorPage(it->first, it->second);
 			}
-			config.addVirtServer(virtServer); // Add the filled VirtServer object to the Config object
-
+			// Add the filled VirtServer object to the Config object
+			config.addVirtServer(virtServer);
 			return true;
 		}
-
 		// Check if the line contains the start of a location block
 		if (line.find("<location>") != std::string::npos) {
-			std::cout << "Encountered location block, parsing..." << std::endl;
+			std::cout << "Encountered location block" << std::endl;
 			// Parse the location block and add it to the current VirtServer object
 			if (!parseLocationBlock(virtServer, file)) {
 				return false;
@@ -356,7 +348,6 @@ bool Parser::parseServerBlock(Config& config, std::ifstream& file) {
 				while (std::getline(iss, serverName, ',')) {
 					serverNames.push_back(trim(serverName));
 				}
-				foundServerName = true;
 			} else if (key == "error_page") {
 				size_t commaPos = value.find(',');
 				if (commaPos != std::string::npos) {
@@ -364,13 +355,11 @@ bool Parser::parseServerBlock(Config& config, std::ifstream& file) {
 					std::string pageURL = value.substr(commaPos + 1);
 					errorPages[errorCode] = pageURL;
 				}
-				foundErrorPage = true;
 			}
 		}
 	}
-
 	std::cerr << "Error: Server block not properly terminated" << std::endl;
-	return false; // Server block not properly terminated
+	return false;
 }
 
 
@@ -434,9 +423,26 @@ bool Parser::parseLocationBlock(VirtServer& virtServer, std::ifstream& file) {
 					std::string redirectUrl = value.substr(commaPos + 1);
 					returnRedir[errorCode] = redirectUrl;
 				}
+
 			} else if (key == "autoindex") {
-				autoIndex = (value == "on") ? true : false;
-			} else if (key == "cgi") {
+				std::cout << "Key: " << key << ", Value: " << value << std::endl;
+
+				// Remove trailing semicolon
+				if (!value.empty() && value[value.size() - 1] == ';') {
+					value.erase(value.size() - 1);
+				}
+
+				if (value == "on") {
+					std::cout << "Auto Index is ON" << std::endl;
+					autoIndex = true; // Update autoIndex to true
+				} else if (value == "off") {
+					std::cout << "Auto Index is OFF" << std::endl;
+					autoIndex = false; // Update autoIndex to false
+				} else {
+					std::cout << "Invalid value for autoindex: " << value << std::endl;
+				}
+
+		} else if (key == "cgi") {
 				// Split the value by commas and add each CGI extension to the cgiExtensions vector
 				std::istringstream iss(value);
 				std::string cgiExtension;
@@ -457,17 +463,25 @@ bool Parser::parseLocationBlock(VirtServer& virtServer, std::ifstream& file) {
 
 	// Create a Location object with parsed values
 	Location location(route, locationRoot, locationIndex);
+	std::cout << "Route: " << route << std::endl;
+	std::cout << "Root: " << locationRoot << std::endl;
+	std::cout << "Index: " << locationIndex << std::endl;
 	for (size_t i = 0; i < methods.size(); ++i) {
+		std::cout << "Method: " << methods[i] << std::endl;
 		location.addMethod(methods[i]);
 	}
 	std::map<int, std::string>::const_iterator it;
 	for (it = returnRedir.begin(); it != returnRedir.end(); ++it) {
+		std::cout << "Return Code: " << it->first << ", Redirect URL: " << it->second << std::endl;
 		location.setReturnRedir(it->first, it->second);
 	}
 	for (size_t i = 0; i < cgiExtensions.size(); ++i) {
+		std::cout << "CGI Extension: " << cgiExtensions[i] << std::endl;
 		location.addCGIExtension(cgiExtensions[i]);
 	}
+	std::cout << "Upload Directory: " << uploadDir << std::endl;
 	location.setUploadDir(uploadDir);
+	std::cout << "Auto Index: " << (autoIndex ? "On" : "Off") << std::endl;
 	location.setAutoIndex(autoIndex);
 
 	// Add the filled Location object to the VirtServer
