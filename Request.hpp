@@ -13,6 +13,8 @@
 
 #define READ_FD     0
 #define WRITE_FD    1
+#define CGI_BUFF_SIZE 10000
+#define PY_EXEC "/usr/bin/python3"
 
 #include "Server.hpp"
 #include "conf/ConfigClass.hpp"
@@ -81,6 +83,9 @@ public:
     std::string process_get500();
     std::string process_POST();
     std::string process_CGI();
+    char ** makeCgiArgv();
+    char ** makeCgiEnv();
+
 };
 
 class Response
