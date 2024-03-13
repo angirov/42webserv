@@ -87,6 +87,7 @@ public:
     std::string process_POST();
     std::string process_post500();
     std::string process_CGI();
+    std::string process_cgi500();
     char ** makeCgiArgv();
     char ** makeCgiEnv();
     void setCgiEnvVar(std::string varName, std::string varVal);

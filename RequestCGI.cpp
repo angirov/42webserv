@@ -150,9 +150,14 @@ std::string Request::process_CGI()
         }
     }
     std::string full_res;
+    if (cgi_res.length() > 0) {
     full_res += "HTTP/1.1 200 OK (CGI)\r\n";
     full_res += "Content-Length: " + server.lg.str((int)getHTTPBodySize(cgi_res)) + "\r\n";
     full_res +=  cgi_res;
+    }
+    else {
+        return process_cgi500();
+    }
 
     return  full_res;
 }

@@ -200,7 +200,7 @@ std::string Request::process_get403()
 
 std::string Request::process_get404()
 {
-    return "HTTP/1.1 404 OK (CGI)\r\n\r\n";
+    return "HTTP/1.1 404 OK (CGI)\r\nContent-Length: 0\r\n\r\n";
 }
 
 std::string Request::process_get405()
@@ -216,6 +216,11 @@ std::string Request::process_get500()
 std::string Request::process_post500()
 {
     return "under construction process_post500";
+}
+
+std::string Request::process_cgi500()
+{
+    return "HTTP/1.1 500 Failed (CGI)\r\nContent-Length: 0\r\n\r\n";
 }
 
 std::string Request::process_POST()
