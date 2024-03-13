@@ -148,7 +148,7 @@ bool Parser::hasSyntaxErrors() {
 			hasMissingSemicolons() ||
 			hasWrongGlobalSettings(file) ||
 			hasIncorrectServerBlocks(file);
-	std::cout << "Finished checking server settings" << std::endl;
+	// std::cout << "Finished checking server settings" << std::endl;
 	file.close();
 	return syntaxErrors;
 }
@@ -327,7 +327,7 @@ bool Parser::parseServerBlock(Config& config, std::ifstream& file) {
 		}
 		// Check if the line contains the start of a location block
 		if (line.find("<location>") != std::string::npos) {
-			std::cout << "Encountered location block" << std::endl;
+			// std::cout << "Encountered location block" << std::endl;
 			// Parse the location block and add it to the current VirtServer object
 			if (!parseLocationBlock(virtServer, file)) {
 				return false;
@@ -374,15 +374,12 @@ bool Parser::parseLocationBlock(VirtServer& virtServer, std::ifstream& file) {
 	std::vector<std::string> cgiExtensions;
 	std::string uploadDir;
 
-	std::cout << "Parsing location block..." << std::endl;
-
 	while (std::getline(file, line)) {
 		// Trim leading and trailing whitespace from the line
 		line = trim(line);
 
 		// Check if we reached the end of the location block
 		if (line.find("</location>") != std::string::npos) {
-			std::cout << "End of location block" << std::endl;
 			break; // End of location block, break out of loop
 		}
 
@@ -396,7 +393,6 @@ bool Parser::parseLocationBlock(VirtServer& virtServer, std::ifstream& file) {
 			key = trim(key);
 			value = trim(value);
 
-			// Check the key and set the corresponding value
 			if (key == "route") {
 				route = value;
 			} else if (key == "root") {
@@ -404,18 +400,15 @@ bool Parser::parseLocationBlock(VirtServer& virtServer, std::ifstream& file) {
 			} else if (key == "index") {
 				locationIndex = value;
 			} else if (key == "methods") {
-				// Remove any trailing semicolon from the value
 				if (!value.empty() && value[value.size() - 1] == ';') {
 					value.erase(value.size() - 1);
 				}
-				// Split the value by commas and add each method to the methods vector
 				std::istringstream iss(value);
 				std::string method;
 				while (std::getline(iss, method, ',')) {
 					methods.push_back(trim(method));
 				}
 			} else if (key == "return") {
-				// Parse the return value for error codes and redirect URLs
 				// Assuming format: errorCode,redirectUrl;
 				size_t commaPos = value.find(',');
 				if (commaPos != std::string::npos) {
@@ -425,21 +418,19 @@ bool Parser::parseLocationBlock(VirtServer& virtServer, std::ifstream& file) {
 				}
 
 			} else if (key == "autoindex") {
-				std::cout << "Key: " << key << ", Value: " << value << std::endl;
-
-				// Remove trailing semicolon
+				// std::cout << "Key: " << key << ", Value: " << value << std::endl;
 				if (!value.empty() && value[value.size() - 1] == ';') {
 					value.erase(value.size() - 1);
 				}
 
 				if (value == "on") {
-					std::cout << "Auto Index is ON" << std::endl;
-					autoIndex = true; // Update autoIndex to true
+					// std::cout << "Auto Index is ON" << std::endl;
+					autoIndex = true;
 				} else if (value == "off") {
-					std::cout << "Auto Index is OFF" << std::endl;
-					autoIndex = false; // Update autoIndex to false
+					// std::cout << "Auto Index is OFF" << std::endl;
+					autoIndex = false;
 				} else {
-					std::cout << "Invalid value for autoindex: " << value << std::endl;
+					std::cerr << "Invalid value for autoindex: " << value << std::endl;
 				}
 
 		} else if (key == "cgi") {
@@ -454,10 +445,8 @@ bool Parser::parseLocationBlock(VirtServer& virtServer, std::ifstream& file) {
 			}
 		}
 	}
-
 	// Check if any key-value pairs were parsed
 	if (route.empty() && locationRoot.empty() && locationIndex.empty() && methods.empty() && returnRedir.empty() && cgiExtensions.empty() && uploadDir.empty()) {
-		// No valid key-value pairs were parsed, indicating the end of the location block or an empty location block
 		return false;
 	}
 

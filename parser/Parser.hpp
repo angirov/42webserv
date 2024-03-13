@@ -14,7 +14,7 @@ public:
 	Parser(const std::string& filename) : filename(filename) {}
 
 	static bool parseGlobalSettings(const std::string& line, Config& config);
-	bool parseServerBlock(Config& config, std::ifstream& file);
+	static bool parseServerBlock(Config& config, std::ifstream& file);
 	static bool parseLocationBlock(VirtServer& virtServer, std::ifstream& file);
 
 	bool hasSyntaxErrors();
