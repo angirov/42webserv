@@ -200,7 +200,7 @@ std::string Request::process_get403()
 
 std::string Request::process_get404()
 {
-    return "HTTP/1.1 200 OK (CGI)\r\n\r\n";
+    return "HTTP/1.1 404 OK (CGI)\r\n\r\n";
 }
 
 std::string Request::process_get405()
@@ -262,7 +262,13 @@ void Request::parse_first_line()
     method = resolveMethod(word);
 
     iss >> word;
-    url = word; ////////////////////////////// need a url handler?????????????????????????????????????????????????
+    url = word;
+    size_t queryStart = url.find('?');
+    if (queryStart != std::string::npos) {
+        queryString = url.substr(queryStart + 1);
+        url = url.substr(0, queryStart);
+    }
+
     iss >> word;
     httpVersion = resolveHTTPVersion(word);
 }

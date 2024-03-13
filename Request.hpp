@@ -41,6 +41,7 @@ public:
 
     Method method;
     std::string url; // should be a class??? query params?
+    std::string queryString;
     std::string resourcePath;
     HTTPVersion httpVersion;
     header_map headers; // conditions GET (changed since last request ), obligatory host header for virtual hosting, Connection: Keep-Alive default for http11 otherwise "close"

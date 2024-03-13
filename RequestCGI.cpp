@@ -18,26 +18,27 @@ std::string headerVals(std::vector<std::string> headerValVec) {
 char ** Request::makeCgiEnv()
 {
 /////////////////////////////////////////////////////////////////////////////////////
+    setCgiEnvVar("GATEWAY_INTERFACE",  "CGI/1.1");
+    setCgiEnvVar("SERVER_SOFTWARE",    "42webserv");
+
+    setCgiEnvVar("QUERY_STRING",       queryString);
+    setCgiEnvVar("REQUEST_METHOD",     toStr(method));
 
     if(method == MethodPOST)
     {
-        setCgiEnvVar("CONTENT_LENGTH", "###todo###");
-        setCgiEnvVar("CONTENT_TYPE",   "###todo###");
+        setCgiEnvVar("CONTENT_TYPE",   *headers["content-type"].begin());
+        setCgiEnvVar("CONTENT_LENGTH", server.lg.str((int)body.size()));
     }
 
-    setCgiEnvVar("SERVER_SOFTWARE",    "42webserv");
-    setCgiEnvVar("SERVER_PROTOCOL",    "HTTP/1.1");
-    setCgiEnvVar("GATEWAY_INTERFACE",  "CGI/1.1");
-    setCgiEnvVar("REDIRECT_STATUS",    "200");
-
     setCgiEnvVar("SCRIPT_NAME",        extractFileName(getPath()));
+    setCgiEnvVar("REQUEST_URI",        url);
     setCgiEnvVar("SCRIPT_FILENAME",    getPath());
     setCgiEnvVar("PATH_INFO",          getPath());
     setCgiEnvVar("PATH_TRANSLATED",    getPath());
-    setCgiEnvVar("REQUEST_URI",        url);
     setCgiEnvVar("SERVER_NAME",        domain);
     setCgiEnvVar("SERVER_PORT",        server.lg.str(server.getPortRef(server.getClientRef(fd))));
-    setCgiEnvVar("REQUEST_METHOD",     toStr(method));
+    setCgiEnvVar("SERVER_PROTOCOL",    "HTTP/1.1");
+    setCgiEnvVar("REDIRECT_STATUS",    "200");
 
     for (header_map::iterator it = headers.begin(); it != headers.end(); ++it)
     {

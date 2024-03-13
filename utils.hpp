@@ -85,4 +85,5 @@ std::string getDifference(const std::string& first, const std::string& second);
 std::string appendIfNotEndsWith(const std::string &str, char c);
 std::string getDifference(const std::string& route, const std::string& url);
 std::list<int> deductLists(const std::list<int>& list1, const std::list<int>& list2);
+
 #endif
