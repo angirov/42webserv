@@ -62,14 +62,14 @@ const std::vector<VirtServer>& Config::getVirtServers() const {
 	return virtServers; // Return the vector of VirtServer objects
 }
 
+// Default constructor
+VirtServer::VirtServer() : _port(0) {}
+
 // Constructor
-VirtServer::VirtServer(int port, const std::vector<std::string> &serverNames) {
-	_port = port;
-	_serverNames = serverNames;
-}
+VirtServer::VirtServer(int port, const std::vector<std::string>& serverNames) : _port(port), _serverNames(serverNames) {}
 
 // Copy Constructor
-VirtServer::VirtServer(const VirtServer &other) {
+VirtServer::VirtServer(const VirtServer& other) {
 	_port = other._port;
 	_serverNames = other._serverNames;
 	_errorPages = other._errorPages;
@@ -93,7 +93,7 @@ const std::vector<std::string> & VirtServer::getServerNames() const {
 	return _serverNames;
 }
 
-void VirtServer::addErrorPage(int errorCode, const std::string &errorPage) {
+void VirtServer::setErrorPage(int errorCode, const std::string &errorPage) {
 	_errorPages[errorCode] = errorPage;
 }
 
@@ -196,17 +196,20 @@ const std::string& Location::getUploadDir() const {
 	return _uploadDir;
 }
 
-void Location::addReturnRedir(int errorCode, const std::string &redirectUrl) {
+// Setter function for adding redirect URL for a specific error code
+void Location::setReturnRedir(int errorCode, const std::string &redirectUrl) {
 	_returnRedir[errorCode] = redirectUrl;
 }
 
-const std::string &Location::getReturnRedir(int errorCode) const {
+// Getter function to retrieve redirect URL for a specific error code
+const std::string& Location::getReturnRedir(int errorCode) const {
 	std::map<int, std::string>::const_iterator it = _returnRedir.find(errorCode);
 	if (it != _returnRedir.end()) {
 		return it->second;
+	} else {
+		static const std::string emptyString = "";
+		return emptyString;
 	}
-	static const std::string emptyString = "";
-	return emptyString;
 }
 
 void VirtServer::display() const {
@@ -225,13 +228,18 @@ void VirtServer::display() const {
 
 	// Display error pages
 	std::cout << "\nError Pages:\n";
-	std::cout << "404 Error Page: " << getErrorPage(404) << std::endl;
+	std::map<int, std::string>::const_iterator errorPageIt = _errorPages.begin();
+	for (; errorPageIt != _errorPages.end(); ++errorPageIt) {
+		std::cout << errorPageIt->first << " Error Page: " << errorPageIt->second << std::endl;
+	}
 
 	// Display locations
+	std::cout << "\nLocations:\n";
 	for (size_t i = 0; i < locations.size(); ++i) {
 		locations[i].display();
 	}
 }
+
 
 void Location::display() const {
 	// Display Location variables
@@ -259,4 +267,8 @@ void Location::display() const {
 	}
 	std::cout << std::endl;
 	std::cout << "Upload Dir: " << getUploadDir() << std::endl;
+	std::map<int, std::string>::const_iterator errorRedirectIt = _returnRedir.begin();
+	for (; errorRedirectIt != _returnRedir.end(); ++errorRedirectIt) {
+		std::cout << errorRedirectIt->first << " Error Redirect: " << errorRedirectIt->second << std::endl;
+	}
 }

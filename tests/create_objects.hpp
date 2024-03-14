@@ -40,21 +40,21 @@ void createObjects(Config &config)
 	location1.addMethod("GET");
 	location1.addCGIExtension(".cgi");
 	location1.setUploadDir("/uploads/");
-	location1.addReturnRedir(301, "redirect1.html");
+	location1.setReturnRedir(301, "redirect1.html");
 
 	Location location2("/path2/", TRUE_ROOT + "/root2/", "index2.html");
 	location2.setAutoIndex(false);
 	location2.addMethod("POST");
 	location2.addCGIExtension(".php");
 	location2.setUploadDir("/files/");
-	location2.addReturnRedir(302, "redirect2.html");
+	location2.setReturnRedir(302, "redirect2.html");
 
 	Location location3("/path3/", TRUE_ROOT + "/root3/", "index3.html");
 	location3.setAutoIndex(false);
 	location3.addMethod("POST");
 	location3.addCGIExtension(".php");
 	location3.setUploadDir("/files/");
-	location3.addReturnRedir(303, "redirect3.html");
+	location3.setReturnRedir(303, "redirect3.html");
 
 	// Add locations to respective servers
 	server0.addLocation(location0);
