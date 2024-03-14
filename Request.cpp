@@ -39,6 +39,11 @@ Request::Request(const Server &server, int fd, const std::string &request) : ser
     else if (method == MethodPOST)
     {
         if (isDirHasWritePermission((*LocationIt).getUploadDir())) {
+            if (isCgiExtention(extractExtension(extractFileName(getPath())))) {
+                statusCode = StatusCodeCGI;
+                server.lg.log(DEBUG, "Request: reg file. set Status CGI");
+                return;
+            }
             server.lg.log(DEBUG, "Request: set Status POST"); // = file does not exist
             statusCode = StatusCodePOST;
             return;
