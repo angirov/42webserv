@@ -7,11 +7,12 @@
 #include <string>
 #include <cctype>
 #include <vector>
+#include <set>
 #include "../conf/ConfigClass.hpp"
 
 class Parser {
 public:
-	Parser(const std::string& filename) : filename(filename) {}
+	explicit Parser(const std::string& filename) : filename(filename) {}
 
 	static bool parseGlobalSettings(const std::string& line, Config& config);
 	static bool parseServerBlock(Config& config, std::ifstream& file);
@@ -22,17 +23,15 @@ public:
 
 	static std::string trim(const std::string& str);
 	static bool isNumeric(const std::string& str);
-	void splitString(const std::string& input, char delimiter, std::vector<std::string>& tokens) const;
 
 private:
 	std::string filename;
 
-	bool hasDuplicateSettings() const;
+	bool hasDuplicateGlobalSettings() const;
 	bool hasMissingSemicolons() const;
+	bool hasInvalidPorts() const;
 	static bool hasWrongGlobalSettings(std::ifstream& file);
 	static bool hasIncorrectServerBlocks(std::ifstream& file);
-
-	bool isValidServerNameFormat(const std::string& value) ;
 
 };
 

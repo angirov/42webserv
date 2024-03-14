@@ -20,65 +20,27 @@ bool Parser::isNumeric(const std::string& str) {
 	return true;
 }
 
-// Helper function splitString
-void Parser::splitString(const std::string& input, char delimiter, std::vector<std::string>& tokens) const {
-	std::string::size_type start = 0;
-	std::string::size_type end = input.find(delimiter);
-
-	while (end != std::string::npos) {
-		tokens.push_back(input.substr(start, end - start));
-		start = end + 1;
-		end = input.find(delimiter, start);
-	}
-
-	tokens.push_back(input.substr(start));
-}
-
-bool Parser::isValidServerNameFormat(const std::string& value) {
-	std::istringstream iss(value);
-	std::string serverName;
-	while (std::getline(iss, serverName, ',')) {
-		if (serverName.empty()) {
-			// Empty server name found
-			std::cerr << "Syntax Error: Empty server name found" << std::endl;
-			return false;
-		}
-	}
-	return true;
-}
-
-bool Parser::hasDuplicateSettings() const {
+bool Parser::hasDuplicateGlobalSettings() const {
 	std::ifstream file(filename.c_str());
 
 	std::map<std::string, int> globalSettingsCount;
-	std::map<std::string, int> serverSettingsCount;
-	bool inServerBlock = false;
 
 	std::string line;
+	bool inServerBlock = false;
 	while (std::getline(file, line)) {
 		if (line.find("<server>") != std::string::npos) {
 			inServerBlock = true;
-			serverSettingsCount.clear(); // Clear the settings count for each new server block
 		} else if (line.find("</server>") != std::string::npos) {
 			inServerBlock = false;
-		} else {
+		} else if (!inServerBlock) { // Check if outside server block
 			size_t colonPos = line.find(':');
 			if (colonPos != std::string::npos) {
 				std::string key = line.substr(0, colonPos);
-				if (inServerBlock) {
-					serverSettingsCount[key]++;
-					if (serverSettingsCount[key] > 1) {
-						std::cerr << "Syntax Error: Duplicate setting found within server block: " << key << std::endl;
-						file.close();
-						return true;
-					}
-				} else {
-					globalSettingsCount[key]++;
-					if (globalSettingsCount[key] > 1) {
-						std::cerr << "Syntax Error: Duplicate global setting found: " << key << std::endl;
-						file.close();
-						return true;
-					}
+				globalSettingsCount[key]++;
+				if (globalSettingsCount[key] > 1) {
+					std::cerr << "Syntax Error: Duplicate global setting found: " << key << std::endl;
+					file.close();
+					return true;
 				}
 			}
 		}
@@ -137,6 +99,38 @@ bool Parser::hasIncorrectServerBlocks(std::ifstream& file) {
 	return false;
 }
 
+// Check for duplicate ports and validate port range
+bool Parser::hasInvalidPorts() const {
+	std::set<int> ports; // Set to store unique ports
+
+	std::ifstream file(filename.c_str());
+	std::string line;
+	while (std::getline(file, line)) {
+		std::string trimmedLine = trim(line);
+		std::size_t colonPos = trimmedLine.find(':');
+		if (colonPos != std::string::npos) {
+			std::string key = trim(trimmedLine.substr(0, colonPos));
+			if (key == "listen") {
+				std::string value = trim(trimmedLine.substr(colonPos + 1));
+				int port = atoi(value.c_str());
+				if (port < 0 || port > 65535) {
+					std::cerr << "Syntax Error: Invalid port number: " << port << std::endl;
+					file.close();
+					return true;
+				}
+				if (ports.find(port) != ports.end()) {
+					std::cerr << "Syntax Error: Duplicate port found: " << port << std::endl;
+					file.close();
+					return true;
+				}
+				ports.insert(port);
+			}
+		}
+	}
+	file.close();
+	return false;
+}
+
 bool Parser::hasSyntaxErrors() {
 	std::ifstream file(filename.c_str());
 	if (!file.is_open()) {
@@ -144,9 +138,10 @@ bool Parser::hasSyntaxErrors() {
 		return true;
 	}
 	bool syntaxErrors =
-			// hasDuplicateSettings() ||
 			hasMissingSemicolons() ||
 			hasWrongGlobalSettings(file) ||
+			hasInvalidPorts() ||
+			hasDuplicateGlobalSettings() ||
 			hasIncorrectServerBlocks(file);
 	// std::cout << "Finished checking server settings" << std::endl;
 	file.close();
@@ -409,7 +404,7 @@ bool Parser::parseLocationBlock(VirtServer& virtServer, std::ifstream& file) {
 					methods.push_back(trim(method));
 				}
 			} else if (key == "return") {
-				// Assuming format: errorCode,redirectUrl;
+				// Assuming format: errorCode, redirectUrl;
 				size_t commaPos = value.find(',');
 				if (commaPos != std::string::npos) {
 					int errorCode = atoi(value.substr(0, commaPos).c_str());
@@ -478,6 +473,3 @@ bool Parser::parseLocationBlock(VirtServer& virtServer, std::ifstream& file) {
 
 	return true;
 }
-
-
-
