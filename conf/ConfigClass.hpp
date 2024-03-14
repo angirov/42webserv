@@ -46,6 +46,9 @@ private:
 
 class VirtServer {
 public:
+	// Default constructor
+	VirtServer();
+	// Constructor
 	VirtServer(int port, const std::vector<std::string> &serverNames);
 	// Copy constructor
 	VirtServer(const VirtServer &other);
