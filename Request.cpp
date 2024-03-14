@@ -205,7 +205,7 @@ std::string Request::process_get403()
 
 std::string Request::process_get404()
 {
-    return "HTTP/1.1 404 OK (CGI)\r\nContent-Length: 0\r\n\r\n";
+    return "HTTP/1.1 404 OK\r\nContent-Length: 0\r\n\r\n";
 }
 
 std::string Request::process_get405()

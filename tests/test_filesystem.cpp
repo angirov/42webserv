@@ -5,7 +5,7 @@
 
 
 int main() {
-    std::string path = "/home/wo/proj/42/42webserv/conf/ConfigClass.cpp"; // Replace with the directory path you want to check
+    std::string path = "/webserv/conf/ConfigClass.cpp"; // Replace with the directory path you want to check
     if (isValidDirectory(path)) {
         std::cout << "The " << path << " is a valid directory." << std::endl;
     } else {

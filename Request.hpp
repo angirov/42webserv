@@ -19,7 +19,7 @@
 #include "Server.hpp"
 #include "conf/ConfigClass.hpp"
 #include "utils.hpp"
-#define UPLOAD_PATH "/home/wo/proj/42/42webserv/data/uploads/"
+#define UPLOAD_PATH "/webserv/data/uploads/"
 typedef std::map<std::string, std::vector<std::string> > header_map;
 
 struct Server;
