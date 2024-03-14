@@ -9,11 +9,17 @@
 #include <list>
 #include <iterator>
 #include <cctype> // for strip
+#include <sys/wait.h>
+
+#define READ_FD     0
+#define WRITE_FD    1
+#define CGI_BUFF_SIZE 10000
+#define PY_EXEC "/usr/bin/python3"
 
 #include "Server.hpp"
 #include "conf/ConfigClass.hpp"
 #include "utils.hpp"
-
+#define UPLOAD_PATH "/webserv/data/uploads/"
 typedef std::map<std::string, std::vector<std::string> > header_map;
 
 struct Server;
@@ -35,6 +41,7 @@ public:
 
     Method method;
     std::string url; // should be a class??? query params?
+    std::string queryString;
     std::string resourcePath;
     HTTPVersion httpVersion;
     header_map headers; // conditions GET (changed since last request ), obligatory host header for virtual hosting, Connection: Keep-Alive default for http11 otherwise "close"
@@ -43,6 +50,8 @@ public:
     std::string domain;
     std::string route;
     StatusCode statusCode;
+
+    std::vector<std::string> cgi_env;
 
     void parse_first_line();
     void parse_header(const std::string& line);
@@ -57,6 +66,7 @@ public:
     void print_headers(std::stringstream &ss);
     void print_request();
     std::string getPath();
+    bool isCgiExtention(std::string ext);
     std::string getMimeType(const std::string& extension);
 
     // public:
@@ -74,6 +84,13 @@ public:
     std::string process_get404();
     std::string process_get405();
     std::string process_get500();
+    std::string process_POST();
+    std::string process_post500();
+    std::string process_CGI();
+    std::string process_cgi500();
+    char ** makeCgiArgv();
+    char ** makeCgiEnv();
+    void setCgiEnvVar(std::string varName, std::string varVal);
 };
 
 class Response

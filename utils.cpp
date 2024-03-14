@@ -98,6 +98,22 @@ bool hasReadPermission(const std::string& path) {
     }
 }
 
+bool isDirHasWritePermission(const std::string& path) {
+    struct stat info;
+    if (stat(path.c_str(), &info) != 0) {
+        // Error accessing file/directory
+        return false;
+    }
+    if (S_ISDIR(info.st_mode)) {
+        // Check if it's a directory
+        if (access(path.c_str(), W_OK) == 0) {
+            // Check if the process has writing permission
+            return true;
+        }
+    }
+    return false;
+}
+
 std::string extractFileName(const std::string& fullPath) {
     // Find the position of the last occurrence of the directory separator
     size_t lastSeparatorPos = fullPath.find_last_of("/\\");
@@ -137,4 +153,84 @@ std::vector<std::string> listFilesInDirectory(const std::string& directoryPath) 
     }
 
     return files;
+}
+
+void writeStringToBinaryFile(const std::string &str, const std::string &filename)
+{
+    // Open the file in binary mode
+    std::ofstream outfile(filename.c_str(), std::ios::out | std::ios::binary);
+
+    if (!outfile)
+    {
+        std::cerr << "Failed to open file for writing: " << filename << std::endl;
+        return;
+    }
+
+    // Write the string length as a 32-bit integer
+    int32_t length = str.size();
+    // outfile.write(reinterpret_cast<const char*>(&length), sizeof(length));
+
+    // Write the string content
+    outfile.write(str.data(), length);
+
+    // Close the file
+    outfile.close();
+}
+
+std::string generateTimeStamp()
+{
+    // Get the current time
+    std::time_t rawtime;
+    std::time(&rawtime);
+
+    // Convert the current time to a string
+    std::tm *timeinfo = std::localtime(&rawtime);
+    char buffer[80];
+    std::strftime(buffer, 80, "%Y%m%d%H%M%S", timeinfo);
+
+    // Create a stringstream to build the file name
+    std::stringstream filenameStream;
+    filenameStream << buffer; // You can adjust the file extension as needed
+
+    // Return the generated file name
+    return filenameStream.str();
+}
+
+std::string appendIfNotEndsWith(const std::string &str, char c)
+{
+    if (str.empty() && str[str.length() - 1] != c)
+    {
+        return str + c;
+    }
+    else
+        return str;
+}
+
+std::string getDifference(const std::string& route, const std::string& url) {
+    std::string prefix  = appendIfNotEndsWith(route, '/');
+    // Check if the url string starts with the prefix string
+    if (url.compare(0, prefix.length(), prefix) == 0) {
+        // If it does, return the part of the url string after the prefix string
+        return (url.substr(prefix.length()));
+    } else {
+        // If not, return an empty string
+        return "";
+    }
+}
+
+std::list<int> deductLists(const std::list<int>& list1, const std::list<int>& list2) {
+    std::list<int> resultList;
+    for (std::list<int>::const_iterator it1 = list1.begin(); it1 != list1.end(); ++it1) {
+        bool found = false;
+        for (std::list<int>::const_iterator it2 = list2.begin(); it2 != list2.end(); ++it2) {
+            if (*it1 == *it2) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            resultList.push_back(*it1);
+        }
+    }
+    return resultList;
 }

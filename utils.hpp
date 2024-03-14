@@ -6,6 +6,7 @@
 #include <sstream>
 #include <iterator>
 #include <vector>
+#include <list>
 #include <cctype> // for strip
 #include <sys/stat.h>
 #include <cstring> // for strerror, strcpy and strcat
@@ -13,6 +14,8 @@
 #include <cerrno>
 #include <cstdlib> // For realpath
 #include <dirent.h>
+#include <fstream>
+#include <ctime>
 
 enum Method
 {
@@ -42,6 +45,9 @@ enum StatusCode
     StatusCode404,
     StatusCode405,
     StatusCode500,
+    StatusCodePOST,
+    StatusCodePost500,
+    StatusCodeCGI
 };
 
 enum ContentType
@@ -69,8 +75,15 @@ void truncateIfEndsWith(std::string& str, char c);
 bool url_match_root(std::string str, std::string pattern);
 bool isValidDirectory(const std::string& path);
 bool hasReadPermission(const std::string& path);
+bool isDirHasWritePermission(const std::string& path);
 std::string extractFileName(const std::string& fullPath);
 std::string extractExtension(const std::string& fileName);
 std::vector<std::string> listFilesInDirectory(const std::string& directoryPath);
+void writeStringToBinaryFile(const std::string& str, const std::string& filename);
+std::string generateTimeStamp();
+std::string getDifference(const std::string& first, const std::string& second);
+std::string appendIfNotEndsWith(const std::string &str, char c);
+std::string getDifference(const std::string& route, const std::string& url);
+std::list<int> deductLists(const std::list<int>& list1, const std::list<int>& list2);
 
 #endif

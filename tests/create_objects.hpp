@@ -2,7 +2,7 @@
 #include <iostream>
 #include "../conf/ConfigClass.hpp"
 
-std::string TRUE_ROOT("/home/wo/proj/42/42webserv/data");
+std::string TRUE_ROOT("/webserv/data");
 
 // Function to create objects
 void createObjects(Config &config)
@@ -28,9 +28,11 @@ void createObjects(Config &config)
 	Location location0("/path0/", TRUE_ROOT + "/root0/", "index0.html");
 	location0.setAutoIndex(true);
 	location0.addMethod("GET");
-	location0.addCGIExtension(".cgi");
-	location0.setUploadDir("/uploads/");
-	location0.setReturnRedir(300, "redirect0.html");
+	location0.addMethod("POST");
+	location0.addCGIExtension("cgi");
+	location0.addCGIExtension("py");
+	location0.setUploadDir("/webserv/data/root0/path0/files/");
+	location0.addReturnRedir(300, "redirect0.html");
 	
 	Location location1("/path1/", TRUE_ROOT + "/root1/", "index1.html");
 

@@ -148,7 +148,7 @@ void Server::accept_new_conn(int fd)
         set_last_time(connfd);
 
         lg.log(INFO, "Connection from " + std::string(inet_ntoa(clientaddr.sin_addr)) + ":" + lg.str(ntohs(clientaddr.sin_port)));
-        lg.log(DEBUG, "Adding fd " + lg.str(connfd) + " to the list. New list " + cout_list(client_fds_l));
+        lg.log(DEBUG, "Adding fd " + lg.str(connfd) + " to the list. New list: " + cout_list(client_fds_l));
     }
 }
 
@@ -257,14 +257,23 @@ void Server::check_timeout()
 {
     time_t now;
     time(&now);
-    for (std::list<int>::iterator it = client_fds_l.begin(); it != client_fds_l.end(); ++it)
+    std::list<int>::iterator it = client_fds_l.begin();
+    while (it != client_fds_l.end())
     {
         double secs = difftime(now, last_times[*it]);
 
         if (secs > timeout)
         {
             lg.log(DEBUG, "Timeout for " + lg.str(*it) + "; diff: " + lg.str((int)secs) + "; Timeout: " + lg.str(timeout));
-            handle_client_disconnect(it);
+            close(*it);
+            lg.log(DEBUG, "Disconnecting: Old list: " + cout_list(client_fds_l));
+            lg.log(DEBUG, "Removing fd " + lg.str(*it) + " from the list. ");
+            it = client_fds_l.erase(it); // returns the next one
+            lg.log(DEBUG, "Disconnecting: New list: " + cout_list(client_fds_l));
+        }
+        else
+        {
+            ++it;
         }
     }
 }
@@ -292,7 +301,11 @@ void Server::do_read(std::list<int>::iterator &fd_itr)
     if (num_bytes_recv == 0)
     {
         lg.log(INFO, "Got zero bytes == Peer has closed the connection gracefully");
-        handle_client_disconnect(fd_itr);
+        close(*fd_itr);
+        lg.log(DEBUG, "Disconnecting: Old list: " + cout_list(client_fds_l));
+        lg.log(DEBUG, "Removing fd " + lg.str(*fd_itr) + " from the list. ");
+        client_fds_l.remove(*fd_itr); // because we work with the copy list
+        lg.log(DEBUG, "Disconnecting: New list: " + cout_list(client_fds_l));
     }
     if (num_bytes_recv == -1)
     {
@@ -312,13 +325,14 @@ void Server::fill_fd_sets()
     }
 
     // Insert Read FDs
-    for (std::list<int>::iterator it = client_fds_l.begin(); it != client_fds_l.end(); ++it)
+    std::list<int> readingFds = getReadingFds();
+    for (std::list<int>::iterator it = readingFds.begin(); it != readingFds.end(); ++it)
     {
         FD_SET(*it, &read_fd_set);
     }
 
     // Insert Write FDs
-    for (std::list<int>::iterator it = client_fds_l.begin(); it != client_fds_l.end(); ++it)
+    for (std::list<int>::iterator it = writing_fds_l.begin(); it != writing_fds_l.end(); ++it)
     {
         FD_SET(*it, &write_fd_set);
     }
@@ -344,45 +358,49 @@ void Server::do_select()
     int ret;
     int maxFd = find_maxFd();
     ret = select(maxFd + 1, &read_fd_set, &write_fd_set, NULL, &tv);
-    lg.log(DEBUG, "Select returned: " + lg.str(ret) +
-                      " Max FD is " + lg.str(maxFd) +
-                      " Server Fds: " + cout_list(server_socket_fds_l) +
-                      " Client Fds: " + cout_list(client_fds_l));
+    // lg.log(DEBUG, "Select returned: " + lg.str(ret) +
+    //                   " Max FD is " + lg.str(maxFd) +
+    //                   " Server Fds: " + cout_list(server_socket_fds_l) +
+    //                   " Reading Fds: " + cout_list(getReadingFds()) +
+    //                   " Writing Fds: " + cout_list(writing_fds_l));
 
     if (ret > 0)
     {
         // Check Server FDs
         for (std::list<int>::iterator it = server_socket_fds_l.begin(); it != server_socket_fds_l.end(); ++it)
         {
-            lg.log(DEBUG, "Checking fd " + lg.str(*it));
+            lg.log(DEBUG, "Checking server fd " + lg.str(*it));
             if (!FD_ISSET(*it, &read_fd_set))
                 continue;
             accept_new_conn(*it);
         }
 
         // Check Client FDs for READING
-        for (std::list<int>::iterator it = client_fds_l.begin(); it != client_fds_l.end(); ++it)
+        std::list<int> readingFds = getReadingFds();
+        for (std::list<int>::iterator it = readingFds.begin(); it != readingFds.end(); ++it)
         {
-            lg.log(DEBUG, "Checking fd " + lg.str(*it));
+            lg.log(DEBUG, "Checking reading fd " + lg.str(*it));
             if (!FD_ISSET(*it, &read_fd_set))
                 continue;
             do_read(it);
         }
-        // do writing???
+        std::list<int>::iterator it = writing_fds_l.begin();
+        while (it != writing_fds_l.end())
+        {
+            lg.log(DEBUG, "Checking writing fd " + lg.str(*it));
+            if (!FD_ISSET(*it, &write_fd_set))
+                continue;
+            do_write(*it);
+            it = writing_fds_l.erase(it);
+        }
     }
-}
-
-void Server::handle_client_disconnect(std::list<int>::iterator &fd_itr)
-{
-    close(*fd_itr);
-    lg.log(DEBUG, "Removing fd " + lg.str(*fd_itr) + " from the list. ");
-    fd_itr = client_fds_l.erase(fd_itr);
-    lg.log(DEBUG, "New list: " + cout_list(client_fds_l));
+    // lg.log(DEBUG, "Done select");
 }
 
 void Server::do_send()
 {
-    for (std::list<int>::iterator it = client_fds_l.begin(); it != client_fds_l.end(); ++it)
+    std::list<int> readingFds = getReadingFds();
+    for (std::list<int>::iterator it = readingFds.begin(); it != readingFds.end(); ++it)
     {
         // Check if any requests are fully read and process them
         // Should be independent of the return value of select but consider the last state of the read set
@@ -391,18 +409,19 @@ void Server::do_send()
             lg.log(DEBUG, "Processing request from " + lg.str(*it) + ". Request:\n" + requests[*it]);
             responces[*it] = Request(*this, *it, requests[*it]).process(); // <<<<<<<<<<<<< REQUEST <<<<<<<<<<<<<<<<
             lg.log(DEBUG, "DONE processing request from " + lg.str(*it) + ". Rescponce:\n" + responces[*it]);
+            writing_fds_l.push_back(*it);
             requests[*it] = "";
         }
-        // Check if any responces are ready to be sent
-        if (FD_ISSET(*it, &write_fd_set) && responces[*it].size() > 0)
-        {
-            lg.log(DEBUG, "Sending responce for " + lg.str(*it));
-            send(*it, responces[*it].c_str(), responces[*it].size(), 0); // Maybe responce has to be sent in pieces
-            set_last_time(*it);
-            lg.log(INFO, "Sent " + lg.str((int)responces[*it].size()) + " bytes for client " + lg.str(*it));
-            responces[*it] = "";
-        }
     }
+}
+
+void Server::do_write(int fd)
+{
+    lg.log(DEBUG, "Sending responce for " + lg.str(fd));
+    send(fd, responces[fd].c_str(), responces[fd].size(), 0); // Maybe responce has to be sent in pieces
+    set_last_time(fd);
+    lg.log(INFO, "Sent " + lg.str((int)responces[fd].size()) + " bytes for client " + lg.str(fd));
+    responces[fd] = "";
 }
 
 void Server::displayServer() const
@@ -440,3 +459,17 @@ void Server::displayVirtServerRefs() const
         std::cout << std::endl;
     }
 }
+
+void Server::addToWriting(int value) {
+    // clients_fds_l.remove(value);
+    writing_fds_l.push_back(value);
+}
+
+void Server::rmFromWriting(int value) {
+    // clients_fds_l.remove(value);
+    writing_fds_l.remove(value);
+}
+
+std::list<int> Server::getReadingFds() {
+        return deductLists(client_fds_l, writing_fds_l);
+    }

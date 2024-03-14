@@ -3,10 +3,11 @@
 Request::Request(const Server &server, int fd, const std::string &request) : server(server), fd(fd), request(request)
 {
     parse();
+    print_request();
 
     // Find the Virtual Host - by default the first one
     VirtServIt = findHost();
-    server.lg.log(DEBUG,"Request: Domain: " + domain);
+    server.lg.log(DEBUG, "Request: Domain: " + domain);
 
     // Find the Location by route - if no route matches - the end of the vector returned
     LocationIt = findRoute();
@@ -35,7 +36,26 @@ Request::Request(const Server &server, int fd, const std::string &request) : ser
         checkForGET();
         return;
     }
-    server.lg.log(DEBUG, "Request: constructor DONE only for GET");
+    else if (method == MethodPOST)
+    {
+        if (isDirHasWritePermission((*LocationIt).getUploadDir())) {
+            if (isCgiExtention(extractExtension(extractFileName(getPath())))) {
+                statusCode = StatusCodeCGI;
+                server.lg.log(DEBUG, "Request: reg file. set Status CGI");
+                return;
+            }
+            server.lg.log(DEBUG, "Request: set Status POST"); // = file does not exist
+            statusCode = StatusCodePOST;
+            return;
+        }
+        else
+        {
+            server.lg.log(DEBUG, "Request: POST upload dir is bad - set 500"); // = file does not exist
+            statusCode = StatusCodePost500;
+            return;
+        }
+    }
+    server.lg.log(DEBUG, "Request: constructor DONE only for GET, POST");
     return;
 }
 
@@ -185,7 +205,7 @@ std::string Request::process_get403()
 
 std::string Request::process_get404()
 {
-    return "under construction process_get404";
+    return "HTTP/1.1 404 OK\r\nContent-Length: 0\r\n\r\n";
 }
 
 std::string Request::process_get405()
@@ -198,6 +218,32 @@ std::string Request::process_get500()
     return "under construction process_get500";
 }
 
+std::string Request::process_post500()
+{
+    return "under construction process_post500";
+}
+
+std::string Request::process_cgi500()
+{
+    return "HTTP/1.1 500 Failed (CGI)\r\nContent-Length: 0\r\n\r\n";
+}
+
+std::string Request::process_POST()
+{
+    std::string upload_path = appendIfNotEndsWith((*LocationIt).getUploadDir(), '/');
+    server.lg.log(DEBUG, "Request: upload_path: " + upload_path);
+    std::string file_name = getDifference((*LocationIt).getRoute(), url);
+    if (file_name == "" || file_name == "/") {
+        server.lg.log(DEBUG, "Request: no name submitted. Generateing name...");
+        file_name = "upload_" + generateTimeStamp();
+    }
+    server.lg.log(DEBUG, "Request: file_name: " + file_name);
+    std::string filepath = upload_path + file_name;
+    writeStringToBinaryFile(body, filepath);
+    return "HTTP/1.1 201 \r\nOK\r\n\r\n";
+    // todo: the rest of the post responce
+}
+
 std::string Request::process()
 {
     std::string res;
@@ -208,8 +254,12 @@ std::string Request::process()
     if (statusCode == StatusCode404) res = process_get404();
     if (statusCode == StatusCode405) res = process_get405();
     if (statusCode == StatusCode500) res = process_get500();
+    if (statusCode == StatusCodePOST) res = process_POST();
+    if (statusCode == StatusCodePost500) res = process_post500();
+    if (statusCode == StatusCodeCGI) res = process_CGI();
     return res;
 }
+
 
 
 void Request::parse_first_line()
@@ -222,12 +272,18 @@ void Request::parse_first_line()
     method = resolveMethod(word);
 
     iss >> word;
-    url = word; ////////////////////////////// need a url handler?????????????????????????????????????????????????
+    url = word;
+    size_t queryStart = url.find('?');
+    if (queryStart != std::string::npos) {
+        queryString = url.substr(queryStart + 1);
+        url = url.substr(0, queryStart);
+    }
+
     iss >> word;
     httpVersion = resolveHTTPVersion(word);
 }
 
-void Request::parse_header(const std::string& line)
+void Request::parse_header(const std::string &line)
 {
     std::stringstream lineStream(line);
     std::string key;
@@ -284,9 +340,10 @@ void Request::print_request()
     ss << "url: " << url << std::endl;
     ss << "httpVersion: " << httpVersion << std::endl;
     print_headers(ss);
-    ss << "body: " << body << std::endl;
-    server.lg.log(DEBUG, "Request:\n" + ss.str());
-
+    ss << "============== body: ==============\n"
+       << body << std::endl;
+    server.lg.log(DEBUG, "Prining parsed request:\n" + ss.str());
+    server.lg.log(DEBUG, "\n============== DONE prining rarsed request ==============\n");
     // printServer();
 }
 
@@ -315,6 +372,10 @@ std::string Request::getRequestHostHeader() const
 {
     // the first and HOPEFULLY the only header of the request
     const std::vector<std::string> hostVals = getHeaderVals("host");
+    if (hostVals == notFoundStrVec) {
+        server.lg.log(ERROR, "Could not find host header.");
+        return "";
+    }
     std::stringstream hostVal(*hostVals.begin());
     server.lg.log(DEBUG, "Request: request header found: " + hostVal.str());
     std::string domain;
@@ -333,21 +394,24 @@ const vsIt Request::findHost()
 
     std::string headerDomain = getRequestHostHeader();
 
-    // loop over the VServers and again over their names
-    std::vector<vsIt>::const_iterator vs_it;
-    for (vs_it = vs_vec.begin(); vs_it != vs_vec.end(); ++vs_it)
+    if (headerDomain.length() > 0)
     {
-        const vsIt server_iter = *vs_it;
-        const std::vector<std::string> names = (*server_iter).getServerNames();
-        std::vector<std::string>::const_iterator name_it;
-        for (name_it = names.begin(); name_it != names.end(); ++name_it)
+    // loop over the VServers and again over their names
+        std::vector<vsIt>::const_iterator vs_it;
+        for (vs_it = vs_vec.begin(); vs_it != vs_vec.end(); ++vs_it)
         {
-            server.lg.log(DEBUG, "Request: checking domain: " + *name_it);
-            if (toLower(*name_it) == toLower(headerDomain))
+            const vsIt server_iter = *vs_it;
+            const std::vector<std::string> names = (*server_iter).getServerNames();
+            std::vector<std::string>::const_iterator name_it;
+            for (name_it = names.begin(); name_it != names.end(); ++name_it)
             {
-                domain = headerDomain;
-                server.lg.log(DEBUG, "Request: domain found: " + headerDomain);
-                return server_iter;
+                server.lg.log(DEBUG, "Request: checking domain: " + *name_it);
+                if (toLower(*name_it) == toLower(headerDomain))
+                {
+                    domain = headerDomain;
+                    server.lg.log(DEBUG, "Request: domain found: " + headerDomain);
+                    return server_iter;
+                }
             }
         }
     }
@@ -488,8 +552,14 @@ bool Request::checkForGET()
     }
     else if (S_ISREG(st.st_mode))
     {
-        statusCode = StatusCode200;
-        server.lg.log(DEBUG, "Request: reg file. set Status 200");
+        if (isCgiExtention(extractExtension(extractFileName(path)))) {
+            statusCode = StatusCodeCGI;
+            server.lg.log(DEBUG, "Request: reg file. set Status CGI");
+        }
+        else {
+            statusCode = StatusCode200;
+            server.lg.log(DEBUG, "Request: reg file. set Status 200");
+        }
         return true;
     }
     else
