@@ -372,6 +372,10 @@ std::string Request::getRequestHostHeader() const
 {
     // the first and HOPEFULLY the only header of the request
     const std::vector<std::string> hostVals = getHeaderVals("host");
+    if (hostVals == notFoundStrVec) {
+        server.lg.log(ERROR, "Could not find host header.");
+        return "";
+    }
     std::stringstream hostVal(*hostVals.begin());
     server.lg.log(DEBUG, "Request: request header found: " + hostVal.str());
     std::string domain;
@@ -390,21 +394,24 @@ const vsIt Request::findHost()
 
     std::string headerDomain = getRequestHostHeader();
 
-    // loop over the VServers and again over their names
-    std::vector<vsIt>::const_iterator vs_it;
-    for (vs_it = vs_vec.begin(); vs_it != vs_vec.end(); ++vs_it)
+    if (headerDomain.length() > 0)
     {
-        const vsIt server_iter = *vs_it;
-        const std::vector<std::string> names = (*server_iter).getServerNames();
-        std::vector<std::string>::const_iterator name_it;
-        for (name_it = names.begin(); name_it != names.end(); ++name_it)
+    // loop over the VServers and again over their names
+        std::vector<vsIt>::const_iterator vs_it;
+        for (vs_it = vs_vec.begin(); vs_it != vs_vec.end(); ++vs_it)
         {
-            server.lg.log(DEBUG, "Request: checking domain: " + *name_it);
-            if (toLower(*name_it) == toLower(headerDomain))
+            const vsIt server_iter = *vs_it;
+            const std::vector<std::string> names = (*server_iter).getServerNames();
+            std::vector<std::string>::const_iterator name_it;
+            for (name_it = names.begin(); name_it != names.end(); ++name_it)
             {
-                domain = headerDomain;
-                server.lg.log(DEBUG, "Request: domain found: " + headerDomain);
-                return server_iter;
+                server.lg.log(DEBUG, "Request: checking domain: " + *name_it);
+                if (toLower(*name_it) == toLower(headerDomain))
+                {
+                    domain = headerDomain;
+                    server.lg.log(DEBUG, "Request: domain found: " + headerDomain);
+                    return server_iter;
+                }
             }
         }
     }
