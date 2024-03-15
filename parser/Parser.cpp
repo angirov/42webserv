@@ -170,7 +170,7 @@ bool Parser::hasSyntaxErrors() {
 		return true;
 	}
 	bool syntaxErrors =
-			hasMissingSemicolons() ||
+			// hasMissingSemicolons() ||
 			hasWrongGlobalSettings(file) ||
 			hasInvalidPorts() ||
 			hasDuplicateServerNames() ||
