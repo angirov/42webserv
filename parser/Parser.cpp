@@ -131,6 +131,38 @@ bool Parser::hasInvalidPorts() const {
 	return false;
 }
 
+bool Parser::hasDuplicateServerNames() const {
+	std::map<std::string, int> serverNamesCount;
+
+	std::ifstream file(filename.c_str());
+
+	std::string line;
+	while (std::getline(file, line)) {
+		size_t colonPos = line.find(':');
+		if (colonPos != std::string::npos) {
+			std::string key = trim(line.substr(0, colonPos));
+			if (key == "server_name") {
+				std::string value = trim(line.substr(colonPos + 1));
+				std::istringstream iss(value);
+				std::string serverName;
+				while (std::getline(iss, serverName, ',')) {
+					serverNamesCount[trim(serverName)]++;
+				}
+			}
+		}
+	}
+	file.close();
+
+	for (std::map<std::string, int>::const_iterator it = serverNamesCount.begin(); it != serverNamesCount.end(); ++it) {
+		if (it->second > 1) {
+			std::cerr << "Syntax Error: Duplicate server name found: " << it->first << std::endl;
+			return true;
+		}
+	}
+	return false;
+}
+
+
 bool Parser::hasSyntaxErrors() {
 	std::ifstream file(filename.c_str());
 	if (!file.is_open()) {
@@ -141,6 +173,7 @@ bool Parser::hasSyntaxErrors() {
 			hasMissingSemicolons() ||
 			hasWrongGlobalSettings(file) ||
 			hasInvalidPorts() ||
+			hasDuplicateServerNames() ||
 			hasDuplicateGlobalSettings() ||
 			hasIncorrectServerBlocks(file);
 	// std::cout << "Finished checking server settings" << std::endl;

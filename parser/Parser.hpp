@@ -30,6 +30,7 @@ private:
 	bool hasDuplicateGlobalSettings() const;
 	bool hasMissingSemicolons() const;
 	bool hasInvalidPorts() const;
+	bool hasDuplicateServerNames() const;
 	static bool hasWrongGlobalSettings(std::ifstream& file);
 	static bool hasIncorrectServerBlocks(std::ifstream& file);
 
