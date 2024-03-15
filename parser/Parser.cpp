@@ -10,16 +10,6 @@ std::string Parser::trim(const std::string& str) {
 	return str.substr(start, end - start + 1);
 }
 
-// Helper function isNumeric
-bool Parser::isNumeric(const std::string& str) {
-	for (size_t i = 0; i < str.length(); ++i) {
-		if (!isdigit(str[i])) {
-			return false;
-		}
-	}
-	return true;
-}
-
 bool Parser::hasDuplicateGlobalSettings() const {
 	std::ifstream file(filename.c_str());
 
@@ -45,25 +35,6 @@ bool Parser::hasDuplicateGlobalSettings() const {
 			}
 		}
 	}
-	file.close();
-	return false;
-}
-
-bool Parser::hasMissingSemicolons() const {
-	std::ifstream file(filename.c_str());
-
-	std::string line;
-	while (std::getline(file, line)) {
-		size_t colonPos = line.find(':');
-		if (colonPos != std::string::npos) {
-			if (line[line.size() - 1] != ';') {
-				std::cerr << "Syntax Error: Missing semicolon at the end of line: " << line << std::endl;
-				file.close();
-				return true;
-			}
-		}
-	}
-
 	file.close();
 	return false;
 }
@@ -162,7 +133,6 @@ bool Parser::hasDuplicateServerNames() const {
 	return false;
 }
 
-
 bool Parser::hasSyntaxErrors() {
 	std::ifstream file(filename.c_str());
 	if (!file.is_open()) {
@@ -170,7 +140,6 @@ bool Parser::hasSyntaxErrors() {
 		return true;
 	}
 	bool syntaxErrors =
-			// hasMissingSemicolons() ||
 			hasWrongGlobalSettings(file) ||
 			hasInvalidPorts() ||
 			hasDuplicateServerNames() ||
@@ -221,24 +190,24 @@ bool Parser::hasWrongGlobalSettings(std::ifstream& file) {
 					std::cerr << "Syntax Error: Unknown global setting found in line: " << line << ", key: " << key << std::endl;
 					return true;
 				}
-
 				// Extract the value part of the key-value pair
 				std::string value = trimmedLine.substr(colonPos + 1);
-
-				// Trim the value if it ends with a semicolon
-				if (!value.empty() && value[value.size() - 1] == ';') {
-					value = trim(value.substr(0, value.size() - 1)); // Remove the semicolon before trimming
-				}
-
-				// Check if the value is numerical
-				if (!value.empty() && !isNumeric(value)) {
-					std::cerr << "Syntax Error: Invalid value for " << key << ": " << value << ". Value must be numerical." << std::endl;
+				int numericValue;
+				sscanf(value.c_str(), "%d", &numericValue);
+				// Validate the numeric value based on the setting
+				if (key == "timeout" && (numericValue < 0 || numericValue > 60)) {
+					std::cerr << "Syntax Error: Timeout value out of range in line: " << line << std::endl;
+					return true;
+				} else if (key == "max_clients" && (numericValue < 0 || numericValue > 1000)) {
+					std::cerr << "Syntax Error: Max clients value out of range in line: " << line << std::endl;
+					return true;
+				} else if (key == "client_max_body_size" && (numericValue < 0 || numericValue > 1000000)) {
+					std::cerr << "Syntax Error: Client max body size value out of range in line: " << line << std::endl;
 					return true;
 				}
 			}
 		}
 	}
-
 	return false;
 }
 
@@ -343,7 +312,6 @@ bool Parser::parseServerBlock(Config& config, std::ifstream& file) {
 				std::cerr << "Error: Missing Port in server block" << std::endl;
 				return false;
 			}
-
 			virtServer.setPort(port);
 			virtServer.setServerNames(serverNames);
 			for (std::map<int, std::string>::const_iterator it = errorPages.begin(); it != errorPages.end(); ++it) {
@@ -361,7 +329,6 @@ bool Parser::parseServerBlock(Config& config, std::ifstream& file) {
 				return false;
 			}
 		}
-
 		size_t colonPos = line.find(':');
 		if (colonPos != std::string::npos) {
 			std::string key = trim(line.substr(0, colonPos));
@@ -428,9 +395,6 @@ bool Parser::parseLocationBlock(VirtServer& virtServer, std::ifstream& file) {
 			} else if (key == "index") {
 				locationIndex = value;
 			} else if (key == "methods") {
-				if (!value.empty() && value[value.size() - 1] == ';') {
-					value.erase(value.size() - 1);
-				}
 				std::istringstream iss(value);
 				std::string method;
 				while (std::getline(iss, method, ',')) {
@@ -444,13 +408,8 @@ bool Parser::parseLocationBlock(VirtServer& virtServer, std::ifstream& file) {
 					std::string redirectUrl = value.substr(commaPos + 1);
 					returnRedir[errorCode] = redirectUrl;
 				}
-
 			} else if (key == "autoindex") {
 				// std::cout << "Key: " << key << ", Value: " << value << std::endl;
-				if (!value.empty() && value[value.size() - 1] == ';') {
-					value.erase(value.size() - 1);
-				}
-
 				if (value == "on") {
 					// std::cout << "Auto Index is ON" << std::endl;
 					autoIndex = true;
@@ -460,7 +419,6 @@ bool Parser::parseLocationBlock(VirtServer& virtServer, std::ifstream& file) {
 				} else {
 					std::cerr << "Invalid value for autoindex: " << value << std::endl;
 				}
-
 		} else if (key == "cgi") {
 				// Split the value by commas and add each CGI extension to the cgiExtensions vector
 				std::istringstream iss(value);

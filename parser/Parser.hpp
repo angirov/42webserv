@@ -22,13 +22,11 @@ public:
 	bool parseFile(Config& config);
 
 	static std::string trim(const std::string& str);
-	static bool isNumeric(const std::string& str);
 
 private:
 	std::string filename;
 
 	bool hasDuplicateGlobalSettings() const;
-	bool hasMissingSemicolons() const;
 	bool hasInvalidPorts() const;
 	bool hasDuplicateServerNames() const;
 	static bool hasWrongGlobalSettings(std::ifstream& file);
