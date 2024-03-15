@@ -4,6 +4,8 @@
 
 `docker-compose build --no-cache && docker-compose up --force-recreate -d`
 
+Try: `http://localhost:8000/colorful/index.html`
+
 https://www.manning.com/books/http2-in-action
 
 ### FreeCodeCamp: HTTP

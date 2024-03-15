@@ -4,12 +4,14 @@ services:
     webserv:
         container_name: webserv
         build:
-          context: .
+          context: ./srcs
         network_mode: "host"
+        environment:
+            - "WEBSERV_LOGLEVEL=DEBUG" 
         volumes:
         - type: bind
-          source: .
-          target: /webserv
+          source: ./data
+          target: /data
         # ports:
         #   - "7777:7777"
         #   - "8080:8080"
