@@ -5,7 +5,7 @@ int main(int argc, char* argv[]) {
 	if (argc == 2) {
 		configFile = argv[1];
 	} else {
-		configFile = "../conf/default.conf"; // Default configuration file path
+		configFile = "/Configs/default.conf"; // Default configuration file path
 	}
 
 	Config config; // Create a Config object
