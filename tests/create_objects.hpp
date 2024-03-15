@@ -34,7 +34,7 @@ void createObjects(Config &config)
 	location0.setUploadDir("/webserv/data/root0/path0/files/");
 	location0.addReturnRedir(300, "redirect0.html");
 	
-	Location location1("/path1/", TRUE_ROOT + "/root1/", "index1.html");
+	Location location1("/colorful/", TRUE_ROOT + "/root1/", "index1.html");
 
 	location1.setAutoIndex(true);
 	location1.addMethod("GET");
