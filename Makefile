@@ -1,7 +1,7 @@
 COMPILER = g++
 CFLAGS = -Wall -Werror -Wextra -std=c++98
 TESTFLAGS = -Wall -Werror -Wextra
-SRCS	:=	main.cpp Server.cpp Request.cpp RequestCGI.cpp Logger.cpp utils.cpp conf/ConfigClass.cpp
+SRCS	:=	main.cpp parser/Parser.cpp Server.cpp Request.cpp RequestCGI.cpp Logger.cpp utils.cpp conf/ConfigClass.cpp
 SRCS_TEST	:=	test_main.cpp Server.cpp Request.cpp RequestCGI.cpp Logger.cpp utils.cpp conf/ConfigClass.cpp
 
 all: client server

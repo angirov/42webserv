@@ -1,9 +1,10 @@
 #include "Server.hpp"
 #include "Logger.hpp"
 #include "conf/ConfigClass.hpp"
+#include "parser/Parser.hpp"
 #include <filesystem>
 
-#include "tests/create_objects.hpp"
+// #include "tests/create_objects.hpp"
 
 std::list<int> argv2ports(int argc, char **argv)
 {
@@ -45,14 +46,28 @@ int test_logger()
 
 int main(int argc, char **argv)
 {
-    if (argc != 1)
-    {
-        fprintf(stderr, "usage: %s\n", argv[0]);
-        exit(0);
-    }
+	std::string configFile;
+	if (argc == 2) {
+		configFile = argv[1];
+	} else {
+		configFile = "parser/Configs/default.conf"; // Default configuration file path
+	}
 
-    Config config;
-    createObjects(config);
+	Config config; // Create a Config object
+	Parser parser(configFile); // Create a Parser object with the filename
+
+	// Perform syntax check
+	if (parser.hasSyntaxErrors()) {
+		std::cerr << "Error: Syntax errors found in config file" << std::endl;
+		return 1;
+	}
+
+	// Parse the config file
+	if (!parser.parseFile(config)) {
+		std::cerr << "Error: Failed to parse config file" << std::endl;
+		return 1;
+	}
+
     Server server(config);
     server.displayServer();
 
