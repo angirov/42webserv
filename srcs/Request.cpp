@@ -249,7 +249,7 @@ std::string Request::process_POST()
     server.lg.log(DEBUG, "Request: file_name: " + file_name);
     std::string filepath = upload_path + file_name;
     writeStringToBinaryFile(body, filepath);
-    return "HTTP/1.1 201 OK\r\n\r\n";
+    return "HTTP/1.1 201 OK\r\nContent-Length: 0\r\n\r\n";
     // todo: the rest of the post responce
 }
 
