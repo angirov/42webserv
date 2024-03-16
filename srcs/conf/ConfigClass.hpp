@@ -103,13 +103,18 @@ public:
 	void setUploadDir(const std::string &uploadDir);
 	const std::string & getUploadDir() const;
 
-	void setReturnRedir(int errorCode, const std::string &redirectUrl);
-	const std::string& getReturnRedir(int errorCode) const;
+	void setReturnURL(const std::string &returnUrl);
+	const std::string & getReturnURL() const;
+
+	void setReturnCode(const std::string &returnCode);
+	const std::string & getReturnCode() const;
+
 
 	void display() const;
 
 private:
-	std::map<int, std::string> _returnRedir;
+	std::string _returnURL; // url _returnRedir : return URL and Code
+	std::string _returnCode; // 3XX -> 300 - 307
 	std::string _route;
 	std::string _locationRoot;
 	std::string _locationIndex;

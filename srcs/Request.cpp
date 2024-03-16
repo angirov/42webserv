@@ -31,6 +31,7 @@ Request::Request(const Server &server, int fd, const std::string &request) : ser
         return;
     }
 	// TODO: CHECK IF REDIR is set for route, if NOT set response code to 3XX (_redirCode string from Configclass)
+	// if strings !empty statusCode 3XX + return
     if (method == MethodGET)
     {
         checkForGET();
@@ -202,32 +203,32 @@ std::string Request::process_get301dir()
 
 std::string Request::process_get301()
 {
-    return "under construction process_get301";
+    return "HTTP/1.1 301 MOVED PERMANENTLY\r\nContent-Length: 0\r\n\r\n";
 }
 
 std::string Request::process_get403()
 {
-    return "under construction process_get403";
+    return "HTTP/1.1 403 FORBIDDEN\r\nContent-Length: 0\r\n\r\n";
 }
 
 std::string Request::process_get404()
 {
-    return "HTTP/1.1 404 OK\r\nContent-Length: 0\r\n\r\n";
+    return "HTTP/1.1 404 NOT FOUND\r\nContent-Length: 0\r\n\r\n";
 }
 
 std::string Request::process_get405()
 {
-    return "under construction process_get405";
+    return "HTTP/1.1 405 METHOD NOT ALLOWED\r\nContent-Length: 0\r\n\r\n";
 }
 
 std::string Request::process_get500()
 {
-    return "under construction process_get500";
+    return "HTTP/1.1 500 INTERNAL SERVER ERROR\r\nContent-Length: 0\r\n\r\n";
 }
 
 std::string Request::process_post500()
 {
-    return "under construction process_post500";
+    return "HTTP/1.1 500 INTERNAL SERVER ERROR\r\nContent-Length: 0\r\n\r\n";
 }
 
 std::string Request::process_cgi500()
