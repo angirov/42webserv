@@ -46,6 +46,7 @@ enum StatusCode
     StatusCode405,
     StatusCode500,
     StatusCodePOST,
+    StatusCodeDELETE,
     StatusCodePost500,
     StatusCodeCGI
 };
@@ -75,6 +76,7 @@ void truncateIfEndsWith(std::string& str, char c);
 bool url_match_root(std::string str, std::string pattern);
 bool isValidDirectory(const std::string& path);
 bool hasReadPermission(const std::string& path);
+bool hasWritePermission(const std::string& path);
 bool isDirHasWritePermission(const std::string& path);
 std::string extractFileName(const std::string& fullPath);
 std::string extractExtension(const std::string& fileName);
