@@ -137,25 +137,49 @@ std::string Request::process_CGI()
     close(fdIn);
 
 
-    wait(NULL);
-    // int status, rc;
-    // int times = 0;
-    // int max_times = 10;
-    // while (times < max_times) {
-    //     server.lg.log(DEBUG, "Request: CGI waiting for the child ... " + server.lg.str(times) + " ...");
-    //     usleep(100000); /* sleep 0.1 seconds */
-    //     rc = waitpid(-1, &status, WNOHANG);
-    //     if (rc < 0) {
-    //         perror("waitpid");
-    //         return "";
-    //     }
-    //     if (WIFEXITED(status) || WIFSIGNALED(status)) {
-    //         /* it's done */
-    //         break;
-    //     }
-    //     times++;
-    // }
+    // wait(NULL);
+    int status, rc;
+    int times = 1;
+    int max_times = 7; // = 0.5 sec
+    int toWait = 0;
+    int waited = 0;
+    while (times < max_times) {
+        server.lg.log(DEBUG, "Request: CGI waitingc for the child ,,, " + server.lg.str(times) + " ...");
+        toWait = pow(10, times);
+        usleep(toWait); /* sleep 0.1 seconds */
+        waited += toWait;
+        rc = waitpid(-1, &status, WNOHANG);
+        if (rc == 0) {
+            times++;
+            continue;
+        }
+        else if (rc < 0) {
+            perror("waitpid");
+            return "";
+        } else {
+            // Child process terminated
+            server.lg.log(DEBUG, "Request: CGI waiting rc: " + server.lg.str(rc));
+            std::stringstream ss;
+            ss << WEXITSTATUS(status);
+            if (WIFEXITED(status)) {
+                server.lg.log(DEBUG, "Request: CGI: Child process exited with status: " + ss.str());
+            } else {
+                server.lg.log(DEBUG, "Request: CGI: Child process exited abnormally.");
+            }
 
+            break;
+        }
+    }
+
+    server.lg.log(DEBUG, "Request: CGI: times: " + server.lg.str(times));
+    server.lg.log(DEBUG, "Request: CGI: Waited " + server.lg.str(waited / 1000) + " ms.");
+
+    if (times == max_times) {
+        server.lg.log(DEBUG, "Request: CGI: Child process timed out.");
+        kill(id, SIGTERM);
+        wait(NULL);
+        return process_cgi500();
+    }
 
     char buff[CGI_BUFF_SIZE];
     std::string cgi_res;
