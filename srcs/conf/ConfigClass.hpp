@@ -103,8 +103,12 @@ public:
 	void setUploadDir(const std::string &uploadDir);
 	const std::string & getUploadDir() const;
 
-	void setReturnRedir(int errorCode, const std::string &redirectUrl);
-	const std::string& getReturnRedir(int errorCode) const;
+	void setReturnURL(const std::string &returnUrl);
+	const std::string & getReturnURL() const;
+
+	void setReturnCode(const std::string &returnCode);
+	const std::string & getReturnCode() const;
+
 
 	void display() const;
 
