@@ -30,7 +30,7 @@ Request::Request(const Server &server, int fd, const std::string &request) : ser
         statusCode = StatusCode405;
         return;
     }
-
+	// TODO: CHECK IF REDIR is set for route, if NOT set response code to 3XX (_redirCode string from Configclass)
     if (method == MethodGET)
     {
         checkForGET();
@@ -242,7 +242,7 @@ std::string Request::process_POST()
     server.lg.log(DEBUG, "Request: file_name: " + file_name);
     std::string filepath = upload_path + file_name;
     writeStringToBinaryFile(body, filepath);
-    return "HTTP/1.1 201 \r\nOK\r\n\r\n";
+    return "HTTP/1.1 201 OK\r\n\r\n";
     // todo: the rest of the post responce
 }
 
