@@ -125,11 +125,12 @@ Location::Location(const std::string &route, const std::string &locationRoot, co
 
 // Copy Constructor
 Location::Location(const Location &other) {
-	_returnRedir = other._returnRedir;
 	_route = other._route;
 	_locationRoot = other._locationRoot;
 	_locationIndex = other._locationIndex;
 	_methods = other._methods;
+	_returnCode = other._returnCode;
+	_returnURL = other._returnURL;
 	_cgiExtension = other._cgiExtension;
 	_uploadDir = other._uploadDir;
 	_autoIndex = other._autoIndex;
@@ -196,20 +197,20 @@ const std::string& Location::getUploadDir() const {
 	return _uploadDir;
 }
 
-// Setter function for adding redirect URL for a specific error code
-void Location::setReturnRedir(int errorCode, const std::string &redirectUrl) {
-	_returnRedir[errorCode] = redirectUrl;
+void Location::setReturnURL(const std::string &returnURL) {
+	_returnURL = returnURL;
 }
 
-// Getter function to retrieve redirect URL for a specific error code
-const std::string& Location::getReturnRedir(int errorCode) const {
-	std::map<int, std::string>::const_iterator it = _returnRedir.find(errorCode);
-	if (it != _returnRedir.end()) {
-		return it->second;
-	} else {
-		static const std::string emptyString = "";
-		return emptyString;
-	}
+const std::string& Location::getReturnURL() const {
+	return _returnURL;
+}
+
+void Location::setReturnCode(const std::string &returnCode) {
+	_returnCode = returnCode;
+}
+
+const std::string& Location::getReturnCode() const {
+	return _returnCode;
 }
 
 void VirtServer::display() const {
@@ -256,6 +257,8 @@ void Location::display() const {
 		}
 	}
 	std::cout << std::endl;
+	std::cout << "Redirection URL: " << getReturnURL() << std::endl;
+	std::cout << "Redirection Status Code: " << getReturnCode() << std::endl;
 	std::cout << "Auto Index: " << (getAutoIndex() ? "On" : "Off") << std::endl;
 	std::cout << "CGI Extensions: ";
 	const std::vector<std::string>& cgiExtensions = getCGIExtensions();
@@ -267,8 +270,5 @@ void Location::display() const {
 	}
 	std::cout << std::endl;
 	std::cout << "Upload Dir: " << getUploadDir() << std::endl;
-	std::map<int, std::string>::const_iterator errorRedirectIt = _returnRedir.begin();
-	for (; errorRedirectIt != _returnRedir.end(); ++errorRedirectIt) {
-		std::cout << errorRedirectIt->first << " Error Redirect: " << errorRedirectIt->second << std::endl;
-	}
+	std::cout << std::endl;
 }

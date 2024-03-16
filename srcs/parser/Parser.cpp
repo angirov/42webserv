@@ -364,7 +364,8 @@ bool Parser::parseLocationBlock(VirtServer& virtServer, std::ifstream& file) {
 	std::string locationRoot;
 	std::string locationIndex;
 	std::vector<std::string> methods;
-	std::map<int, std::string> returnRedir;
+	std::string returnURL;
+	std::string returnCode;
 	bool autoIndex = false;
 	std::vector<std::string> cgiExtensions;
 	std::string uploadDir;
@@ -401,13 +402,9 @@ bool Parser::parseLocationBlock(VirtServer& virtServer, std::ifstream& file) {
 					methods.push_back(trim(method));
 				}
 			} else if (key == "return") {
-				// Assuming format: errorCode, redirectUrl;
-				size_t commaPos = value.find(',');
-				if (commaPos != std::string::npos) {
-					int errorCode = atoi(value.substr(0, commaPos).c_str());
-					std::string redirectUrl = value.substr(commaPos + 1);
-					returnRedir[errorCode] = redirectUrl;
-				}
+				returnURL = value;
+			} else if (key == "returnCode") {
+				returnCode = value;
 			} else if (key == "autoindex") {
 				// std::cout << "Key: " << key << ", Value: " << value << std::endl;
 				if (value == "on") {
@@ -432,7 +429,16 @@ bool Parser::parseLocationBlock(VirtServer& virtServer, std::ifstream& file) {
 		}
 	}
 	// Check if any key-value pairs were parsed
-	if (route.empty() && locationRoot.empty() && locationIndex.empty() && methods.empty() && returnRedir.empty() && cgiExtensions.empty() && uploadDir.empty()) {
+	if (
+	route.empty() &&
+	locationRoot.empty() &&
+	locationIndex.empty() &&
+	methods.empty() &&
+	returnURL.empty() &&
+	returnCode.empty() &&
+	cgiExtensions.empty() &&
+	uploadDir.empty())
+	{
 		return false;
 	}
 
@@ -445,19 +451,16 @@ bool Parser::parseLocationBlock(VirtServer& virtServer, std::ifstream& file) {
 		std::cout << "Method: " << methods[i] << std::endl;
 		location.addMethod(methods[i]);
 	}
-	std::map<int, std::string>::const_iterator it;
-	for (it = returnRedir.begin(); it != returnRedir.end(); ++it) {
-		std::cout << "Return Code: " << it->first << ", Redirect URL: " << it->second << std::endl;
-		location.setReturnRedir(it->first, it->second);
-	}
+	std::cout << "Auto Index: " << (autoIndex ? "On" : "Off") << std::endl;
+	location.setAutoIndex(autoIndex);
+	std::cout << "returnURL: " << returnURL << std::endl;
+	std::cout << "returnCode: " << returnCode << std::endl;
 	for (size_t i = 0; i < cgiExtensions.size(); ++i) {
 		std::cout << "CGI Extension: " << cgiExtensions[i] << std::endl;
 		location.addCGIExtension(cgiExtensions[i]);
 	}
 	std::cout << "Upload Directory: " << uploadDir << std::endl;
 	location.setUploadDir(uploadDir);
-	std::cout << "Auto Index: " << (autoIndex ? "On" : "Off") << std::endl;
-	location.setAutoIndex(autoIndex);
 
 	// Add the filled Location object to the VirtServer
 	virtServer.addLocation(location);

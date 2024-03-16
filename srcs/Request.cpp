@@ -31,9 +31,15 @@ Request::Request(const Server &server, int fd, const std::string &request) : ser
         return;
     }
 	// TODO: CHECK IF REDIR is set for route, if NOT set response code to 3XX (_redirCode string from Configclass)
+	// if strings !empty statusCode 3XX + return
     if (method == MethodGET)
     {
         checkForGET();
+        return;
+    }
+    else if (method == MethodDELETE)
+    {
+        checkForDELETE();
         return;
     }
     else if (method == MethodPOST)
@@ -46,13 +52,13 @@ Request::Request(const Server &server, int fd, const std::string &request) : ser
                 server.lg.log(DEBUG, "Request: reg file. set Status CGI");
                 return;
             }
-            server.lg.log(DEBUG, "Request: set Status POST"); // = file does not exist
+            server.lg.log(DEBUG, "Request: set Status POST");
             statusCode = StatusCodePOST;
             return;
         }
         else
         {
-            server.lg.log(DEBUG, "Request: POST upload dir is bad - set 500"); // = file does not exist
+            server.lg.log(DEBUG, "Request: POST upload dir is bad - set 500");
             statusCode = StatusCodePost500;
             return;
         }
@@ -235,7 +241,8 @@ std::string Request::process_POST()
     std::string upload_path = appendIfNotEndsWith((*LocationIt).getUploadDir(), '/');
     server.lg.log(DEBUG, "Request: upload_path: " + upload_path);
     std::string file_name = getDifference((*LocationIt).getRoute(), url);
-    if (file_name == "" || file_name == "/") {
+    if (file_name == "" || file_name == "/")
+    {
         server.lg.log(DEBUG, "Request: no name submitted. Generateing name...");
         file_name = "upload_" + generateTimeStamp();
     }
@@ -243,6 +250,25 @@ std::string Request::process_POST()
     std::string filepath = upload_path + file_name;
     writeStringToBinaryFile(body, filepath);
     return "HTTP/1.1 201 OK\r\n\r\n";
+    // todo: the rest of the post responce
+}
+
+std::string Request::process_DELETE()
+{
+    std::string filename = getPath();
+
+    // Attempt to delete the file
+    if (std::remove(filename.c_str()) != 0)
+    {
+        server.lg.log(ERROR, "Error deleting file");
+        return "HTTP/1.1 500 Internal Server Error\r\n\r\n";
+    }
+    else
+    {
+        server.lg.log(INFO, "File successfully deleted");
+    }
+
+    return "HTTP/1.1 204 No Content\r\n\r\n";
     // todo: the rest of the post responce
 }
 
@@ -259,10 +285,9 @@ std::string Request::process()
     if (statusCode == StatusCodePOST) res = process_POST();
     if (statusCode == StatusCodePost500) res = process_post500();
     if (statusCode == StatusCodeCGI) res = process_CGI();
+    if (statusCode == StatusCodeDELETE) res = process_DELETE();
     return res;
 }
-
-
 
 void Request::parse_first_line()
 {
@@ -517,7 +542,7 @@ bool Request::checkForGET()
     {
         server.lg.log(DEBUG, "Request: Error accessing path (does NOT exist?): " + std::string(strerror(errno))); // = file does not exist
         statusCode = StatusCode404;
-        server.lg.log(DEBUG, "Request: set Status 404"); // = file does not exist
+        server.lg.log(DEBUG, "Request: set Status 404");
         return false;
     }
 
@@ -562,6 +587,50 @@ bool Request::checkForGET()
             statusCode = StatusCode200;
             server.lg.log(DEBUG, "Request: reg file. set Status 200");
         }
+        return true;
+    }
+    else
+    {
+        statusCode = StatusCode404;
+        server.lg.log(DEBUG, "Request: path is NEITHER reg file or dir. set Status 404");
+        return false;
+    }
+}
+
+bool Request::checkForDELETE()
+{
+    std::string path = getPath();
+    if (path.length() == 0)
+        return false;
+    server.lg.log(DEBUG, "Request: DELETE: resourceAvailable: checking path: " + path);
+
+    struct stat st = {};
+    if (stat(path.c_str(), &st) != 0)
+    {
+        server.lg.log(DEBUG, "Request: DELETE: Error accessing path (does NOT exist?): " + std::string(strerror(errno))); // = file does not exist
+        statusCode = StatusCode404;
+        server.lg.log(DEBUG, "Request: set Status 404");
+        return false;
+    }
+
+    if (S_ISDIR(st.st_mode))
+    {
+        statusCode = StatusCode500;
+        server.lg.log(DEBUG, "Request: DELETE: is directory. set Status 500");
+        return false;
+    }
+
+    if (!hasWritePermission(path))
+    {
+        statusCode = StatusCode500;
+        server.lg.log(DEBUG, "Request: DELETE: Cannot write existing file. set Status 500");
+        return false;
+    }
+
+    if (S_ISREG(st.st_mode))
+    {
+        server.lg.log(DEBUG, "Request: set Status DELETE");
+        statusCode = StatusCodeDELETE;
         return true;
     }
     else
