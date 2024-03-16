@@ -30,7 +30,7 @@ Request::Request(const Server &server, int fd, const std::string &request) : ser
         statusCode = StatusCode405;
         return;
     }
-
+	// TODO: CHECK IF REDIR is set for route, if NOT set response code to 3XX (_redirCode string from Configclass)
     if (method == MethodGET)
     {
         checkForGET();
