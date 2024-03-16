@@ -198,7 +198,7 @@ std::string generateTimeStamp()
 
 std::string appendIfNotEndsWith(const std::string &str, char c)
 {
-    if (str.empty() && str[str.length() - 1] != c)
+    if (str.empty() || str[str.length()] != c)
     {
         return str + c;
     }

@@ -38,7 +38,9 @@ Request::Request(const Server &server, int fd, const std::string &request) : ser
     }
     else if (method == MethodPOST)
     {
-        if (isDirHasWritePermission((*LocationIt).getUploadDir())) {
+        std::string uploadDir = (*LocationIt).getUploadDir();
+        server.lg.log(DEBUG, "Request: checking uploaddir: " + uploadDir);
+        if (isDirHasWritePermission(uploadDir)) {
             if (isCgiExtention(extractExtension(extractFileName(getPath())))) {
                 statusCode = StatusCodeCGI;
                 server.lg.log(DEBUG, "Request: reg file. set Status CGI");
