@@ -98,6 +98,15 @@ bool hasReadPermission(const std::string& path) {
     }
 }
 
+bool hasWritePermission(const std::string& path) {
+    if (access(path.c_str(), W_OK) == 0) {
+        return true; // Read permission is granted
+    } else {
+        std::cerr << "Error accessing path: " << strerror(errno) << std::endl;
+        return false; // Read permission is not granted or an error occurred
+    }
+}
+
 bool isDirHasWritePermission(const std::string& path) {
     struct stat info;
     if (stat(path.c_str(), &info) != 0) {

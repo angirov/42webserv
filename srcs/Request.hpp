@@ -62,6 +62,7 @@ public:
     locIt findRoute() const;
     bool methodOk() const;
     bool checkForGET();
+    bool checkForDELETE();
     std::string getRequestHostHeader() const;
     void print_headers(std::stringstream &ss);
     void print_request();
@@ -85,6 +86,7 @@ public:
     std::string process_get405();
     std::string process_get500();
     std::string process_POST();
+    std::string process_DELETE();
     std::string process_post500();
     std::string process_CGI();
     std::string process_cgi500();
