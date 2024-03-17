@@ -60,8 +60,8 @@ public:
 	void setServerNames(const std::vector<std::string> &serverNames);
 	const std::vector<std::string> & getServerNames() const;
 
-	void setErrorPage(int errorCode, const std::string &errorPage);
-	const std::string & getErrorPage(int errorCode) const;
+	void setErrorPage(const std::string &errorPage);
+	const std::string & getErrorPage() const;
 
 	void addLocation(const Location &location);
 	const std::vector<Location> & getLocations() const;
@@ -71,7 +71,7 @@ public:
 private:
 	int _port;
 	std::vector<std::string> _serverNames;
-	std::map<int, std::string> _errorPages;
+	std::string _errorPage;
 	std::vector<Location> locations;
 };
 
