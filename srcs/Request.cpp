@@ -1,24 +1,25 @@
 #include "Request.hpp"
 #include "utils.hpp"
 
-/*
-void Request::checkForRedirection() {
-	// Check if redirection is set for the route
-	const std::string& redirectionURL = (*LocationIt).getReturnURL();
-	int redirectionCode = (*LocationIt).getReturnCode();
-	if (!redirectionURL.empty() && redirectionCode >= 300 && redirectionCode <= 307) {
-		// Redirection is set, set response code to the stored integer value
-		server.lg.log(DEBUG, "Request: Redirection set for route: " + (*LocationIt).getRoute());
 
-		std::ostringstream oss;
-		oss << redirectionCode;
-		server.lg.log(DEBUG, "Request: Redirection status code: " + oss.str());
+bool Request::checkForRedirection() {
+    // Check if redirection is set for the route
+    const std::string& redirectionURL = (*LocationIt).getReturnURL();
+    int redirectionCode = (*LocationIt).getReturnCode();
+    if (!redirectionURL.empty() && redirectionCode >= 300 && redirectionCode <= 307) {
+        // Redirection is set, set response code to the stored integer value
+        server.lg.log(DEBUG, "Request: Redirection set for route: " + (*LocationIt).getRoute());
 
-		statusCode = static_cast<StatusCode>(redirectionCode);
-		return;
-	}
+        std::ostringstream oss;
+        oss << redirectionCode;
+        server.lg.log(DEBUG, "Request: Redirection status code: " + oss.str());
+
+        statusCode = static_cast<StatusCode>(redirectionCode);
+        return true; // Redirection is set
+    }
+    return false; // Redirection is not set
 }
-*/
+
 
 
 Request::Request(const Server &server, int fd, const std::string &request) : server(server), fd(fd), request(request)
@@ -42,22 +43,10 @@ Request::Request(const Server &server, int fd, const std::string &request) : ser
 		statusCode = StatusCode404;
 		return;
 	}
-
 	// Check if redirection is set for the route
-	const std::string& redirectionURL = (*LocationIt).getReturnURL();
-	int redirectionCode = (*LocationIt).getReturnCode();
-	if (!redirectionURL.empty() && redirectionCode >= 300 && redirectionCode <= 307) {
-		// Redirection is set, set response code to the stored integer value
-		server.lg.log(DEBUG, "Request: Redirection set for route: " + (*LocationIt).getRoute());
-
-		std::ostringstream oss;
-		oss << redirectionCode;
-		server.lg.log(DEBUG, "Request: Redirection status code: " + oss.str());
-
-		statusCode = static_cast<StatusCode>(redirectionCode);
+	if (checkForRedirection()) {
 		return;
 	}
-
 	if (methodOk())
 		server.lg.log(DEBUG, "Request: Method: " + toStr(method) + " allowed");
 	else
@@ -110,7 +99,7 @@ std::string Request::process_hard()
                                  "Transfer-Encoding: chunked\r\n"
                                  "\r\n";
     std::string res;
-    res += "RESPONCE: your request was:\n";
+    res += "RESPONSE: your request was:\n";
     res += "============================\n";
     res += request.str();
     res += "============================\n";
@@ -161,9 +150,6 @@ std::string Request::getMimeType(const std::string &extension)
         return "application/octet-stream";
     }
 }
-
-std::string extractFileName(const std::string &fullPath);
-std::string extractExtension(const std::string &fileName);
 
 std::string Request::process_get200()
 {
@@ -235,7 +221,7 @@ std::string Request::process_get301dir()
     return full_res;
 }
 
-std::string Request::process_redirection() {
+std::string Request::process_redirection() const {
 	std::string response;
 	switch (statusCode) {
 		case StatusCode300:
@@ -269,6 +255,7 @@ std::string Request::process_redirection() {
 	}
 	// Add Location header
 	response += "Location: " + (*LocationIt).getReturnURL() + "\r\n";
+	response += "Content-Type: text/html\r\n";
 	response += "Content-Length: 0\r\n";
 	response += "\r\n"; // End of headers
 	return response;
