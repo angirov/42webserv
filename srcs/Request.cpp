@@ -1,70 +1,104 @@
 #include "Request.hpp"
+#include "utils.hpp"
+
+/*
+void Request::checkForRedirection() {
+	// Check if redirection is set for the route
+	const std::string& redirectionURL = (*LocationIt).getReturnURL();
+	int redirectionCode = (*LocationIt).getReturnCode();
+	if (!redirectionURL.empty() && redirectionCode >= 300 && redirectionCode <= 307) {
+		// Redirection is set, set response code to the stored integer value
+		server.lg.log(DEBUG, "Request: Redirection set for route: " + (*LocationIt).getRoute());
+
+		std::ostringstream oss;
+		oss << redirectionCode;
+		server.lg.log(DEBUG, "Request: Redirection status code: " + oss.str());
+
+		statusCode = static_cast<StatusCode>(redirectionCode);
+		return;
+	}
+}
+*/
+
 
 Request::Request(const Server &server, int fd, const std::string &request) : server(server), fd(fd), request(request)
 {
-    parse();
-    print_request();
+	parse();
+	print_request();
 
-    // Find the Virtual Host - by default the first one
-    VirtServIt = findHost();
-    server.lg.log(DEBUG, "Request: Domain: " + domain);
+	// Find the Virtual Host - by default the first one
+	VirtServIt = findHost();
+	server.lg.log(DEBUG, "Request: Domain: " + domain);
 
-    // Find the Location by route - if no route matches - the end of the vector returned
-    LocationIt = findRoute();
-    if (LocationIt != (*VirtServIt).getLocations().end())
-    {
-        server.lg.log(DEBUG, "Request: Route found: " + (*LocationIt).getRoute());
-    }
-    else
-    {
-        server.lg.log(DEBUG, "Request: Route NOT found for url: " + url);
-        statusCode = StatusCode404;
-        return;
-    }
+	// Find the Location by route - if no route matches - the end of the vector returned
+	LocationIt = findRoute();
+	if (LocationIt != (*VirtServIt).getLocations().end())
+	{
+		server.lg.log(DEBUG, "Request: Route found: " + (*LocationIt).getRoute());
+	}
+	else
+	{
+		server.lg.log(DEBUG, "Request: Route NOT found for url: " + url);
+		statusCode = StatusCode404;
+		return;
+	}
 
-    if (methodOk())
-        server.lg.log(DEBUG, "Request: Method: " + toStr(method) + " allowed");
-    else
-    {
-        server.lg.log(DEBUG, "Request: Method: " + toStr(method) + " forbidden. set Status 405");
-        statusCode = StatusCode405;
-        return;
-    }
-	// TODO: CHECK IF REDIR is set for route, if NOT set response code to 3XX (_redirCode string from Configclass)
-	// if strings !empty statusCode 3XX + return
-    if (method == MethodGET)
-    {
-        checkForGET();
-        return;
-    }
-    else if (method == MethodDELETE)
-    {
-        checkForDELETE();
-        return;
-    }
-    else if (method == MethodPOST)
-    {
-        std::string uploadDir = (*LocationIt).getUploadDir();
-        server.lg.log(DEBUG, "Request: checking uploaddir: " + uploadDir);
-        if (isDirHasWritePermission(uploadDir)) {
-            if (isCgiExtention(extractExtension(extractFileName(getPath())))) {
-                statusCode = StatusCodeCGI;
-                server.lg.log(DEBUG, "Request: reg file. set Status CGI");
-                return;
-            }
-            server.lg.log(DEBUG, "Request: set Status POST");
-            statusCode = StatusCodePOST;
-            return;
-        }
-        else
-        {
-            server.lg.log(DEBUG, "Request: POST upload dir is bad - set 500");
-            statusCode = StatusCodePost500;
-            return;
-        }
-    }
-    server.lg.log(DEBUG, "Request: constructor DONE only for GET, POST");
-    return;
+	// Check if redirection is set for the route
+	const std::string& redirectionURL = (*LocationIt).getReturnURL();
+	int redirectionCode = (*LocationIt).getReturnCode();
+	if (!redirectionURL.empty() && redirectionCode >= 300 && redirectionCode <= 307) {
+		// Redirection is set, set response code to the stored integer value
+		server.lg.log(DEBUG, "Request: Redirection set for route: " + (*LocationIt).getRoute());
+
+		std::ostringstream oss;
+		oss << redirectionCode;
+		server.lg.log(DEBUG, "Request: Redirection status code: " + oss.str());
+
+		statusCode = static_cast<StatusCode>(redirectionCode);
+		return;
+	}
+
+	if (methodOk())
+		server.lg.log(DEBUG, "Request: Method: " + toStr(method) + " allowed");
+	else
+	{
+		server.lg.log(DEBUG, "Request: Method: " + toStr(method) + " forbidden. set Status 405");
+		statusCode = StatusCode405;
+		return;
+	}
+	if (method == MethodGET)
+	{
+		checkForGET();
+		return;
+	}
+	else if (method == MethodDELETE)
+	{
+		checkForDELETE();
+		return;
+	}
+	else if (method == MethodPOST)
+	{
+		std::string uploadDir = (*LocationIt).getUploadDir();
+		server.lg.log(DEBUG, "Request: checking uploaddir: " + uploadDir);
+		if (isDirHasWritePermission(uploadDir)) {
+			if (isCgiExtention(extractExtension(extractFileName(getPath())))) {
+				statusCode = StatusCodeCGI;
+				server.lg.log(DEBUG, "Request: reg file. set Status CGI");
+				return;
+			}
+			server.lg.log(DEBUG, "Request: set Status POST");
+			statusCode = StatusCodePOST;
+			return;
+		}
+		else
+		{
+			server.lg.log(DEBUG, "Request: POST upload dir is bad - set 500");
+			statusCode = StatusCodePost500;
+			return;
+		}
+	}
+	server.lg.log(DEBUG, "Request: constructor DONE only for GET, POST");
+	return;
 }
 
 std::string Request::process_hard()
@@ -201,6 +235,45 @@ std::string Request::process_get301dir()
     return full_res;
 }
 
+std::string Request::process_redirection() {
+	std::string response;
+	switch (statusCode) {
+		case StatusCode300:
+			// Handle StatusCode 300 (Multiple Choices)
+			response = "HTTP/1.1 300 Multiple Choices\r\n";
+			break;
+		case StatusCode301:
+			response = "HTTP/1.1 301 Moved Permanently\r\n";
+			break;
+		case StatusCode302:
+			response = "HTTP/1.1 302 Found\r\n";
+			break;
+		case StatusCode303:
+			response = "HTTP/1.1 303 See Other\r\n";
+			break;
+		case StatusCode304:
+			response = "HTTP/1.1 304 Not Modified\r\n";
+			break;
+		case StatusCode305:
+			response = "HTTP/1.1 305 Use Proxy\r\n";
+			break;
+		case StatusCode306:
+			response = "HTTP/1.1 306 Reserved\r\n";
+			break;
+		case StatusCode307:
+			response = "HTTP/1.1 307 Temporary Redirect\r\n";
+			break;
+		default:
+			response = "HTTP/1.1 500 Internal Server Error\r\n";
+			break;
+	}
+	// Add Location header
+	response += "Location: " + (*LocationIt).getReturnURL() + "\r\n";
+	response += "Content-Length: 0\r\n";
+	response += "\r\n"; // End of headers
+	return response;
+}
+
 std::string Request::process_get301()
 {
     return "HTTP/1.1 301 MOVED PERMANENTLY\r\nContent-Length: 0\r\n\r\n";
@@ -272,21 +345,54 @@ std::string Request::process_DELETE()
     // todo: the rest of the post responce
 }
 
-std::string Request::process()
-{
-    std::string res;
-    if (statusCode == StatusCode200) res = process_get200();
-    if (statusCode == StatusCode200dir) res = process_get200dir();
-    if (statusCode == StatusCode301) res = process_get301();
-    if (statusCode == StatusCode403) res = process_get403();
-    if (statusCode == StatusCode404) res = process_get404();
-    if (statusCode == StatusCode405) res = process_get405();
-    if (statusCode == StatusCode500) res = process_get500();
-    if (statusCode == StatusCodePOST) res = process_POST();
-    if (statusCode == StatusCodePost500) res = process_post500();
-    if (statusCode == StatusCodeCGI) res = process_CGI();
-    if (statusCode == StatusCodeDELETE) res = process_DELETE();
-    return res;
+std::string Request::process() {
+	std::string res;
+	switch (statusCode) {
+		case StatusCode200:
+			res = process_get200();
+			break;
+		case StatusCode200dir:
+			res = process_get200dir();
+			break;
+		case StatusCode300:
+		case StatusCode301:
+		case StatusCode302:
+		case StatusCode303:
+		case StatusCode304:
+		case StatusCode305:
+		case StatusCode306:
+		case StatusCode307:
+			res = process_redirection();
+			break;
+		case StatusCode403:
+			res = process_get403();
+			break;
+		case StatusCode404:
+			res = process_get404();
+			break;
+		case StatusCode405:
+			res = process_get405();
+			break;
+		case StatusCode500:
+			res = process_get500();
+			break;
+		case StatusCodePOST:
+			res = process_POST();
+			break;
+		case StatusCodePost500:
+			res = process_post500();
+			break;
+		case StatusCodeCGI:
+			res = process_CGI();
+			break;
+		case StatusCodeDELETE:
+			res = process_DELETE();
+			break;
+		default:
+			// Handle unrecognized status code
+			break;
+	}
+	return res;
 }
 
 void Request::parse_first_line()
@@ -529,7 +635,7 @@ bool Request::checkForGET()
     // assuming GET method, functionS that check
     // if the resource can be found  in the location root
     // if it is accessible for the server process.
-    // if it is a directory, we check if listing is alowed for this location
+    // if it is a directory, we check if listing is allowed for this location
     // Expected Errors: file or dir is not found -> 404.
 
     std::string path = getPath();
@@ -573,7 +679,7 @@ bool Request::checkForGET()
         else
         {
             statusCode = StatusCode403;
-            server.lg.log(DEBUG, "Request: dir CANNOT be incexed. set Status 403");
+            server.lg.log(DEBUG, "Request: dir CANNOT be indexed. set Status 403");
             return false;
         }
     }
