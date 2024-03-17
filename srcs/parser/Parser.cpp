@@ -84,8 +84,8 @@ bool Parser::hasInvalidPorts() const {
 			if (key == "listen") {
 				std::string value = trim(trimmedLine.substr(colonPos + 1));
 				int port = atoi(value.c_str());
-				if (port < 0 || port > 65535) {
-					std::cerr << "Syntax Error: Invalid port number: " << port << std::endl;
+				if (port <= 0 || port > 65535) {
+					std::cerr << "Syntax Error: Invalid or unset port number: " << port << std::endl;
 					file.close();
 					return true;
 				}
@@ -295,9 +295,9 @@ bool Parser::parseGlobalSettings(const std::string& line, Config& config) {
 
 bool Parser::parseServerBlock(Config& config, std::ifstream& file) {
 	std::string line;
-	int port = 0;
+	int port;
 	std::vector<std::string> serverNames;
-	std::map<int, std::string> errorPages;
+	std::string errorPage;
 
 	bool foundListen = false;
 
@@ -314,9 +314,7 @@ bool Parser::parseServerBlock(Config& config, std::ifstream& file) {
 			}
 			virtServer.setPort(port);
 			virtServer.setServerNames(serverNames);
-			for (std::map<int, std::string>::const_iterator it = errorPages.begin(); it != errorPages.end(); ++it) {
-				virtServer.setErrorPage(it->first, it->second);
-			}
+			virtServer.setErrorPage(errorPage);
 			// Add the filled VirtServer object to the Config object
 			config.addVirtServer(virtServer);
 			return true;
@@ -344,15 +342,10 @@ bool Parser::parseServerBlock(Config& config, std::ifstream& file) {
 					serverNames.push_back(trim(serverName));
 				}
 			} else if (key == "error_page") {
-				size_t commaPos = value.find(',');
-				if (commaPos != std::string::npos) {
-					int errorCode = atoi(value.substr(0, commaPos).c_str());
-					std::string pageURL = value.substr(commaPos + 1);
-					errorPages[errorCode] = pageURL;
+				errorPage = value;
 				}
 			}
 		}
-	}
 	std::cerr << "Error: Server block not properly terminated" << std::endl;
 	return false;
 }
