@@ -22,6 +22,8 @@ Request::Request(const Server &server, int fd, const std::string &request) : ser
         return;
     }
 
+    resourcePath = getPath();
+
     if (methodOk())
         server.lg.log(DEBUG, "Request: Method: " + toStr(method) + " allowed");
     else
@@ -47,7 +49,7 @@ Request::Request(const Server &server, int fd, const std::string &request) : ser
         std::string uploadDir = (*LocationIt).getUploadDir();
         server.lg.log(DEBUG, "Request: checking uploaddir: " + uploadDir);
         if (isDirHasWritePermission(uploadDir)) {
-            if (isCgiExtention(extractExtension(extractFileName(getPath())))) {
+            if (isCgiExtention(extractExtension(extractFileName(resourcePath)))) {
                 statusCode = StatusCodeCGI;
                 server.lg.log(DEBUG, "Request: reg file. set Status CGI");
                 return;
@@ -133,7 +135,7 @@ std::string extractExtension(const std::string &fileName);
 
 std::string Request::process_get200()
 {
-    std::string path = getPath();
+    std::string path = resourcePath;
     std::string res_body = readFileToString(path);
     std::string type = getMimeType(extractExtension(extractFileName(path)));
 
@@ -158,7 +160,7 @@ std::string Request::process_get200dir()
 
     DIR *dir; // DIR = A type representing a directory stream.
     struct dirent *ent;
-    if ((dir = opendir(getPath().c_str())) != NULL) {
+    if ((dir = opendir(resourcePath.c_str())) != NULL) {
         while ((ent = readdir(dir)) != NULL) {
             std::string name(ent->d_name);
             if (ent->d_type == DT_REG) {
@@ -255,7 +257,7 @@ std::string Request::process_POST()
 
 std::string Request::process_DELETE()
 {
-    std::string filename = getPath();
+    std::string filename = resourcePath;
 
     // Attempt to delete the file
     if (std::remove(filename.c_str()) != 0)
@@ -532,7 +534,7 @@ bool Request::checkForGET()
     // if it is a directory, we check if listing is alowed for this location
     // Expected Errors: file or dir is not found -> 404.
 
-    std::string path = getPath();
+    std::string path = resourcePath;
     if (path.length() == 0)
         return false;
     server.lg.log(DEBUG, "Request: resourceAvailable: checking path: " + path);
@@ -599,7 +601,7 @@ bool Request::checkForGET()
 
 bool Request::checkForDELETE()
 {
-    std::string path = getPath();
+    std::string path = resourcePath;
     if (path.length() == 0)
         return false;
     server.lg.log(DEBUG, "Request: DELETE: resourceAvailable: checking path: " + path);

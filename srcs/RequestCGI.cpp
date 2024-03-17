@@ -35,11 +35,11 @@ char ** Request::makeCgiEnv()
         setCgiEnvVar("CONTENT_LENGTH", server.lg.str((int)body.size()));
     }
 
-    setCgiEnvVar("SCRIPT_NAME",        extractFileName(getPath()));
+    setCgiEnvVar("SCRIPT_NAME",        extractFileName(resourcePath));
     setCgiEnvVar("REQUEST_URI",        url);
-    setCgiEnvVar("SCRIPT_FILENAME",    getPath());
-    setCgiEnvVar("PATH_INFO",          getPath());
-    setCgiEnvVar("PATH_TRANSLATED",    getPath());
+    setCgiEnvVar("SCRIPT_FILENAME",    resourcePath);
+    setCgiEnvVar("PATH_INFO",          resourcePath);
+    setCgiEnvVar("PATH_TRANSLATED",    resourcePath);
     setCgiEnvVar("SERVER_NAME",        domain);
     setCgiEnvVar("SERVER_PORT",        server.lg.str(server.getPortRef(server.getClientRef(fd))));
     setCgiEnvVar("SERVER_PROTOCOL",    "HTTP/1.1");
@@ -67,7 +67,7 @@ char ** Request::makeCgiArgv()
 {
     char ** cgi_argv = (char **)calloc(3, sizeof(char *));
     cgi_argv[0] = strdup(PY_EXEC);
-    cgi_argv[1] = strdup(getPath().c_str());
+    cgi_argv[1] = strdup(resourcePath.c_str());
     cgi_argv[2] = NULL;
 
     return cgi_argv;
