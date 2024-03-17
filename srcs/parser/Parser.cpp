@@ -397,6 +397,15 @@ bool Parser::parseLocationBlock(VirtServer& virtServer, std::ifstream& file) {
 			} else if (key == "return") {
 				returnURL = value;
 			} else if (key == "returnCode") {
+				// Check if the return code is empty or between 300 and 307
+				if (!value.empty()) {
+					int returnCodeInt;
+					std::istringstream iss(value);
+					if (!(iss >> returnCodeInt) || returnCodeInt < 300 || returnCodeInt > 307) {
+						std::cerr << "Invalid value for returnCode: " << value << std::endl;
+						return false;
+					}
+				}
 				returnCode = value;
 			} else if (key == "autoindex") {
 				// std::cout << "Key: " << key << ", Value: " << value << std::endl;
@@ -437,22 +446,24 @@ bool Parser::parseLocationBlock(VirtServer& virtServer, std::ifstream& file) {
 
 	// Create a Location object with parsed values
 	Location location(route, locationRoot, locationIndex);
-	std::cout << "Route: " << route << std::endl;
-	std::cout << "Root: " << locationRoot << std::endl;
-	std::cout << "Index: " << locationIndex << std::endl;
+//	std::cout << "Route: " << route << std::endl;
+//	std::cout << "Root: " << locationRoot << std::endl;
+//	std::cout << "Index: " << locationIndex << std::endl;
 	for (size_t i = 0; i < methods.size(); ++i) {
-		std::cout << "Method: " << methods[i] << std::endl;
+//		std::cout << "Method: " << methods[i] << std::endl;
 		location.addMethod(methods[i]);
 	}
-	std::cout << "Auto Index: " << (autoIndex ? "On" : "Off") << std::endl;
+//	std::cout << "Auto Index: " << (autoIndex ? "On" : "Off") << std::endl;
 	location.setAutoIndex(autoIndex);
-	std::cout << "returnURL: " << returnURL << std::endl;
-	std::cout << "returnCode: " << returnCode << std::endl;
+//	std::cout << "returnURL: " << returnURL << std::endl;
+	location.setReturnURL(returnURL);
+//	std::cout << "returnCode: " << returnCode << std::endl;
+	location.setReturnCode(returnCode);
 	for (size_t i = 0; i < cgiExtensions.size(); ++i) {
-		std::cout << "CGI Extension: " << cgiExtensions[i] << std::endl;
+//		std::cout << "CGI Extension: " << cgiExtensions[i] << std::endl;
 		location.addCGIExtension(cgiExtensions[i]);
 	}
-	std::cout << "Upload Directory: " << uploadDir << std::endl;
+//	std::cout << "Upload Directory: " << uploadDir << std::endl;
 	location.setUploadDir(uploadDir);
 
 	// Add the filled Location object to the VirtServer
