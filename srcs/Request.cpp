@@ -135,9 +135,8 @@ std::string extractExtension(const std::string &fileName);
 
 std::string Request::process_get200()
 {
-    std::string path = resourcePath;
-    std::string res_body = readFileToString(path);
-    std::string type = getMimeType(extractExtension(extractFileName(path)));
+    std::string res_body = readFileToString(resourcePath);
+    std::string type = getMimeType(extractExtension(extractFileName(resourcePath)));
 
     std::string full_res;
     full_res += "HTTP/1.1 200 OK\r\n";
@@ -257,10 +256,8 @@ std::string Request::process_POST()
 
 std::string Request::process_DELETE()
 {
-    std::string filename = resourcePath;
-
     // Attempt to delete the file
-    if (std::remove(filename.c_str()) != 0)
+    if (std::remove(resourcePath.c_str()) != 0)
     {
         server.lg.log(ERROR, "Error deleting file");
         return "HTTP/1.1 500 Internal Server Error\r\n\r\n";
@@ -534,21 +531,20 @@ bool Request::checkForGET()
     // if it is a directory, we check if listing is alowed for this location
     // Expected Errors: file or dir is not found -> 404.
 
-    std::string path = resourcePath;
-    if (path.length() == 0)
+    if (resourcePath.length() == 0)
         return false;
-    server.lg.log(DEBUG, "Request: resourceAvailable: checking path: " + path);
+    server.lg.log(DEBUG, "Request: resourceAvailable: checking resourcePath: " + resourcePath);
 
     struct stat st = {};
-    if (stat(path.c_str(), &st) != 0)
+    if (stat(resourcePath.c_str(), &st) != 0)
     {
-        server.lg.log(DEBUG, "Request: Error accessing path (does NOT exist?): " + std::string(strerror(errno))); // = file does not exist
+        server.lg.log(DEBUG, "Request: Error accessing resourcePath (does NOT exist?): " + std::string(strerror(errno))); // = file does not exist
         statusCode = StatusCode404;
         server.lg.log(DEBUG, "Request: set Status 404");
         return false;
     }
 
-    if (!hasReadPermission(path))
+    if (!hasReadPermission(resourcePath))
     {
         statusCode = StatusCode500;
         server.lg.log(DEBUG, "Request: Cannot read existing file. set Status 500");
@@ -581,7 +577,7 @@ bool Request::checkForGET()
     }
     else if (S_ISREG(st.st_mode))
     {
-        if (isCgiExtention(extractExtension(extractFileName(path)))) {
+        if (isCgiExtention(extractExtension(extractFileName(resourcePath)))) {
             statusCode = StatusCodeCGI;
             server.lg.log(DEBUG, "Request: reg file. set Status CGI");
         }
@@ -594,22 +590,21 @@ bool Request::checkForGET()
     else
     {
         statusCode = StatusCode404;
-        server.lg.log(DEBUG, "Request: path is NEITHER reg file or dir. set Status 404");
+        server.lg.log(DEBUG, "Request: resourcePath is NEITHER reg file or dir. set Status 404");
         return false;
     }
 }
 
 bool Request::checkForDELETE()
 {
-    std::string path = resourcePath;
-    if (path.length() == 0)
+    if (resourcePath.length() == 0)
         return false;
-    server.lg.log(DEBUG, "Request: DELETE: resourceAvailable: checking path: " + path);
+    server.lg.log(DEBUG, "Request: DELETE: resourceAvailable: checking resourcePath: " + resourcePath);
 
     struct stat st = {};
-    if (stat(path.c_str(), &st) != 0)
+    if (stat(resourcePath.c_str(), &st) != 0)
     {
-        server.lg.log(DEBUG, "Request: DELETE: Error accessing path (does NOT exist?): " + std::string(strerror(errno))); // = file does not exist
+        server.lg.log(DEBUG, "Request: DELETE: Error accessing resourcePath (does NOT exist?): " + std::string(strerror(errno))); // = file does not exist
         statusCode = StatusCode404;
         server.lg.log(DEBUG, "Request: set Status 404");
         return false;
@@ -622,7 +617,7 @@ bool Request::checkForDELETE()
         return false;
     }
 
-    if (!hasWritePermission(path))
+    if (!hasWritePermission(resourcePath))
     {
         statusCode = StatusCode500;
         server.lg.log(DEBUG, "Request: DELETE: Cannot write existing file. set Status 500");
