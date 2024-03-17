@@ -277,6 +277,7 @@ std::string Request::process()
     if (statusCode == StatusCode200) res = process_get200();
     if (statusCode == StatusCode200dir) res = process_get200dir();
     if (statusCode == StatusCode301) res = process_get301();
+    if (statusCode == StatusCode301dir) res = process_get301dir();
     if (statusCode == StatusCode403) res = process_get403();
     if (statusCode == StatusCode404) res = process_get404();
     if (statusCode == StatusCode405) res = process_get405();
@@ -520,6 +521,7 @@ std::string Request::getPath()
     truncateIfEndsWith(path, '/');
 
     path += url;
+    server.lg.log(DEBUG, "Request: resourcePath: " + path);
     return path;
 }
 
@@ -533,7 +535,6 @@ bool Request::checkForGET()
 
     if (resourcePath.length() == 0)
         return false;
-    server.lg.log(DEBUG, "Request: resourceAvailable: checking resourcePath: " + resourcePath);
 
     struct stat st = {};
     if (stat(resourcePath.c_str(), &st) != 0)
@@ -553,27 +554,7 @@ bool Request::checkForGET()
 
     if (S_ISDIR(st.st_mode))
     {
-        if ((*LocationIt).getAutoIndex())
-        {
-            if (url[url.length() - 1] == '/')
-            { // if last char of url == /
-                statusCode = StatusCode200dir;
-                server.lg.log(DEBUG, "Request: dir can be indexed. set Status 200");
-                return true;
-            }
-            else
-            {
-                statusCode = StatusCode301dir;
-                server.lg.log(DEBUG, "Request: dir can be indexed but needs a trailing / set Status 301dir");
-                return true;
-            }
-        }
-        else
-        {
-            statusCode = StatusCode403;
-            server.lg.log(DEBUG, "Request: dir CANNOT be incexed. set Status 403");
-            return false;
-        }
+        return process_dir();
     }
     else if (S_ISREG(st.st_mode))
     {
@@ -636,4 +617,43 @@ bool Request::checkForDELETE()
         server.lg.log(DEBUG, "Request: path is NEITHER reg file or dir. set Status 404");
         return false;
     }
+}
+
+bool Request::process_dir()
+{
+    server.lg.log(DEBUG, "Request: resourcePath is a DIR.");
+
+    if (url[url.length() - 1] != '/')
+    {
+        statusCode = StatusCode301dir;
+        server.lg.log(DEBUG, "Request: dir can be indexed but needs a trailing / set Status 301dir");
+        return true;
+    }
+    else
+    {
+        std::string indexFile = (*LocationIt).getLocationIndex();
+        std::string checkPath = resourcePath + indexFile;
+        server.lg.log(DEBUG, "Request: checking if exists: " + checkPath);
+        if (indexFile.length() > 0 && hasReadPermission(checkPath))
+        {
+            server.lg.log(DEBUG, "Request: index file found NEW resourcePath: " + checkPath);
+            resourcePath = checkPath;
+            statusCode = StatusCode200;
+            return true;
+        }
+        else if ((*LocationIt).getAutoIndex())
+        {
+            statusCode = StatusCode200dir;
+            server.lg.log(DEBUG, "Request: url has a trailing slash: " + url);
+            server.lg.log(DEBUG, "Request: dir can be indexed. set Status 200");
+            return true;
+        }
+        else
+        {
+            statusCode = StatusCode403;
+            server.lg.log(DEBUG, "Request: dir CANNOT be incexed. set Status 403");
+            return false;
+        }
+    }
+
 }
