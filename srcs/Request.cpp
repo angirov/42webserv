@@ -22,6 +22,8 @@ Request::Request(const Server &server, int fd, const std::string &request) : ser
         return;
     }
 
+    resourcePath = getPath();
+
     if (methodOk())
         server.lg.log(DEBUG, "Request: Method: " + toStr(method) + " allowed");
     else
@@ -47,7 +49,7 @@ Request::Request(const Server &server, int fd, const std::string &request) : ser
         std::string uploadDir = (*LocationIt).getUploadDir();
         server.lg.log(DEBUG, "Request: checking uploaddir: " + uploadDir);
         if (isDirHasWritePermission(uploadDir)) {
-            if (isCgiExtention(extractExtension(extractFileName(getPath())))) {
+            if (isCgiExtention(extractExtension(extractFileName(resourcePath)))) {
                 statusCode = StatusCodeCGI;
                 server.lg.log(DEBUG, "Request: reg file. set Status CGI");
                 return;
@@ -133,9 +135,8 @@ std::string extractExtension(const std::string &fileName);
 
 std::string Request::process_get200()
 {
-    std::string path = getPath();
-    std::string res_body = readFileToString(path);
-    std::string type = getMimeType(extractExtension(extractFileName(path)));
+    std::string res_body = readFileToString(resourcePath);
+    std::string type = getMimeType(extractExtension(extractFileName(resourcePath)));
 
     std::string full_res;
     full_res += "HTTP/1.1 200 OK\r\n";
@@ -158,7 +159,7 @@ std::string Request::process_get200dir()
 
     DIR *dir; // DIR = A type representing a directory stream.
     struct dirent *ent;
-    if ((dir = opendir(getPath().c_str())) != NULL) {
+    if ((dir = opendir(resourcePath.c_str())) != NULL) {
         while ((ent = readdir(dir)) != NULL) {
             std::string name(ent->d_name);
             if (ent->d_type == DT_REG) {
@@ -255,10 +256,8 @@ std::string Request::process_POST()
 
 std::string Request::process_DELETE()
 {
-    std::string filename = getPath();
-
     // Attempt to delete the file
-    if (std::remove(filename.c_str()) != 0)
+    if (std::remove(resourcePath.c_str()) != 0)
     {
         server.lg.log(ERROR, "Error deleting file");
         return "HTTP/1.1 500 Internal Server Error\r\n\r\n";
@@ -278,6 +277,7 @@ std::string Request::process()
     if (statusCode == StatusCode200) res = process_get200();
     if (statusCode == StatusCode200dir) res = process_get200dir();
     if (statusCode == StatusCode301) res = process_get301();
+    if (statusCode == StatusCode301dir) res = process_get301dir();
     if (statusCode == StatusCode403) res = process_get403();
     if (statusCode == StatusCode404) res = process_get404();
     if (statusCode == StatusCode405) res = process_get405();
@@ -521,6 +521,7 @@ std::string Request::getPath()
     truncateIfEndsWith(path, '/');
 
     path += url;
+    server.lg.log(DEBUG, "Request: resourcePath: " + path);
     return path;
 }
 
@@ -532,21 +533,19 @@ bool Request::checkForGET()
     // if it is a directory, we check if listing is alowed for this location
     // Expected Errors: file or dir is not found -> 404.
 
-    std::string path = getPath();
-    if (path.length() == 0)
+    if (resourcePath.length() == 0)
         return false;
-    server.lg.log(DEBUG, "Request: resourceAvailable: checking path: " + path);
 
     struct stat st = {};
-    if (stat(path.c_str(), &st) != 0)
+    if (stat(resourcePath.c_str(), &st) != 0)
     {
-        server.lg.log(DEBUG, "Request: Error accessing path (does NOT exist?): " + std::string(strerror(errno))); // = file does not exist
+        server.lg.log(DEBUG, "Request: Error accessing resourcePath (does NOT exist?): " + std::string(strerror(errno))); // = file does not exist
         statusCode = StatusCode404;
         server.lg.log(DEBUG, "Request: set Status 404");
         return false;
     }
 
-    if (!hasReadPermission(path))
+    if (!hasReadPermission(resourcePath))
     {
         statusCode = StatusCode500;
         server.lg.log(DEBUG, "Request: Cannot read existing file. set Status 500");
@@ -555,31 +554,11 @@ bool Request::checkForGET()
 
     if (S_ISDIR(st.st_mode))
     {
-        if ((*LocationIt).getAutoIndex())
-        {
-            if (url[url.length() - 1] == '/')
-            { // if last char of url == /
-                statusCode = StatusCode200dir;
-                server.lg.log(DEBUG, "Request: dir can be indexed. set Status 200");
-                return true;
-            }
-            else
-            {
-                statusCode = StatusCode301dir;
-                server.lg.log(DEBUG, "Request: dir can be indexed but needs a trailing / set Status 301dir");
-                return true;
-            }
-        }
-        else
-        {
-            statusCode = StatusCode403;
-            server.lg.log(DEBUG, "Request: dir CANNOT be incexed. set Status 403");
-            return false;
-        }
+        return process_dir();
     }
     else if (S_ISREG(st.st_mode))
     {
-        if (isCgiExtention(extractExtension(extractFileName(path)))) {
+        if (isCgiExtention(extractExtension(extractFileName(resourcePath)))) {
             statusCode = StatusCodeCGI;
             server.lg.log(DEBUG, "Request: reg file. set Status CGI");
         }
@@ -592,22 +571,21 @@ bool Request::checkForGET()
     else
     {
         statusCode = StatusCode404;
-        server.lg.log(DEBUG, "Request: path is NEITHER reg file or dir. set Status 404");
+        server.lg.log(DEBUG, "Request: resourcePath is NEITHER reg file or dir. set Status 404");
         return false;
     }
 }
 
 bool Request::checkForDELETE()
 {
-    std::string path = getPath();
-    if (path.length() == 0)
+    if (resourcePath.length() == 0)
         return false;
-    server.lg.log(DEBUG, "Request: DELETE: resourceAvailable: checking path: " + path);
+    server.lg.log(DEBUG, "Request: DELETE: resourceAvailable: checking resourcePath: " + resourcePath);
 
     struct stat st = {};
-    if (stat(path.c_str(), &st) != 0)
+    if (stat(resourcePath.c_str(), &st) != 0)
     {
-        server.lg.log(DEBUG, "Request: DELETE: Error accessing path (does NOT exist?): " + std::string(strerror(errno))); // = file does not exist
+        server.lg.log(DEBUG, "Request: DELETE: Error accessing resourcePath (does NOT exist?): " + std::string(strerror(errno))); // = file does not exist
         statusCode = StatusCode404;
         server.lg.log(DEBUG, "Request: set Status 404");
         return false;
@@ -620,7 +598,7 @@ bool Request::checkForDELETE()
         return false;
     }
 
-    if (!hasWritePermission(path))
+    if (!hasWritePermission(resourcePath))
     {
         statusCode = StatusCode500;
         server.lg.log(DEBUG, "Request: DELETE: Cannot write existing file. set Status 500");
@@ -639,4 +617,43 @@ bool Request::checkForDELETE()
         server.lg.log(DEBUG, "Request: path is NEITHER reg file or dir. set Status 404");
         return false;
     }
+}
+
+bool Request::process_dir()
+{
+    server.lg.log(DEBUG, "Request: resourcePath is a DIR.");
+
+    if (url[url.length() - 1] != '/')
+    {
+        statusCode = StatusCode301dir;
+        server.lg.log(DEBUG, "Request: dir can be indexed but needs a trailing / set Status 301dir");
+        return true;
+    }
+    else
+    {
+        std::string indexFile = (*LocationIt).getLocationIndex();
+        std::string checkPath = resourcePath + indexFile;
+        server.lg.log(DEBUG, "Request: checking if exists: " + checkPath);
+        if (indexFile.length() > 0 && hasReadPermission(checkPath))
+        {
+            server.lg.log(DEBUG, "Request: index file found NEW resourcePath: " + checkPath);
+            resourcePath = checkPath;
+            statusCode = StatusCode200;
+            return true;
+        }
+        else if ((*LocationIt).getAutoIndex())
+        {
+            statusCode = StatusCode200dir;
+            server.lg.log(DEBUG, "Request: url has a trailing slash: " + url);
+            server.lg.log(DEBUG, "Request: dir can be indexed. set Status 200");
+            return true;
+        }
+        else
+        {
+            statusCode = StatusCode403;
+            server.lg.log(DEBUG, "Request: dir CANNOT be incexed. set Status 403");
+            return false;
+        }
+    }
+
 }

@@ -76,6 +76,7 @@ public:
     void printServer() const;
 
     std::string process();
+    bool process_dir();
     std::string process_hard();
     std::string getStatusLine();
     std::string process_get200();
