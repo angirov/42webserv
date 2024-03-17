@@ -243,3 +243,16 @@ std::list<int> deductLists(const std::list<int>& list1, const std::list<int>& li
     }
     return resultList;
 }
+
+size_t getHTTPBodySize(const std::string& httpResponse) {
+    // Find the position of the double CRLF ("\r\n\r\n") that separates the header and body
+    size_t bodyStart = httpResponse.find("\r\n\r\n");
+
+    // If double CRLF is not found, return 0 (no body)
+    if (bodyStart == std::string::npos)
+        return 0;
+
+    // Calculate the size of the body by subtracting the body start position
+    // from the total length of the HTTP response
+    return httpResponse.size() - (bodyStart + 4); // 4 is the length of "\r\n\r\n"
+}

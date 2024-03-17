@@ -32,7 +32,7 @@ char ** Request::makeCgiEnv()
             server.lg.log(DEBUG, "Request: CGI: request's contentType FOUND");
             setCgiEnvVar("CONTENT_TYPE",  *headers["content-type"].begin());
         }
-        setCgiEnvVar("CONTENT_LENGTH", server.lg.str((int)body.size()));
+        setCgiEnvVar("CONTENT_LENGTH", server.lg.str(body.size()));
     }
 
     setCgiEnvVar("SCRIPT_NAME",        extractFileName(resourcePath));
@@ -80,18 +80,6 @@ void freeCharPtrArr(char ** arr) {
         }
         free(arr);
     }
-}
-size_t getHTTPBodySize(const std::string& httpResponse) {
-    // Find the position of the double CRLF ("\r\n\r\n") that separates the header and body
-    size_t bodyStart = httpResponse.find("\r\n\r\n");
-
-    // If double CRLF is not found, return 0 (no body)
-    if (bodyStart == std::string::npos)
-        return 0;
-
-    // Calculate the size of the body by subtracting the body start position
-    // from the total length of the HTTP response
-    return httpResponse.size() - (bodyStart + 4); // 4 is the length of "\r\n\r\n"
 }
 
 std::string Request::process_CGI()
@@ -202,7 +190,7 @@ std::string Request::process_CGI()
     std::string full_res;
     if (cgi_res.length() > 0) {
         full_res += "HTTP/1.1 200 OK (CGI)\r\n";
-        full_res += "Content-Length: " + server.lg.str((int)getHTTPBodySize(cgi_res)) + "\r\n";
+        full_res += "Content-Length: " + server.lg.str(getHTTPBodySize(cgi_res)) + "\r\n";
         full_res +=  cgi_res;
     }
     else {

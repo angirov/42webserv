@@ -40,8 +40,6 @@ void Server::init()
 
     tv.tv_sec = 0;
     tv.tv_usec = 10;
-    timeout = 5;
-	// TODO remove hardcoded values and use setting from configclass.
     time(&last_checked);
 }
 
@@ -96,7 +94,7 @@ void Server::init_server_sockets()
             exit(EXIT_FAILURE);
         };
 
-        if (listen(fd, LISTENQ) < 0)
+        if (listen(fd, _maxClients) < 0)
         {
             perror("listen");
             exit(EXIT_FAILURE);
@@ -251,6 +249,7 @@ void Server::run()
         fill_fd_sets();
         do_select();
         check_request();
+        check_size();
     }
 }
 
@@ -263,9 +262,9 @@ void Server::check_timeout()
     {
         double secs = difftime(now, last_times[*it]);
 
-        if (secs > timeout)
+        if (secs > _timeout)
         {
-            lg.log(DEBUG, "Timeout for " + lg.str(*it) + "; diff: " + lg.str((int)secs) + "; Timeout: " + lg.str(timeout));
+            lg.log(DEBUG, "Timeout for " + lg.str(*it) + "; diff: " + lg.str(secs) + "; Timeout: " + lg.str(_timeout));
             close(*it);
             lg.log(DEBUG, "Disconnecting: Old list: " + cout_list(client_fds_l));
             lg.log(DEBUG, "Removing fd " + lg.str(*it) + " from the list. ");
@@ -295,10 +294,8 @@ void Server::do_read(std::list<int>::iterator &fd_itr)
     num_bytes_recv = recv(*fd_itr, buffer, buffsize, 0);
     if (num_bytes_recv > 0)
     {
-        lg.log(DEBUG, "Received " + lg.str((int)num_bytes_recv) + " bytes from fd " + lg.str(*fd_itr) + ": " + std::string(buffer, num_bytes_recv));
+        lg.log(DEBUG, "Received " + lg.str(num_bytes_recv) + " bytes from fd " + lg.str(*fd_itr) + ": " + std::string(buffer, num_bytes_recv));
         requests[*fd_itr] += std::string(buffer, num_bytes_recv);
-		// TODO Limit request size depending on "client_max_body_size"
-		// handle response to client?
         set_last_time(*fd_itr);
     }
     if (num_bytes_recv == 0)
@@ -421,12 +418,32 @@ void Server::check_request()
     }
 }
 
+
+void Server::check_size()
+{
+    for (std::list<int>::iterator it = client_fds_l.begin(); it != client_fds_l.end(); ++it)
+    {
+        size_t size = getHTTPBodySize(requests[*it]);
+        // lg.log(DEBUG, "Checking client_max_body_size for " + lg.str(*it) + "; max size: " + lg.str(_client_max_body_size) + "; already received: " + lg.str(size));
+        if (size > _client_max_body_size)
+        {
+            lg.log(ERROR, "Client_max_body_size EXCEEDED for " + lg.str(*it) + "; max size: " + lg.str(_client_max_body_size) + "; already received: " + lg.str(size));
+            close(*it);
+            lg.log(DEBUG, "Disconnecting: Old list: " + cout_list(client_fds_l));
+            lg.log(DEBUG, "Removing fd " + lg.str(*it) + " from the list. ");
+            it = client_fds_l.erase(it); // returns the next one
+            requests[*it] = "";
+            lg.log(DEBUG, "Disconnecting: New list: " + cout_list(client_fds_l));
+        }
+    }
+}
+
 void Server::do_write(int fd)
 {
     lg.log(DEBUG, "Sending response for " + lg.str(fd));
     send(fd, responces[fd].c_str(), responces[fd].size(), 0); // Maybe response has to be sent in pieces
     set_last_time(fd);
-    lg.log(INFO, "Sent " + lg.str((int)responces[fd].size()) + " bytes for client " + lg.str(fd));
+    lg.log(INFO, "Sent " + lg.str(responces[fd].size()) + " bytes for client " + lg.str(fd));
     responces[fd] = "";
 }
 

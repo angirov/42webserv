@@ -21,7 +21,6 @@
 #include <cstring>
 #include <ctime>
 
-#define LISTENQ 10
 #define BUFFERSIZE 10000
 #define BUFFERTEST 10000
 
@@ -37,7 +36,7 @@ struct Server
 // private:
     int _timeout;
     int _maxClients;
-    int _client_max_body_size;
+    size_t _client_max_body_size;
     std::vector<VirtServer> virtServers;
 
     //////////////////////////////////////////////////////////////////////
@@ -45,7 +44,6 @@ struct Server
     bool handTesting;
     mutable Logger lg;
     unsigned int buffsize;
-    int timeout;
     time_t last_checked;
 
 public:
@@ -92,6 +90,7 @@ public:
     void do_read(std::list<int>::iterator &fd_itr);
     void do_write(int fd);
     void check_request();
+    void check_size();
     void do_timing();
     void check_timeout();
     void set_last_time(int fd);
