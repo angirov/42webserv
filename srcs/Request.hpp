@@ -10,6 +10,7 @@
 #include <iterator>
 #include <cctype> // for strip
 #include <sys/wait.h>
+#include <cmath>
 
 #define READ_FD     0
 #define WRITE_FD    1

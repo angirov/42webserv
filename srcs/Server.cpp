@@ -379,7 +379,7 @@ void Server::do_select()
         std::list<int> readingFds = getReadingFds();
         for (std::list<int>::iterator it = readingFds.begin(); it != readingFds.end(); ++it)
         {
-            lg.log(DEBUG, "Checking reading fd " + lg.str(*it));
+            // lg.log(DEBUG, "Checking reading fd " + lg.str(*it));
             if (!FD_ISSET(*it, &read_fd_set))
                 continue;
             do_read(it);
@@ -387,7 +387,7 @@ void Server::do_select()
         std::list<int>::iterator it = writing_fds_l.begin();
         while (it != writing_fds_l.end())
         {
-            lg.log(DEBUG, "Checking writing fd " + lg.str(*it));
+            // lg.log(DEBUG, "Checking writing fd " + lg.str(*it));
             if (!FD_ISSET(*it, &write_fd_set))
                 continue;
             do_write(*it);

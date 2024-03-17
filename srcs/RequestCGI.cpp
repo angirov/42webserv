@@ -26,7 +26,12 @@ char ** Request::makeCgiEnv()
 
     if(method == MethodPOST)
     {
-        setCgiEnvVar("CONTENT_TYPE",   *headers["content-type"].begin());
+        header_map::iterator it = headers.find("content-type");
+        if (it != headers.end())
+        {
+            server.lg.log(DEBUG, "Request: CGI: request's contentType FOUND");
+            setCgiEnvVar("CONTENT_TYPE",  *headers["content-type"].begin());
+        }
         setCgiEnvVar("CONTENT_LENGTH", server.lg.str((int)body.size()));
     }
 
@@ -92,7 +97,7 @@ size_t getHTTPBodySize(const std::string& httpResponse) {
 std::string Request::process_CGI()
 {
     server.lg.log(DEBUG, "Request: start processing CGI...");
-    server.lg.log(DEBUG, "CGI: body: " + body);
+    server.lg.log(DEBUG, "Request: CGI body: " + body);
     int fdOut[2];
     pipe(fdOut);
 
@@ -122,7 +127,7 @@ std::string Request::process_CGI()
         {
             freeCharPtrArr(cgi_argv);
             freeCharPtrArr(env_arr);
-            write(STDERR_FILENO, "EXECVE failed\n", 14);
+            std::cerr << "EXECVE failed: " << err << "\n";
             close(STDOUT_FILENO);
             close(STDIN_FILENO);
             exit(0);
@@ -130,7 +135,52 @@ std::string Request::process_CGI()
     }
     close(fdOut[WRITE_FD]);
     close(fdIn);
-    wait(NULL);
+
+
+    // wait(NULL);
+    int status, rc;
+    int times = 1;
+    int max_times = 7; // = 0.5 sec
+    int toWait = 0;
+    int waited = 0;
+    while (times < max_times) {
+        server.lg.log(DEBUG, "Request: CGI waitingc for the child ,,, " + server.lg.str(times) + " ...");
+        toWait = pow(10, times);
+        usleep(toWait); /* sleep 0.1 seconds */
+        waited += toWait;
+        rc = waitpid(-1, &status, WNOHANG);
+        if (rc == 0) {
+            times++;
+            continue;
+        }
+        else if (rc < 0) {
+            perror("waitpid");
+            return "";
+        } else {
+            // Child process terminated
+            server.lg.log(DEBUG, "Request: CGI waiting rc: " + server.lg.str(rc));
+            std::stringstream ss;
+            ss << WEXITSTATUS(status);
+            if (WIFEXITED(status)) {
+                server.lg.log(DEBUG, "Request: CGI: Child process exited with status: " + ss.str());
+            } else {
+                server.lg.log(DEBUG, "Request: CGI: Child process exited abnormally.");
+            }
+
+            break;
+        }
+    }
+
+    server.lg.log(DEBUG, "Request: CGI: times: " + server.lg.str(times));
+    server.lg.log(DEBUG, "Request: CGI: Waited " + server.lg.str(waited / 1000) + " ms.");
+
+    if (times == max_times) {
+        server.lg.log(DEBUG, "Request: CGI: Child process timed out.");
+        kill(id, SIGTERM);
+        wait(NULL);
+        return process_cgi500();
+    }
+
     char buff[CGI_BUFF_SIZE];
     std::string cgi_res;
     int read_ret;
@@ -145,15 +195,15 @@ std::string Request::process_CGI()
         }
         else
         {
-            server.lg.log(DEBUG, "Request: read_ret " + server.lg.str(read_ret));
+            server.lg.log(DEBUG, "Request: CGI read_ret " + server.lg.str(read_ret));
             break;
         }
     }
     std::string full_res;
     if (cgi_res.length() > 0) {
-    full_res += "HTTP/1.1 200 OK (CGI)\r\n";
-    full_res += "Content-Length: " + server.lg.str((int)getHTTPBodySize(cgi_res)) + "\r\n";
-    full_res +=  cgi_res;
+        full_res += "HTTP/1.1 200 OK (CGI)\r\n";
+        full_res += "Content-Length: " + server.lg.str((int)getHTTPBodySize(cgi_res)) + "\r\n";
+        full_res +=  cgi_res;
     }
     else {
         return process_cgi500();
@@ -164,6 +214,7 @@ std::string Request::process_CGI()
 
 bool Request::isCgiExtention(std::string ext)
 {
+    server.lg.log(DEBUG, "Reqeust: checking extention: " + ext);
     if (LocationIt == (*VirtServIt).getLocations().end())
         return "";
     const Location &loc = *LocationIt;
@@ -171,8 +222,10 @@ bool Request::isCgiExtention(std::string ext)
     std::vector<std::string>::const_iterator it;
     for (it = exts.begin(); it != exts.end(); ++it) {
         if (*it == ext) {
+            server.lg.log(DEBUG, "Reqeust: found extention: " + ext);
             return true;
         }
     }
+    server.lg.log(DEBUG, "Reqeust: NOT found extention: " + ext);
     return false;
 }
