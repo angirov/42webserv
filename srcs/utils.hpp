@@ -11,7 +11,6 @@
 #include <sys/stat.h>
 #include <cstring> // for strerror, strcpy and strcat
 #include <unistd.h> // for access()
-#include <cerrno>
 #include <cstdlib> // For realpath
 #include <dirent.h>
 #include <fstream>

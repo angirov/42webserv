@@ -9,7 +9,6 @@
 #include <strings.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
-#include <cerrno>
 #include <list>
 #include <iostream>
 #include <algorithm>

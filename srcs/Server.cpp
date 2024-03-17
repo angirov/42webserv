@@ -126,15 +126,7 @@ void Server::accept_new_conn(int fd)
     // https://stackoverflow.com/questions/7003234/
     if (connfd == -1)
     {
-        if (errno == EWOULDBLOCK || errno == EAGAIN)
-        {
-            lg.log(DEBUG, "No connection request for " + lg.str(fd));
-        }
-        else
-        {
-            perror("accept");
-            exit(EXIT_FAILURE);
-        }
+        perror("accept");
     }
     else
     {
@@ -300,19 +292,19 @@ void Server::do_read(std::list<int>::iterator &fd_itr)
     }
     if (num_bytes_recv == 0)
     {
-        lg.log(INFO, "Got zero bytes == Peer has closed the connection gracefully");
+        lg.log(INFO, "Server: recv got zero bytes i.e. peer has closed the connection gracefully. Fd: " + lg.str(*fd_itr));
+        lg.log(DEBUG, "Disconnecting and Removing fd " + lg.str(*fd_itr) + " from the list.");
         close(*fd_itr);
-        lg.log(DEBUG, "Disconnecting: Old list: " + cout_list(client_fds_l));
-        lg.log(DEBUG, "Removing fd " + lg.str(*fd_itr) + " from the list. ");
         client_fds_l.remove(*fd_itr); // because we work with the copy list
-        lg.log(DEBUG, "Disconnecting: New list: " + cout_list(client_fds_l));
+        lg.log(DEBUG, "Disconnected: New list: " + cout_list(client_fds_l));
     }
-	// TODO:
-	// Search for all read/recv/write/send and check if the returned value is correctly checked
-	// (checking only -1 or 0 values is not enough, both should be checked).
     if (num_bytes_recv == -1)
     {
-        perror("recv");
+        lg.log(ERROR, "Server: recv got -1 responce code while reading fd: " + lg.str(*fd_itr));
+        lg.log(DEBUG, "Disconnecting and Removing fd " + lg.str(*fd_itr) + " from the list.");
+        close(*fd_itr);
+        client_fds_l.remove(*fd_itr); // because we work with the copy list
+        lg.log(DEBUG, "Disconnected: New list: " + cout_list(client_fds_l));
     }
 }
 
@@ -441,7 +433,16 @@ void Server::check_size()
 void Server::do_write(int fd)
 {
     lg.log(DEBUG, "Sending response for " + lg.str(fd));
-    send(fd, responces[fd].c_str(), responces[fd].size(), 0); // Maybe response has to be sent in pieces
+    int ret;
+    ret = send(fd, responces[fd].c_str(), responces[fd].size(), 0); // Maybe response has to be sent in pieces
+    if (ret == 0)
+    {
+        lg.log(ERROR, "Server: recv got 0 responce code while reading fd: " + lg.str(fd));
+    }
+    else if (ret < 0)
+    {
+        lg.log(ERROR, "Server: recv got -1 responce code while reading fd: " + lg.str(fd));
+    }
     set_last_time(fd);
     lg.log(INFO, "Sent " + lg.str(responces[fd].size()) + " bytes for client " + lg.str(fd));
     responces[fd] = "";

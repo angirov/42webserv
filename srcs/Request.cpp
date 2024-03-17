@@ -539,7 +539,7 @@ bool Request::checkForGET()
     struct stat st = {};
     if (stat(resourcePath.c_str(), &st) != 0)
     {
-        server.lg.log(DEBUG, "Request: Error accessing resourcePath (does NOT exist?): " + std::string(strerror(errno))); // = file does not exist
+        server.lg.log(DEBUG, "Request: Error accessing resourcePath (does NOT exist?)."); // = file does not exist
         statusCode = StatusCode404;
         server.lg.log(DEBUG, "Request: set Status 404");
         return false;
@@ -585,7 +585,7 @@ bool Request::checkForDELETE()
     struct stat st = {};
     if (stat(resourcePath.c_str(), &st) != 0)
     {
-        server.lg.log(DEBUG, "Request: DELETE: Error accessing resourcePath (does NOT exist?): " + std::string(strerror(errno))); // = file does not exist
+        server.lg.log(DEBUG, "Request: DELETE: Error accessing resourcePath (does NOT exist?)");
         statusCode = StatusCode404;
         server.lg.log(DEBUG, "Request: set Status 404");
         return false;

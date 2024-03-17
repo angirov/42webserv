@@ -83,7 +83,7 @@ bool url_match_root(std::string str, std::string pattern) {
 bool isValidDirectory(const std::string& path) {
     struct stat st;
     if (stat(path.c_str(), &st) != 0) {
-        std::cerr << "Error accessing path: " << strerror(errno) << std::endl;
+        std::cerr << "Error accessing path" << std::endl;
         return false;
     }
     return S_ISDIR(st.st_mode);
@@ -93,7 +93,7 @@ bool hasReadPermission(const std::string& path) {
     if (access(path.c_str(), R_OK) == 0) {
         return true; // Read permission is granted
     } else {
-        std::cerr << "Error accessing path: " << strerror(errno) << std::endl;
+        std::cerr << "Error accessing path" << std::endl;
         return false; // Read permission is not granted or an error occurred
     }
 }
@@ -102,7 +102,7 @@ bool hasWritePermission(const std::string& path) {
     if (access(path.c_str(), W_OK) == 0) {
         return true; // Read permission is granted
     } else {
-        std::cerr << "Error accessing path: " << strerror(errno) << std::endl;
+        std::cerr << "Error accessing path" << std::endl;
         return false; // Read permission is not granted or an error occurred
     }
 }
