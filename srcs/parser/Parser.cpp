@@ -350,7 +350,6 @@ bool Parser::parseServerBlock(Config& config, std::ifstream& file) {
 	return false;
 }
 
-
 bool Parser::parseLocationBlock(VirtServer& virtServer, std::ifstream& file) {
 	std::string line;
 	std::string route;
@@ -358,7 +357,7 @@ bool Parser::parseLocationBlock(VirtServer& virtServer, std::ifstream& file) {
 	std::string locationIndex;
 	std::vector<std::string> methods;
 	std::string returnURL;
-	std::string returnCode;
+	int returnCode = 0; // Changed to integer
 	bool autoIndex = false;
 	std::vector<std::string> cgiExtensions;
 	std::string uploadDir;
@@ -405,21 +404,17 @@ bool Parser::parseLocationBlock(VirtServer& virtServer, std::ifstream& file) {
 						std::cerr << "Invalid value for returnCode: " << value << std::endl;
 						return false;
 					}
+					returnCode = returnCodeInt; // Store as integer
 				}
-				returnCode = value;
 			} else if (key == "autoindex") {
-				// std::cout << "Key: " << key << ", Value: " << value << std::endl;
 				if (value == "on") {
-					// std::cout << "Auto Index is ON" << std::endl;
 					autoIndex = true;
 				} else if (value == "off") {
-					// std::cout << "Auto Index is OFF" << std::endl;
 					autoIndex = false;
 				} else {
 					std::cerr << "Invalid value for autoindex: " << value << std::endl;
 				}
-		} else if (key == "cgi") {
-				// Split the value by commas and add each CGI extension to the cgiExtensions vector
+			} else if (key == "cgi") {
 				std::istringstream iss(value);
 				std::string cgiExtension;
 				while (std::getline(iss, cgiExtension, ',')) {
@@ -432,38 +427,28 @@ bool Parser::parseLocationBlock(VirtServer& virtServer, std::ifstream& file) {
 	}
 	// Check if any key-value pairs were parsed
 	if (
-	route.empty() &&
-	locationRoot.empty() &&
-	locationIndex.empty() &&
-	methods.empty() &&
-	returnURL.empty() &&
-	returnCode.empty() &&
-	cgiExtensions.empty() &&
-	uploadDir.empty())
-	{
+			route.empty() &&
+			locationRoot.empty() &&
+			locationIndex.empty() &&
+			methods.empty() &&
+			returnURL.empty() &&
+			returnCode == 0 && // Check against integer
+			cgiExtensions.empty() &&
+			uploadDir.empty()) {
 		return false;
 	}
 
 	// Create a Location object with parsed values
 	Location location(route, locationRoot, locationIndex);
-//	std::cout << "Route: " << route << std::endl;
-//	std::cout << "Root: " << locationRoot << std::endl;
-//	std::cout << "Index: " << locationIndex << std::endl;
 	for (size_t i = 0; i < methods.size(); ++i) {
-//		std::cout << "Method: " << methods[i] << std::endl;
 		location.addMethod(methods[i]);
 	}
-//	std::cout << "Auto Index: " << (autoIndex ? "On" : "Off") << std::endl;
 	location.setAutoIndex(autoIndex);
-//	std::cout << "returnURL: " << returnURL << std::endl;
 	location.setReturnURL(returnURL);
-//	std::cout << "returnCode: " << returnCode << std::endl;
-	location.setReturnCode(returnCode);
+	location.setReturnCode(returnCode); // Set as integer
 	for (size_t i = 0; i < cgiExtensions.size(); ++i) {
-//		std::cout << "CGI Extension: " << cgiExtensions[i] << std::endl;
 		location.addCGIExtension(cgiExtensions[i]);
 	}
-//	std::cout << "Upload Directory: " << uploadDir << std::endl;
 	location.setUploadDir(uploadDir);
 
 	// Add the filled Location object to the VirtServer
