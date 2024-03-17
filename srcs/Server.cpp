@@ -41,6 +41,7 @@ void Server::init()
     tv.tv_sec = 0;
     tv.tv_usec = 10;
     timeout = 5;
+	// TODO remove hardcoded values and use setting from configclass.
     time(&last_checked);
 }
 
@@ -296,6 +297,8 @@ void Server::do_read(std::list<int>::iterator &fd_itr)
     {
         lg.log(DEBUG, "Received " + lg.str((int)num_bytes_recv) + " bytes from fd " + lg.str(*fd_itr) + ": " + std::string(buffer, num_bytes_recv));
         requests[*fd_itr] += std::string(buffer, num_bytes_recv);
+		// TODO Limit request size depending on "client_max_body_size"
+		// handle response to client?
         set_last_time(*fd_itr);
     }
     if (num_bytes_recv == 0)
@@ -307,6 +310,9 @@ void Server::do_read(std::list<int>::iterator &fd_itr)
         client_fds_l.remove(*fd_itr); // because we work with the copy list
         lg.log(DEBUG, "Disconnecting: New list: " + cout_list(client_fds_l));
     }
+	// TODO:
+	// Search for all read/recv/write/send and check if the returned value is correctly checked
+	// (checking only -1 or 0 values is not enough, both should be checked).
     if (num_bytes_recv == -1)
     {
         perror("recv");
@@ -408,7 +414,7 @@ void Server::do_send()
         {
             lg.log(DEBUG, "Processing request from " + lg.str(*it) + ". Request:\n" + requests[*it]);
             responces[*it] = Request(*this, *it, requests[*it]).process(); // <<<<<<<<<<<<< REQUEST <<<<<<<<<<<<<<<<
-            lg.log(DEBUG, "DONE processing request from " + lg.str(*it) + ". Rescponce:\n" + responces[*it]);
+            lg.log(DEBUG, "DONE processing request from " + lg.str(*it) + ". Response:\n" + responces[*it]);
             writing_fds_l.push_back(*it);
             requests[*it] = "";
         }
@@ -417,8 +423,8 @@ void Server::do_send()
 
 void Server::do_write(int fd)
 {
-    lg.log(DEBUG, "Sending responce for " + lg.str(fd));
-    send(fd, responces[fd].c_str(), responces[fd].size(), 0); // Maybe responce has to be sent in pieces
+    lg.log(DEBUG, "Sending response for " + lg.str(fd));
+    send(fd, responces[fd].c_str(), responces[fd].size(), 0); // Maybe response has to be sent in pieces
     set_last_time(fd);
     lg.log(INFO, "Sent " + lg.str((int)responces[fd].size()) + " bytes for client " + lg.str(fd));
     responces[fd] = "";

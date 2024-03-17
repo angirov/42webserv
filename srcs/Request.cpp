@@ -233,7 +233,7 @@ std::string Request::process_post500()
 
 std::string Request::process_cgi500()
 {
-    return "HTTP/1.1 500 Failed (CGI)\r\nContent-Length: 0\r\n\r\n";
+	return "HTTP/1.1 500 INTERNAL SERVER ERROR\r\nContent-Length: 0\r\n\r\n";
 }
 
 std::string Request::process_POST()
