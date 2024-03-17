@@ -200,11 +200,11 @@ const std::string& Location::getReturnURL() const {
 	return _returnURL;
 }
 
-void Location::setReturnCode(const std::string &returnCode) {
+void Location::setReturnCode(int returnCode) {
 	_returnCode = returnCode;
 }
 
-const std::string& Location::getReturnCode() const {
+int Location::getReturnCode() const {
 	return _returnCode;
 }
 

@@ -106,15 +106,14 @@ public:
 	void setReturnURL(const std::string &returnUrl);
 	const std::string & getReturnURL() const;
 
-	void setReturnCode(const std::string &returnCode);
-	const std::string & getReturnCode() const;
-
+	void setReturnCode(int returnCode);
+	int getReturnCode() const;
 
 	void display() const;
 
 private:
 	std::string _returnURL; // url _returnRedir : return URL and Code
-	std::string _returnCode; // 3XX -> 300 - 307
+	int _returnCode; // 3XX -> 300 - 307
 	std::string _route;
 	std::string _locationRoot;
 	std::string _locationIndex;
