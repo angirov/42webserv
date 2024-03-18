@@ -6,6 +6,8 @@
 
 Try: `http://localhost:8000/colorful/index.html`
 
+Also often used: `docker compose build  && docker compose up --force-recreate -d && docker logs webserv &&  docker exec -it webserv tail logfile.txt -f`
+
 https://www.manning.com/books/http2-in-action
 
 ### FreeCodeCamp: HTTP
