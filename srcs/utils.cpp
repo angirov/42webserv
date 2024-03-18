@@ -1,5 +1,6 @@
 #include "utils.hpp"
 
+
 Method resolveMethod(std::string const & word) {
     if(word == "GET" ) return MethodGET;
     if(word == "POST" ) return MethodPOST;
@@ -242,6 +243,21 @@ std::list<int> deductLists(const std::list<int>& list1, const std::list<int>& li
         }
     }
     return resultList;
+}
+
+StatusCode resolveRedirectionStatusCode(int code) {
+	switch (code) {
+		case 300: return StatusCode300;
+		case 301: return StatusCode301;
+		case 302: return StatusCode302;
+		case 303: return StatusCode300;
+		case 304: return StatusCode304;
+		case 305: return StatusCode305;
+		case 306: return StatusCode306;
+		case 307: return StatusCode307;
+		default:
+			return StatusCode300; // Default to a safe redirection code
+	}
 }
 
 size_t getHTTPBodySize(const std::string& httpResponse) {

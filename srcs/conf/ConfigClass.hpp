@@ -60,8 +60,8 @@ public:
 	void setServerNames(const std::vector<std::string> &serverNames);
 	const std::vector<std::string> & getServerNames() const;
 
-	void setErrorPage(int errorCode, const std::string &errorPage);
-	const std::string & getErrorPage(int errorCode) const;
+	void setErrorPage(const std::string &errorPage);
+	const std::string & getErrorPage() const;
 
 	void addLocation(const Location &location);
 	const std::vector<Location> & getLocations() const;
@@ -71,7 +71,7 @@ public:
 private:
 	int _port;
 	std::vector<std::string> _serverNames;
-	std::map<int, std::string> _errorPages;
+	std::string _errorPage;
 	std::vector<Location> locations;
 };
 
@@ -106,15 +106,14 @@ public:
 	void setReturnURL(const std::string &returnUrl);
 	const std::string & getReturnURL() const;
 
-	void setReturnCode(const std::string &returnCode);
-	const std::string & getReturnCode() const;
-
+	void setReturnCode(int returnCode);
+	int getReturnCode() const;
 
 	void display() const;
 
 private:
 	std::string _returnURL; // url _returnRedir : return URL and Code
-	std::string _returnCode; // 3XX -> 300 - 307
+	int _returnCode; // 3XX -> 300 - 307
 	std::string _route;
 	std::string _locationRoot;
 	std::string _locationIndex;

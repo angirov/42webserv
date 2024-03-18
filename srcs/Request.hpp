@@ -75,6 +75,8 @@ public:
     Request(const Server &server, int fd, const std::string &request);
     void printServer() const;
 
+	bool checkForRedirection();
+
     std::string process();
     bool process_dir();
     std::string process_hard();
@@ -83,6 +85,7 @@ public:
     std::string process_get200dir();
     std::string process_get301();
     std::string process_get301dir();
+	std::string process_redirection() const;
     std::string process_get403();
     std::string process_get404();
     std::string process_get405();
