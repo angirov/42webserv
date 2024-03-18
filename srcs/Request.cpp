@@ -432,7 +432,6 @@ void Request::print_headers(std::stringstream &ss)
     for (header_map::iterator it = headers.begin(); it != headers.end(); ++it)
     {
         ss << "Header: " << (*it).first << ";  values: [ " << std::endl;
-        (*it).second; // str vec
         for (std::vector<std::string>::iterator val_it = (*it).second.begin(); val_it != (*it).second.end(); ++val_it)
         {
             ss << "    " << *val_it << std::endl;

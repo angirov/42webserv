@@ -11,6 +11,7 @@
 #include <cctype> // for strip
 #include <sys/wait.h>
 #include <cmath>
+#include <csignal>
 
 #define READ_FD     0
 #define WRITE_FD    1
@@ -101,12 +102,12 @@ public:
     void setCgiEnvVar(std::string varName, std::string varVal);
 };
 
-class Response
-{
-    HTTPVersion httpVersion;
-    StatusCode statusCode; // with descriptions hardcoded
-    header_map headers;
-};
+//class Response
+//{
+//    HTTPVersion httpVersion;
+//    StatusCode statusCode; // with descriptions hardcoded
+//    header_map headers;
+//};
 
 #endif
 
