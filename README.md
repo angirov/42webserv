@@ -17,3 +17,5 @@ https://www.url-encode-decode.com/
 curl -X POST -d 'Hello from curl again!' http://localhost:8000/save/?savepath=%2Fdata%2Fnewdir%2Ffile.txt
 ```
 
+# Config googledoc
+https://docs.google.com/document/d/1AY-qDocJuQR4Rgr7KgyeAjsX5wkgn2mUF8NiFqpTxOQ/edit?usp=sharing
