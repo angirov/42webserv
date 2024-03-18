@@ -20,7 +20,31 @@ bool Request::checkForRedirection() {
     return false; // Redirection is not set
 }
 
+std::string Request::generate_error_page(const std::string& error_page_path) {
+	std::stringstream response;
 
+	// Read HTML content from file
+	std::ifstream file(error_page_path.c_str());
+	std::string error_html;
+	if (file.is_open()) {
+		std::stringstream buffer;
+		buffer << file.rdbuf();
+		error_html = buffer.str();
+		file.close();
+	} else {
+		// If file reading fails, use a default error message
+		error_html = "<html><head><title>404 Not Found</title></head><body><h1>404 Not Found</h1><p>The requested resource was not found on this server.</p></body></html>";
+	}
+
+	// Construct the HTTP response
+	response << "HTTP/1.1 404 Not Found\r\n";
+	response << "Content-Type: text/html\r\n";
+	response << "Content-Length: " << error_html.length() << "\r\n";
+	response << "\r\n";
+	response << error_html;
+
+	return response.str();
+}
 
 Request::Request(const Server &server, int fd, const std::string &request) : server(server), fd(fd), request(request)
 {
@@ -153,7 +177,7 @@ std::string Request::process_get200()
     full_res += "\r\n";
     full_res += res_body;
 
-    server.lg.log(DEBUG, "Request: Responce:\n " + full_res);
+    server.lg.log(DEBUG, "Request: Response:\n " + full_res);
 
     return full_res;
 }
@@ -260,9 +284,25 @@ std::string Request::process_get403()
     return "HTTP/1.1 403 FORBIDDEN\r\nContent-Length: 0\r\n\r\n";
 }
 
-std::string Request::process_get404()
-{
-    return "HTTP/1.1 404 NOT FOUND\r\nContent-Length: 0\r\n\r\n";
+std::string Request::process_get404() {
+	const VirtServer &vs = *VirtServIt;
+	std::string errorPath = vs.getErrorPage();
+
+	std::cout << "Error page path: " << errorPath << std::endl;
+
+	if (!errorPath.empty()) {
+		// Generate the error page content dynamically
+		std::string errorPageContent = generate_error_page(errorPath);
+
+		// Calculate the content length
+		std::ostringstream contentLength;
+		contentLength << errorPageContent.size();
+
+		return errorPageContent;
+	} else {
+		// If the error page path is empty, fallback to a default response format
+		return "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n";
+	}
 }
 
 std::string Request::process_get405()
@@ -292,14 +332,14 @@ std::string Request::process_POST()
     std::string file_name = getDifference((*LocationIt).getRoute(), url);
     if (file_name == "" || file_name == "/")
     {
-        server.lg.log(DEBUG, "Request: no name submitted. Generateing name...");
+        server.lg.log(DEBUG, "Request: no name submitted. Generating name...");
         file_name = "upload_" + generateTimeStamp();
     }
     server.lg.log(DEBUG, "Request: file_name: " + file_name);
     std::string filepath = upload_path + file_name;
     writeStringToBinaryFile(body, filepath);
     return "HTTP/1.1 201 OK\r\nContent-Length: 0\r\n\r\n";
-    // todo: the rest of the post responce
+    // todo: the rest of the post response
 }
 
 std::string Request::process_DELETE()
@@ -316,7 +356,7 @@ std::string Request::process_DELETE()
     }
 
     return "HTTP/1.1 204 No Content\r\n\r\n";
-    // todo: the rest of the post responce
+    // todo: the rest of the post response
 }
 
 std::string Request::process() {

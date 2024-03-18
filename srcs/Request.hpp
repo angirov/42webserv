@@ -72,6 +72,7 @@ public:
     std::string getPath();
     bool isCgiExtention(std::string ext);
     std::string getMimeType(const std::string& extension);
+	std::string generate_error_page(const std::string& error_page_path);
 
     // public:
     Request(const Server &server, int fd, const std::string &request);
