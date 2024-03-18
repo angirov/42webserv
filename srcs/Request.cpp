@@ -29,6 +29,10 @@ Request::Request(const Server &server, int fd, const std::string &request) : ser
 
 	// Find the Virtual Host - by default the first one
 	VirtServIt = findHost();
+    if (domain.length() == 0 && !(*VirtServIt).getServerNames().empty())
+    {
+        domain = *(*VirtServIt).getServerNames().begin();
+    }
 	server.lg.log(DEBUG, "Request: Domain: " + domain);
 
 	// Find the Location by route - if no route matches - the end of the vector returned
