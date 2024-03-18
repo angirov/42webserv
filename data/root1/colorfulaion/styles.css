@@ -1,0 +1,30 @@
+/* styles.css */
+
+/* Header styles */
+header {
+    background-color: #ffcc00; /* Yellow */
+    color: #333; /* Dark gray */
+    padding: 20px;
+    text-align: center;
+}
+
+/* Main content styles */
+main {
+    padding: 20px;
+}
+
+/* Section styles */
+section {
+    background-color: #33ccff; /* Light blue */
+    color: #fff; /* White */
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+/* Footer styles */
+footer {
+    background-color: #ff6666; /* Red */
+    color: #fff; /* White */
+    padding: 10px 0;
+    text-align: center;
+}
