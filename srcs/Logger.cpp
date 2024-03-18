@@ -135,6 +135,13 @@ std::string Logger::str(int n)
     return ss.str();
 }
 
+std::string Logger::str(size_t n)
+{
+    std::stringstream ss;
+    ss << n;
+    return ss.str();
+}
+
 std::string Logger::str(double n)
 {
     std::stringstream ss;

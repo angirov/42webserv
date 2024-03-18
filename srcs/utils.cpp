@@ -84,7 +84,7 @@ bool url_match_root(std::string str, std::string pattern) {
 bool isValidDirectory(const std::string& path) {
     struct stat st;
     if (stat(path.c_str(), &st) != 0) {
-        std::cerr << "Error accessing path: " << strerror(errno) << std::endl;
+        std::cerr << "Error accessing path" << std::endl;
         return false;
     }
     return S_ISDIR(st.st_mode);
@@ -94,7 +94,7 @@ bool hasReadPermission(const std::string& path) {
     if (access(path.c_str(), R_OK) == 0) {
         return true; // Read permission is granted
     } else {
-        std::cerr << "Error accessing path: " << strerror(errno) << std::endl;
+        std::cerr << "Error accessing path" << std::endl;
         return false; // Read permission is not granted or an error occurred
     }
 }
@@ -103,7 +103,7 @@ bool hasWritePermission(const std::string& path) {
     if (access(path.c_str(), W_OK) == 0) {
         return true; // Read permission is granted
     } else {
-        std::cerr << "Error accessing path: " << strerror(errno) << std::endl;
+        std::cerr << "Error accessing path" << std::endl;
         return false; // Read permission is not granted or an error occurred
     }
 }
@@ -258,4 +258,17 @@ StatusCode resolveRedirectionStatusCode(int code) {
 		default:
 			return StatusCode300; // Default to a safe redirection code
 	}
+}
+
+size_t getHTTPBodySize(const std::string& httpResponse) {
+    // Find the position of the double CRLF ("\r\n\r\n") that separates the header and body
+    size_t bodyStart = httpResponse.find("\r\n\r\n");
+
+    // If double CRLF is not found, return 0 (no body)
+    if (bodyStart == std::string::npos)
+        return 0;
+
+    // Calculate the size of the body by subtracting the body start position
+    // from the total length of the HTTP response
+    return httpResponse.size() - (bodyStart + 4); // 4 is the length of "\r\n\r\n"
 }

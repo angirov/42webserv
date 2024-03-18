@@ -161,7 +161,7 @@ std::string Request::process_get200()
     std::string full_res;
     full_res += "HTTP/1.1 200 OK\r\n";
     full_res += "Content-Type: " + type + "\r\n";
-    full_res += "Content-Length : " + server.lg.str((int)res_body.length()) + "\r\n";
+    full_res += "Content-Length : " + server.lg.str(res_body.length()) + "\r\n";
     full_res += "\r\n";
     full_res += res_body;
 
@@ -198,7 +198,7 @@ std::string Request::process_get200dir()
     std::string full_res;
     full_res += "HTTP/1.1 200 OK\r\n";
     full_res += "Content-Type: text/html\r\n";
-    full_res += "Content-Length : " + server.lg.str((int)res_body.length()) + "\r\n";
+    full_res += "Content-Length : " + server.lg.str(res_body.length()) + "\r\n";
     full_res += "\r\n";
     full_res += res_body;
 
@@ -214,7 +214,7 @@ std::string Request::process_get301dir()
     std::string full_res;
     full_res += "HTTP/1.1 301 Moved Permanently\r\n";
     full_res += "Content-Type: text/html\r\n";
-    full_res += "Content-Length : " + server.lg.str((int)res_body.length()) + "\r\n";
+    full_res += "Content-Length : " + server.lg.str(res_body.length()) + "\r\n";
     full_res += "Location: " + url + "/\r\n";
     full_res += "\r\n";
     full_res += res_body;
@@ -634,7 +634,7 @@ bool Request::checkForGET()
     struct stat st = {};
     if (stat(resourcePath.c_str(), &st) != 0)
     {
-        server.lg.log(DEBUG, "Request: Error accessing resourcePath (does NOT exist?): " + std::string(strerror(errno))); // = file does not exist
+        server.lg.log(DEBUG, "Request: Error accessing resourcePath (does NOT exist?)."); // = file does not exist
         statusCode = StatusCode404;
         server.lg.log(DEBUG, "Request: set Status 404");
         return false;
@@ -680,7 +680,7 @@ bool Request::checkForDELETE()
     struct stat st = {};
     if (stat(resourcePath.c_str(), &st) != 0)
     {
-        server.lg.log(DEBUG, "Request: DELETE: Error accessing resourcePath (does NOT exist?): " + std::string(strerror(errno))); // = file does not exist
+        server.lg.log(DEBUG, "Request: DELETE: Error accessing resourcePath (does NOT exist?)");
         statusCode = StatusCode404;
         server.lg.log(DEBUG, "Request: set Status 404");
         return false;

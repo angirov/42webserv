@@ -11,7 +11,6 @@
 #include <sys/stat.h>
 #include <cstring> // for strerror, strcpy and strcat
 #include <unistd.h> // for access()
-#include <cerrno>
 #include <cstdlib> // For realpath
 #include <dirent.h>
 #include <fstream>
@@ -94,4 +93,6 @@ std::string appendIfNotEndsWith(const std::string &str, char c);
 std::string getDifference(const std::string& route, const std::string& url);
 std::list<int> deductLists(const std::list<int>& list1, const std::list<int>& list2);
 StatusCode resolveRedirectionStatusCode(int code);
+size_t getHTTPBodySize(const std::string& httpResponse);
+
 #endif
