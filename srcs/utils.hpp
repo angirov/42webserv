@@ -32,23 +32,29 @@ enum HTTPVersion
     HTTPVer11
 };
 
-enum StatusCode
-{
-    StatusCodeInvalid,
-    StatusCode200,
-    StatusCode200dir,
-    // StatusCode201,
-    StatusCode301,
-    StatusCode301dir,
-    // StatusCode400, // not understand
-    StatusCode403,
-    StatusCode404,
-    StatusCode405,
-    StatusCode500,
-    StatusCodePOST,
-    StatusCodeDELETE,
-    StatusCodePost500,
-    StatusCodeCGI
+enum StatusCode {
+	StatusCodeInvalid,
+	StatusCode200,
+	StatusCode200dir,
+	// StatusCode201,
+	StatusCode301dir,
+	// StatusCode400, // not understand
+	StatusCode403,
+	StatusCode404,
+	StatusCode405,
+	StatusCode500,
+	StatusCodePOST,
+	StatusCodeDELETE,
+	StatusCodePost500,
+	StatusCodeCGI,
+	StatusCode300 = 300,
+	StatusCode301 = 301,
+	StatusCode302 = 302,
+	StatusCode303 = 303,
+	StatusCode304 = 304,
+	StatusCode305 = 305,
+	StatusCode306 = 306,
+	StatusCode307 = 307
 };
 
 enum ContentType
@@ -87,5 +93,5 @@ std::string getDifference(const std::string& first, const std::string& second);
 std::string appendIfNotEndsWith(const std::string &str, char c);
 std::string getDifference(const std::string& route, const std::string& url);
 std::list<int> deductLists(const std::list<int>& list1, const std::list<int>& list2);
-
+StatusCode resolveRedirectionStatusCode(int code);
 #endif

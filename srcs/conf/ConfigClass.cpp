@@ -12,7 +12,7 @@ Config::Config(const Config &other) {
 	_timeout = other._timeout;
 	_maxClients = other._maxClients;
 	_client_max_body_size = other._client_max_body_size;
-	virtServers = other.virtServers; // Copy the vector of VirtServer objects
+	virtServers = other.virtServers;
 }
 
 // Setter and Getter functions for Config class
@@ -59,7 +59,7 @@ void Config::display() const {
 }
 
 const std::vector<VirtServer>& Config::getVirtServers() const {
-	return virtServers; // Return the vector of VirtServer objects
+	return virtServers;
 }
 
 // Default constructor
@@ -72,7 +72,7 @@ VirtServer::VirtServer(int port, const std::vector<std::string>& serverNames) : 
 VirtServer::VirtServer(const VirtServer& other) {
 	_port = other._port;
 	_serverNames = other._serverNames;
-	_errorPages = other._errorPages;
+	_errorPage = other._errorPage;
 	locations = other.locations;
 }
 
@@ -93,17 +93,12 @@ const std::vector<std::string> & VirtServer::getServerNames() const {
 	return _serverNames;
 }
 
-void VirtServer::setErrorPage(int errorCode, const std::string &errorPage) {
-	_errorPages[errorCode] = errorPage;
+void VirtServer::setErrorPage(const std::string &errorPage) {
+	_errorPage = errorPage;
 }
 
-const std::string &VirtServer::getErrorPage(int errorCode) const {
-	std::map<int, std::string>::const_iterator it = _errorPages.find(errorCode);
-	if (it != _errorPages.end()) {
-		return it->second;
-	}
-	static const std::string emptyString = "";
-	return emptyString;
+const std::string& VirtServer::getErrorPage() const {
+	return _errorPage;
 }
 
 void VirtServer::addLocation(const Location &location) {
@@ -205,11 +200,11 @@ const std::string& Location::getReturnURL() const {
 	return _returnURL;
 }
 
-void Location::setReturnCode(const std::string &returnCode) {
+void Location::setReturnCode(int returnCode) {
 	_returnCode = returnCode;
 }
 
-const std::string& Location::getReturnCode() const {
+int Location::getReturnCode() const {
 	return _returnCode;
 }
 
@@ -227,12 +222,8 @@ void VirtServer::display() const {
 	}
 	std::cout << std::endl;
 
-	// Display error pages
-	std::cout << "\nError Pages:\n";
-	std::map<int, std::string>::const_iterator errorPageIt = _errorPages.begin();
-	for (; errorPageIt != _errorPages.end(); ++errorPageIt) {
-		std::cout << errorPageIt->first << " Error Page: " << errorPageIt->second << std::endl;
-	}
+	// Display Server error page
+	std::cout << "ErrorPage: " << getErrorPage() << std::endl;
 
 	// Display locations
 	std::cout << "\nLocations:\n";
@@ -240,7 +231,6 @@ void VirtServer::display() const {
 		locations[i].display();
 	}
 }
-
 
 void Location::display() const {
 	// Display Location variables
