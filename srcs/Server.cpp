@@ -250,7 +250,7 @@ void Server::run()
         do_timing();
         fill_fd_sets();
         do_select();
-        do_send();
+        check_request();
     }
 }
 
@@ -403,7 +403,7 @@ void Server::do_select()
     // lg.log(DEBUG, "Done select");
 }
 
-void Server::do_send()
+void Server::check_request()
 {
     std::list<int> readingFds = getReadingFds();
     for (std::list<int>::iterator it = readingFds.begin(); it != readingFds.end(); ++it)

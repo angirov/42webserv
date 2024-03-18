@@ -91,7 +91,7 @@ public:
     int find_maxFd();
     void do_read(std::list<int>::iterator &fd_itr);
     void do_write(int fd);
-    void do_send();
+    void check_request();
     void do_timing();
     void check_timeout();
     void set_last_time(int fd);
