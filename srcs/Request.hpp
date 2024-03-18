@@ -62,6 +62,7 @@ public:
     const vsIt findHost();
     locIt findRoute() const;
     bool methodOk() const;
+    bool checkForPOST();
     bool checkForGET();
     bool checkForDELETE();
     std::string getRequestHostHeader() const;
