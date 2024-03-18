@@ -73,24 +73,8 @@ Request::Request(const Server &server, int fd, const std::string &request) : ser
 	}
 	else if (method == MethodPOST)
 	{
-		std::string uploadDir = (*LocationIt).getUploadDir();
-		server.lg.log(DEBUG, "Request: checking uploaddir: " + uploadDir);
-		if (isDirHasWritePermission(uploadDir)) {
-			if (isCgiExtention(extractExtension(extractFileName(resourcePath)))) {
-				statusCode = StatusCodeCGI;
-				server.lg.log(DEBUG, "Request: reg file. set Status CGI");
-				return;
-			}
-			server.lg.log(DEBUG, "Request: set Status POST");
-			statusCode = StatusCodePOST;
-			return;
-		}
-		else
-		{
-			server.lg.log(DEBUG, "Request: POST upload dir is bad - set 500");
-			statusCode = StatusCodePost500;
-			return;
-		}
+		checkForPOST();
+		return;
 	}
 	server.lg.log(DEBUG, "Request: constructor DONE only for GET, POST");
 	return;
@@ -675,6 +659,46 @@ bool Request::checkForGET()
     }
 }
 
+bool Request::checkForPOST()
+{
+    if (url[url.length() - 1] != '/')
+    {
+        statusCode = StatusCode301dir;
+        server.lg.log(DEBUG, "Request: dir can be indexed but needs a trailing / set Status 301dir");
+        return true;
+    }
+    std::string indexFile = (*LocationIt).getLocationIndex();
+    std::string checkPath = resourcePath + indexFile;
+    server.lg.log(DEBUG, "Request: checking if exists: " + checkPath);
+    if (indexFile.length() > 0 && hasReadPermission(checkPath) && isCgiExtention(extractExtension(extractFileName(checkPath)))) {
+            resourcePath = checkPath;
+            statusCode = StatusCodeCGI;
+            server.lg.log(DEBUG, "Request: dir with CGI index file. set Status CGI");
+            return true;
+    }
+    else
+    {
+        std::string uploadDir = (*LocationIt).getUploadDir();
+        server.lg.log(DEBUG, "Request: checking uploaddir: " + uploadDir);
+        if (isDirHasWritePermission(uploadDir)) {
+            if (isCgiExtention(extractExtension(extractFileName(resourcePath)))) {
+                statusCode = StatusCodeCGI;
+                server.lg.log(DEBUG, "Request: reg file. set Status CGI");
+                return true;
+            }
+            server.lg.log(DEBUG, "Request: set Status POST");
+            statusCode = StatusCodePOST;
+            return true;
+        }
+        else
+        {
+            server.lg.log(DEBUG, "Request: POST upload dir is bad - set 500");
+            statusCode = StatusCodePost500;
+            return true;
+        }
+    }
+}
+
 bool Request::checkForDELETE()
 {
     if (resourcePath.length() == 0)
@@ -735,8 +759,13 @@ bool Request::process_dir()
         server.lg.log(DEBUG, "Request: checking if exists: " + checkPath);
         if (indexFile.length() > 0 && hasReadPermission(checkPath))
         {
-            server.lg.log(DEBUG, "Request: index file found NEW resourcePath: " + checkPath);
             resourcePath = checkPath;
+            if (isCgiExtention(extractExtension(extractFileName(resourcePath)))) {
+                statusCode = StatusCodeCGI;
+                server.lg.log(DEBUG, "Request: dir with CGI index file. set Status CGI");
+                return true;
+            }
+            server.lg.log(DEBUG, "Request: index file found NEW resourcePath: " + checkPath);
             statusCode = StatusCode200;
             return true;
         }
