@@ -69,7 +69,7 @@
 
 <nav>
     <button onclick="showContainer('get-container')">GET</button>
-    <button onclick="showContainer('post-container')">POST</button>
+<!--    <button onclick="showContainer('post-container')">POST</button>-->
     <button onclick="showContainer('delete-container')">DELETE</button>
 </nav>
 
@@ -78,11 +78,11 @@
     <button onclick="sendGetRequest()">Send</button>
 </div>
 
-<div id="post-container" class="container">
-    <input type="text" id="post-url" placeholder="URL">
-    <input type="file" id="post-file">
-    <button onclick="sendPostRequest()">Send</button>
-</div>
+<!--<div id="post-container" class="container">-->
+<!--    <input type="text" id="post-url" placeholder="URL">-->
+<!--    <input type="file" id="post-file">-->
+<!--    <button onclick="sendPostRequest()">Send</button>-->
+<!--</div>-->
 
 <div id="delete-container" class="container">
     <input type="text" id="delete-url" placeholder="URL">
@@ -112,29 +112,34 @@
         xhr.send();
     }
 
-    function sendPostRequest() {
-        var url = document.getElementById('post-url').value;
-        var file = document.getElementById('post-file').files[0];
-        return new Promise((resolve, reject) => {
-            const xhr = new XMLHttpRequest();
-            xhr.open('POST', url, true);
+    // function sendPostRequest() {
+    //     var url = document.getElementById('post-url').value;
+    //     var file = document.getElementById('post-file').files[0];
+    //     console.log(url);
+    //     return new Promise((resolve, reject) => {
+    //             const xhr = new XMLHttpRequest();
+    //             xhr.open('POST', url, true);
+    //             xhr.setRequestHeader('Content-Type', 'text/plain');
+    //             xhr.onload = function () {
+    //                 if (xhr.status >= 200 && xhr.status < 300) {
+    //                     resolve(xhr); // Resolve with the XMLHttpRequest object
+    //                 } else {
+    //                     reject(xhr.statusText); // Reject with the status text
+    //                 }
+    //             };
+    //             xhr.onerror = function () {
+    //                 reject(xhr.statusText); // Reject with the status text
+    //             };
+    //             xhr.send(file);
+    //         })
+    //         .then(response => {
+    //             alert('response: ' + response.status + ' ' + response.statusText);
+    //         })
+    //         .catch(error => {
+    //             alert('Error: ' + error);
+    //         });
+    // }
 
-            xhr.onload = function () {
-                if (xhr.status >= 200 && xhr.status < 300) {
-                    resolve(xhr.responseText);
-                } else {
-                    reject(xhr.statusText);
-                }
-            };
-
-            xhr.onerror = function () {
-                reject(xhr.statusText);
-            };
-
-            xhr.setRequestHeader('Content-Type', 'text/plain');
-            xhr.send(file);
-        });
-    }
 
     function sendDeleteRequest() {
         var url = document.getElementById('delete-url').value;
