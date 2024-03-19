@@ -700,7 +700,7 @@ bool Request::checkForGET()
 
 bool Request::checkForPOST()
 {
-    if (url[url.length() - 1] != '/')
+    if (isDirHasWritePermission(resourcePath) && url[url.length() - 1] != '/')
     {
         statusCode = StatusCode301dir;
         server.lg.log(DEBUG, "Request: dir can be indexed but needs a trailing / set Status 301dir");
