@@ -30,6 +30,7 @@ struct Request
 {
     // private:
 public:
+    bool sizeExceeded;
     // Have to be initialized in the constructor?
     const Server &server; // server->virtServers[0].locations[0]
     int fd;
@@ -75,7 +76,7 @@ public:
 	std::string generate_error_page(const std::string& error_page_path);
 
     // public:
-    Request(const Server &server, int fd, const std::string &request);
+    Request(const Server &server, int fd, const std::string &request, bool sizeExceeded);
     void printServer() const;
 
 	bool checkForRedirection();
@@ -92,6 +93,7 @@ public:
     std::string process_get403();
     std::string process_get404();
     std::string process_get405();
+    std::string process_get413();
     std::string process_get500();
     std::string process_POST();
     std::string process_DELETE();
