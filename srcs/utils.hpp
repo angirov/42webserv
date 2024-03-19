@@ -41,6 +41,7 @@ enum StatusCode {
 	StatusCode403,
 	StatusCode404,
 	StatusCode405,
+	StatusCode413,
 	StatusCode500,
 	StatusCodePOST,
 	StatusCodeDELETE,
@@ -94,5 +95,7 @@ std::string getDifference(const std::string& route, const std::string& url);
 std::list<int> deductLists(const std::list<int>& list1, const std::list<int>& list2);
 StatusCode resolveRedirectionStatusCode(int code);
 size_t getHTTPBodySize(const std::string& httpResponse);
+bool isInFirstLine(const std::string& input, const std::string& substring);
+void removeAllElementsByValue(std::list<int>& lst, int value);
 
 #endif

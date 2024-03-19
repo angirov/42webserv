@@ -241,7 +241,7 @@ void Server::run()
         fill_fd_sets();
         do_select();
         check_request();
-        check_size();
+        // check_size();
     }
 }
 
@@ -293,19 +293,22 @@ void Server::do_read(std::list<int>::iterator &fd_itr)
     if (num_bytes_recv == 0)
     {
         lg.log(INFO, "Server: recv got zero bytes i.e. peer has closed the connection gracefully. Fd: " + lg.str(*fd_itr));
-        lg.log(DEBUG, "Disconnecting and Removing fd " + lg.str(*fd_itr) + " from the list.");
-        close(*fd_itr);
-        client_fds_l.remove(*fd_itr); // because we work with the copy list
-        lg.log(DEBUG, "Disconnected: New list: " + cout_list(client_fds_l));
+        disconnectFd(*fd_itr);
     }
     if (num_bytes_recv == -1)
     {
         lg.log(ERROR, "Server: recv got -1 responce code while reading fd: " + lg.str(*fd_itr));
-        lg.log(DEBUG, "Disconnecting and Removing fd " + lg.str(*fd_itr) + " from the list.");
-        close(*fd_itr);
-        client_fds_l.remove(*fd_itr); // because we work with the copy list
-        lg.log(DEBUG, "Disconnected: New list: " + cout_list(client_fds_l));
+        disconnectFd(*fd_itr);
     }
+}
+
+void Server::disconnectFd(int fd)
+{
+    
+    lg.log(DEBUG, "Disconnecting and Removing fd " + lg.str(fd) + " from the list.");
+    close(fd);
+    removeAllElementsByValue(client_fds_l, fd);
+    lg.log(DEBUG, "Disconnected: New list: " + cout_list(client_fds_l));
 }
 
 void Server::fill_fd_sets()
@@ -397,19 +400,19 @@ void Server::check_request()
     std::list<int> readingFds = getReadingFds();
     for (std::list<int>::iterator it = readingFds.begin(); it != readingFds.end(); ++it)
     {
+        bool sizeExceeded = (getHTTPBodySize(requests[*it]) > _client_max_body_size);
         // Check if any requests are fully read and process them
         // Should be independent of the return value of select but consider the last state of the read set
-        if (!FD_ISSET(*it, &read_fd_set) && requests[*it].size() > 0)
+        if ((sizeExceeded || (!FD_ISSET(*it, &read_fd_set) && requests[*it].size() > 0)))
         {
             lg.log(DEBUG, "Processing request from " + lg.str(*it) + ". Request:\n" + requests[*it]);
-            responces[*it] = Request(*this, *it, requests[*it]).process(); // <<<<<<<<<<<<< REQUEST <<<<<<<<<<<<<<<<
+            responces[*it] = Request(*this, *it, requests[*it], sizeExceeded).process(); // <<<<<<<<<<<<< REQUEST <<<<<<<<<<<<<<<<
             lg.log(DEBUG, "DONE processing request from " + lg.str(*it) + ". Response:\n" + responces[*it]);
             writing_fds_l.push_back(*it);
             requests[*it] = "";
         }
     }
 }
-
 
 void Server::check_size()
 {
@@ -420,12 +423,8 @@ void Server::check_size()
         if (size > _client_max_body_size)
         {
             lg.log(ERROR, "Client_max_body_size EXCEEDED for " + lg.str(*it) + "; max size: " + lg.str(_client_max_body_size) + "; already received: " + lg.str(size));
-            close(*it);
-            lg.log(DEBUG, "Disconnecting: Old list: " + cout_list(client_fds_l));
-            lg.log(DEBUG, "Removing fd " + lg.str(*it) + " from the list. ");
-            it = client_fds_l.erase(it); // returns the next one
+            disconnectFd(*it);
             requests[*it] = "";
-            lg.log(DEBUG, "Disconnecting: New list: " + cout_list(client_fds_l));
         }
     }
 }
@@ -434,18 +433,25 @@ void Server::do_write(int fd)
 {
     lg.log(DEBUG, "Sending response for " + lg.str(fd));
     int ret;
+    bool sizeExceeded = isInFirstLine(responces[fd], "413");
+    lg.log(INFO, "Sending " + lg.str(responces[fd].size()) + " bytes for client " + lg.str(fd));
     ret = send(fd, responces[fd].c_str(), responces[fd].size(), 0); // Maybe response has to be sent in pieces
     if (ret == 0)
     {
         lg.log(ERROR, "Server: recv got 0 responce code while reading fd: " + lg.str(fd));
+        disconnectFd(fd);
     }
     else if (ret < 0)
     {
         lg.log(ERROR, "Server: recv got -1 responce code while reading fd: " + lg.str(fd));
-        // todo!!!!!!!!!!!!!
+        disconnectFd(fd);
+    }
+    else if (sizeExceeded)
+    {
+        lg.log(ERROR, "Server: sent error 413 to: " + lg.str(fd) + " . Going to disconnenct.");
+        disconnectFd(fd);
     }
     set_last_time(fd);
-    lg.log(INFO, "Sent " + lg.str(responces[fd].size()) + " bytes for client " + lg.str(fd));
     responces[fd] = "";
 }
 
@@ -485,16 +491,19 @@ void Server::displayVirtServerRefs() const
     }
 }
 
-void Server::addToWriting(int value) {
+void Server::addToWriting(int value)
+{
     // clients_fds_l.remove(value);
     writing_fds_l.push_back(value);
 }
 
-void Server::rmFromWriting(int value) {
+void Server::rmFromWriting(int value)
+{
     // clients_fds_l.remove(value);
     writing_fds_l.remove(value);
 }
 
-std::list<int> Server::getReadingFds() {
-        return deductLists(client_fds_l, writing_fds_l);
-    }
+std::list<int> Server::getReadingFds()
+{
+    return deductLists(client_fds_l, writing_fds_l);
+}

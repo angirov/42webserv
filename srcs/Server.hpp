@@ -111,6 +111,7 @@ public:
     int maxOfList(std::list<int> & l) const;
     const std::vector<VirtServer> & getVirtServers() const;
     void run();
+    void disconnectFd(int fd);
 };
 
 #endif
