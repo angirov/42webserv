@@ -6,14 +6,8 @@ SRCS_TEST	:=	test_main.cpp Server.cpp Request.cpp RequestCGI.cpp Logger.cpp util
 
 all: client server
 
-client: client.cpp
-	$(COMPILER) $(CFLAGS) client.cpp -o client
-
 server:
 	$(COMPILER) $(CFLAGS) ${SRCS} -o server
-
-servertest:
-	$(COMPILER) $(TESTFLAGS) ${SRCS_TEST} -o servertest
 
 clean:
 	rm -f server
@@ -21,8 +15,5 @@ clean:
 fclean: clean
 	rm -f client
 	rm -f servertest
-
-test: re
-	bash test.sh
 
 re: clean all
