@@ -50,7 +50,7 @@ int main(int argc, char **argv)
 	if (argc == 2) {
 		configFile = argv[1];
 	} else {
-		configFile = "parser/Configs/default.conf"; // Default configuration file path
+		configFile = "/configs/default.conf"; // Default configuration file path
 	}
 
 	Config config; // Create a Config object

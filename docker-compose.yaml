@@ -6,12 +6,16 @@ services:
         build:
           context: ./srcs
           #network_mode: "host"
+        # command: "/configs/eval.conf" # command: ""
         environment:
             - "WEBSERV_LOGLEVEL=DEBUG" 
         volumes:
         - type: bind
           source: ./data
           target: /data
+        - type: bind
+          source: ./configs
+          target: /configs
         ports:
            - "7777:7777"
            - "8080:8080"

@@ -6,9 +6,9 @@ RUN apt install g++ -y
 WORKDIR /webserv
 COPY . .
 
-RUN make
+RUN make re
 
 EXPOSE 7777
 EXPOSE 8080
 
-CMD [ "./server" ]
+ENTRYPOINT [ "./server" ]
