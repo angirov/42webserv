@@ -19,3 +19,10 @@ curl -X POST -d 'Hello from curl again!' http://localhost:8000/save/?savepath=%2
 
 # Config googledoc
 https://docs.google.com/document/d/1AY-qDocJuQR4Rgr7KgyeAjsX5wkgn2mUF8NiFqpTxOQ/edit?usp=sharing
+
+# Uploads tests
+
+```
+curl -X POST 127.0.0.1:8000/uploads/test.txt -d "@./data/files/100k.txt" -v
+curl -X DELETE 127.0.0.1:8000/uploads/test.txt  -v  
+```
