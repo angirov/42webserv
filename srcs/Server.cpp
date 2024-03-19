@@ -442,6 +442,7 @@ void Server::do_write(int fd)
     else if (ret < 0)
     {
         lg.log(ERROR, "Server: recv got -1 responce code while reading fd: " + lg.str(fd));
+        // todo!!!!!!!!!!!!!
     }
     set_last_time(fd);
     lg.log(INFO, "Sent " + lg.str(responces[fd].size()) + " bytes for client " + lg.str(fd));

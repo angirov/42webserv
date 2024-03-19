@@ -1,3 +1,3 @@
-#curl -O http://localhost:8000/dnd.pdf
+#curl -O http://localhost:80/dnd.pdf
 
-GET http://localhost:8000/dnd.pdf
+GET http://localhost:80/dnd.pdf

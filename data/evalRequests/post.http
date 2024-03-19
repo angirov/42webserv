@@ -1,5 +1,5 @@
-# curl -X POST -F "file=@dnd.pdf" http://localhost:8000
-POST http://localhost:8000
+# curl -X POST -F "file=@dnd.pdf" http://localhost:80
+POST http://localhost:80
 Content-Type: multipart/form-data; boundary=WebAppBoundary
 
 --WebAppBoundary

@@ -1,5 +1,5 @@
-# curl -X DELETE http://localhost:8000/dnd.pdf
-DELETE http://localhost:8000/dnd.pdf
+# curl -X DELETE http://localhost:80/dnd.pdf
+DELETE http://localhost:80/dnd.pdf
 
 ###
 
