@@ -5,15 +5,15 @@ services:
         container_name: webserv
         build:
           context: ./srcs
-        network_mode: "host"
+          #network_mode: "host"
         environment:
             - "WEBSERV_LOGLEVEL=DEBUG" 
         volumes:
         - type: bind
           source: ./data
           target: /data
-        # ports:
-        #   - "7777:7777"
-        #   - "8080:8080"
-
-
+        ports:
+           - "7777:7777"
+           - "8080:8080"
+           - "8040:8040"
+           - "8000:8000"
