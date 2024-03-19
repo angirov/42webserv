@@ -272,3 +272,30 @@ size_t getHTTPBodySize(const std::string& httpResponse) {
     // from the total length of the HTTP response
     return httpResponse.size() - (bodyStart + 4); // 4 is the length of "\r\n\r\n"
 }
+
+bool isInFirstLine(const std::string& input, const std::string& substring)
+{
+    // Find the position of the first newline character
+    size_t pos = input.find('\n');
+    
+    // Extract the first line of the input string
+    std::string firstLine = input.substr(0, pos);
+    
+    // Check if the substring exists in the first line
+    if (firstLine.find(substring) != std::string::npos) {
+        return true;
+    }
+    return false;
+}
+
+void removeAllElementsByValue(std::list<int>& lst, int value)
+{
+    std::list<int>::iterator it = lst.begin();
+    while (it != lst.end()) {
+        if (*it == value) {
+            it = lst.erase(it);
+        } else {
+            ++it;
+        }
+    }
+}

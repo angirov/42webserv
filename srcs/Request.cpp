@@ -1,12 +1,13 @@
 #include "Request.hpp"
 #include "utils.hpp"
 
-
-bool Request::checkForRedirection() {
+bool Request::checkForRedirection()
+{
     // Check if redirection is set for the route
-    const std::string& redirectionURL = (*LocationIt).getReturnURL();
+    const std::string &redirectionURL = (*LocationIt).getReturnURL();
     int redirectionCode = (*LocationIt).getReturnCode();
-    if (!redirectionURL.empty() && redirectionCode >= 300 && redirectionCode <= 307) {
+    if (!redirectionURL.empty() && redirectionCode >= 300 && redirectionCode <= 307)
+    {
         // Redirection is set, set response code to the stored integer value
         server.lg.log(DEBUG, "Request: Redirection set for route: " + (*LocationIt).getRoute());
 
@@ -20,88 +21,98 @@ bool Request::checkForRedirection() {
     return false; // Redirection is not set
 }
 
-std::string Request::generate_error_page(const std::string& error_page_path) {
-	std::stringstream response;
+std::string Request::generate_error_page(const std::string &error_page_path)
+{
+    std::stringstream response;
 
-	// Read HTML content from file
-	std::ifstream file(error_page_path.c_str());
-	std::string error_html;
-	if (file.is_open()) {
-		std::stringstream buffer;
-		buffer << file.rdbuf();
-		error_html = buffer.str();
-		file.close();
-	} else {
-		// If file reading fails, use a default error message
-		error_html = "<html><head><title>404 Not Found</title></head><body><h1>404 Not Found</h1><p>The requested resource was not found on this server.</p></body></html>";
-	}
+    // Read HTML content from file
+    std::ifstream file(error_page_path.c_str());
+    std::string error_html;
+    if (file.is_open())
+    {
+        std::stringstream buffer;
+        buffer << file.rdbuf();
+        error_html = buffer.str();
+        file.close();
+    }
+    else
+    {
+        // If file reading fails, use a default error message
+        error_html = "<html><head><title>404 Not Found</title></head><body><h1>404 Not Found</h1><p>The requested resource was not found on this server.</p></body></html>";
+    }
 
-	// Construct the HTTP response
-	response << "HTTP/1.1 404 Not Found\r\n";
-	response << "Content-Type: text/html\r\n";
-	response << "Content-Length: " << error_html.length() << "\r\n";
-	response << "\r\n";
-	response << error_html;
+    // Construct the HTTP response
+    response << "HTTP/1.1 404 Not Found\r\n";
+    response << "Content-Type: text/html\r\n";
+    response << "Content-Length: " << error_html.length() << "\r\n";
+    response << "\r\n";
+    response << error_html;
 
-	return response.str();
+    return response.str();
 }
 
-Request::Request(const Server &server, int fd, const std::string &request) : server(server), fd(fd), request(request)
+Request::Request(const Server &server, int fd, const std::string &request, bool sizeExceeded) : sizeExceeded(sizeExceeded), server(server), fd(fd), request(request)
 {
-	parse();
-	print_request();
+    if (sizeExceeded)
+    {
+        statusCode = StatusCode413;
+        return;
+    }
+    parse();
+    print_request();
 
-	// Find the Virtual Host - by default the first one
-	VirtServIt = findHost();
+    // Find the Virtual Host - by default the first one
+    VirtServIt = findHost();
     if (domain.length() == 0 && !(*VirtServIt).getServerNames().empty())
     {
         domain = *(*VirtServIt).getServerNames().begin();
     }
-	server.lg.log(DEBUG, "Request: Domain: " + domain);
+    server.lg.log(DEBUG, "Request: Domain: " + domain);
 
-	// Find the Location by route - if no route matches - the end of the vector returned
-	LocationIt = findRoute();
-	if (LocationIt != (*VirtServIt).getLocations().end())
-	{
-		server.lg.log(DEBUG, "Request: Route found: " + (*LocationIt).getRoute());
-	}
-	else
-	{
-		server.lg.log(DEBUG, "Request: Route NOT found for url: " + url);
-		statusCode = StatusCode404;
-		return;
-	}
+    // Find the Location by route - if no route matches - the end of the vector returned
+    LocationIt = findRoute();
+    if (LocationIt != (*VirtServIt).getLocations().end())
+    {
+        server.lg.log(DEBUG, "Request: Route found: " + (*LocationIt).getRoute());
+    }
+    else
+    {
+        server.lg.log(DEBUG, "Request: Route NOT found for url: " + url);
+        statusCode = StatusCode404;
+        return;
+    }
 
     resourcePath = getPath();
-	// Check if redirection is set for the route
-	if (checkForRedirection()) {
-		return;
-	}
-	if (methodOk())
-		server.lg.log(DEBUG, "Request: Method: " + toStr(method) + " allowed");
-	else
-	{
-		server.lg.log(DEBUG, "Request: Method: " + toStr(method) + " forbidden. set Status 405");
-		statusCode = StatusCode405;
-		return;
-	}
-	if (method == MethodGET)
-	{
-		checkForGET();
-		return;
-	}
-	else if (method == MethodDELETE)
-	{
-		checkForDELETE();
-		return;
-	}
-	else if (method == MethodPOST)
-	{
-		checkForPOST();
-		return;
-	}
-	server.lg.log(DEBUG, "Request: constructor DONE only for GET, POST");
-	return;
+    // Check if redirection is set for the route
+    if (checkForRedirection())
+    {
+        return;
+    }
+    if (methodOk())
+        server.lg.log(DEBUG, "Request: Method: " + toStr(method) + " allowed");
+    else
+    {
+        server.lg.log(DEBUG, "Request: Method: " + toStr(method) + " forbidden. set Status 405");
+        statusCode = StatusCode405;
+        return;
+    }
+    if (method == MethodGET)
+    {
+        checkForGET();
+        return;
+    }
+    else if (method == MethodDELETE)
+    {
+        checkForDELETE();
+        return;
+    }
+    else if (method == MethodPOST)
+    {
+        checkForPOST();
+        return;
+    }
+    server.lg.log(DEBUG, "Request: constructor DONE only for GET, POST");
+    return;
 }
 
 std::string Request::process_hard()
@@ -187,17 +198,24 @@ std::string Request::process_get200dir()
     std::string res_body;
 
     res_body += "<html>\n<head><title>Index of " + url + "</title></head>\n"
-                "<body>\n<h1>Index of " + url + "</h1><hr><pre><a href=\"../\">../</a>\n";
+                                                         "<body>\n<h1>Index of " +
+                url + "</h1><hr><pre><a href=\"../\">../</a>\n";
 
     DIR *dir; // DIR = A type representing a directory stream.
     struct dirent *ent;
-    if ((dir = opendir(resourcePath.c_str())) != NULL) {
-        while ((ent = readdir(dir)) != NULL) {
+    if ((dir = opendir(resourcePath.c_str())) != NULL)
+    {
+        while ((ent = readdir(dir)) != NULL)
+        {
             std::string name(ent->d_name);
-            if (ent->d_type == DT_REG) {
+            if (ent->d_type == DT_REG)
+            {
                 res_body += "<a href=\"" + name + "\">" + name + "</a>\n";
-            } else if (ent->d_type == DT_DIR) {
-                if (strcmp(ent->d_name, ".") != 0 && strcmp(ent->d_name, "..") != 0) {
+            }
+            else if (ent->d_type == DT_DIR)
+            {
+                if (strcmp(ent->d_name, ".") != 0 && strcmp(ent->d_name, "..") != 0)
+                {
                     res_body += "<a href=\"" + name + "/\">" + name + "/</a>\n";
                 }
             }
@@ -234,44 +252,46 @@ std::string Request::process_get301dir()
     return full_res;
 }
 
-std::string Request::process_redirection() const {
-	std::string response;
-	switch (statusCode) {
-		case StatusCode300:
-			// Handle StatusCode 300 (Multiple Choices)
-			response = "HTTP/1.1 300 Multiple Choices\r\n";
-			break;
-		case StatusCode301:
-			response = "HTTP/1.1 301 Moved Permanently\r\n";
-			break;
-		case StatusCode302:
-			response = "HTTP/1.1 302 Found\r\n";
-			break;
-		case StatusCode303:
-			response = "HTTP/1.1 303 See Other\r\n";
-			break;
-		case StatusCode304:
-			response = "HTTP/1.1 304 Not Modified\r\n";
-			break;
-		case StatusCode305:
-			response = "HTTP/1.1 305 Use Proxy\r\n";
-			break;
-		case StatusCode306:
-			response = "HTTP/1.1 306 Reserved\r\n";
-			break;
-		case StatusCode307:
-			response = "HTTP/1.1 307 Temporary Redirect\r\n";
-			break;
-		default:
-			response = "HTTP/1.1 500 Internal Server Error\r\n";
-			break;
-	}
-	// Add Location header
-	response += "Location: " + (*LocationIt).getReturnURL() + "\r\n";
-	response += "Content-Type: text/html\r\n";
-	response += "Content-Length: 0\r\n";
-	response += "\r\n"; // End of headers
-	return response;
+std::string Request::process_redirection() const
+{
+    std::string response;
+    switch (statusCode)
+    {
+    case StatusCode300:
+        // Handle StatusCode 300 (Multiple Choices)
+        response = "HTTP/1.1 300 Multiple Choices\r\n";
+        break;
+    case StatusCode301:
+        response = "HTTP/1.1 301 Moved Permanently\r\n";
+        break;
+    case StatusCode302:
+        response = "HTTP/1.1 302 Found\r\n";
+        break;
+    case StatusCode303:
+        response = "HTTP/1.1 303 See Other\r\n";
+        break;
+    case StatusCode304:
+        response = "HTTP/1.1 304 Not Modified\r\n";
+        break;
+    case StatusCode305:
+        response = "HTTP/1.1 305 Use Proxy\r\n";
+        break;
+    case StatusCode306:
+        response = "HTTP/1.1 306 Reserved\r\n";
+        break;
+    case StatusCode307:
+        response = "HTTP/1.1 307 Temporary Redirect\r\n";
+        break;
+    default:
+        response = "HTTP/1.1 500 Internal Server Error\r\n";
+        break;
+    }
+    // Add Location header
+    response += "Location: " + (*LocationIt).getReturnURL() + "\r\n";
+    response += "Content-Type: text/html\r\n";
+    response += "Content-Length: 0\r\n";
+    response += "\r\n"; // End of headers
+    return response;
 }
 
 std::string Request::process_get301()
@@ -284,30 +304,39 @@ std::string Request::process_get403()
     return "HTTP/1.1 403 FORBIDDEN\r\nContent-Length: 0\r\n\r\n";
 }
 
-std::string Request::process_get404() {
-	const VirtServer &vs = *VirtServIt;
-	std::string errorPath = vs.getErrorPage();
+std::string Request::process_get404()
+{
+    const VirtServer &vs = *VirtServIt;
+    std::string errorPath = vs.getErrorPage();
 
-	std::cout << "Error page path: " << errorPath << std::endl;
+    std::cout << "Error page path: " << errorPath << std::endl;
 
-	if (!errorPath.empty()) {
-		// Generate the error page content dynamically
-		std::string errorPageContent = generate_error_page(errorPath);
+    if (!errorPath.empty())
+    {
+        // Generate the error page content dynamically
+        std::string errorPageContent = generate_error_page(errorPath);
 
-		// Calculate the content length
-		std::ostringstream contentLength;
-		contentLength << errorPageContent.size();
+        // Calculate the content length
+        std::ostringstream contentLength;
+        contentLength << errorPageContent.size();
 
-		return errorPageContent;
-	} else {
-		// If the error page path is empty, fallback to a default response format
-		return "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n";
-	}
+        return errorPageContent;
+    }
+    else
+    {
+        // If the error page path is empty, fallback to a default response format
+        return "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n";
+    }
 }
 
 std::string Request::process_get405()
 {
     return "HTTP/1.1 405 METHOD NOT ALLOWED\r\nContent-Length: 0\r\n\r\n";
+}
+
+std::string Request::process_get413()
+{
+    return "HTTP/1.1 413 CONTENT TOO LARGE\r\nContent-Length: 0\r\n\r\n";
 }
 
 std::string Request::process_get500()
@@ -322,7 +351,7 @@ std::string Request::process_post500()
 
 std::string Request::process_cgi500()
 {
-	return "HTTP/1.1 500 INTERNAL SERVER ERROR\r\nContent-Length: 0\r\n\r\n";
+    return "HTTP/1.1 500 INTERNAL SERVER ERROR\r\nContent-Length: 0\r\n\r\n";
 }
 
 std::string Request::process_POST()
@@ -359,57 +388,62 @@ std::string Request::process_DELETE()
     // todo: the rest of the post response
 }
 
-std::string Request::process() {
-	std::string res;
-	switch (statusCode) {
-		case StatusCode200:
-			res = process_get200();
-			break;
-		case StatusCode200dir:
-			res = process_get200dir();
-			break;
-		case StatusCode300:
-		case StatusCode301:
-		case StatusCode302:
-		case StatusCode303:
-		case StatusCode304:
-		case StatusCode305:
-		case StatusCode306:
-		case StatusCode307:
-			res = process_redirection();
-			break;
-        case StatusCode301dir:
-            res = process_get301dir();
-            break;
-		case StatusCode403:
-			res = process_get403();
-			break;
-		case StatusCode404:
-			res = process_get404();
-			break;
-		case StatusCode405:
-			res = process_get405();
-			break;
-		case StatusCode500:
-			res = process_get500();
-			break;
-		case StatusCodePOST:
-			res = process_POST();
-			break;
-		case StatusCodePost500:
-			res = process_post500();
-			break;
-		case StatusCodeCGI:
-			res = process_CGI();
-			break;
-		case StatusCodeDELETE:
-			res = process_DELETE();
-			break;
-		default:
-			// Handle unrecognized status code
-			break;
-	}
-	return res;
+std::string Request::process()
+{
+    std::string res;
+    switch (statusCode)
+    {
+    case StatusCode200:
+        res = process_get200();
+        break;
+    case StatusCode200dir:
+        res = process_get200dir();
+        break;
+    case StatusCode300:
+    case StatusCode301:
+    case StatusCode302:
+    case StatusCode303:
+    case StatusCode304:
+    case StatusCode305:
+    case StatusCode306:
+    case StatusCode307:
+        res = process_redirection();
+        break;
+    case StatusCode301dir:
+        res = process_get301dir();
+        break;
+    case StatusCode403:
+        res = process_get403();
+        break;
+    case StatusCode404:
+        res = process_get404();
+        break;
+    case StatusCode405:
+        res = process_get405();
+        break;
+    case StatusCode413:
+        res = process_get413();
+        break;
+    case StatusCode500:
+        res = process_get500();
+        break;
+    case StatusCodePOST:
+        res = process_POST();
+        break;
+    case StatusCodePost500:
+        res = process_post500();
+        break;
+    case StatusCodeCGI:
+        res = process_CGI();
+        break;
+    case StatusCodeDELETE:
+        res = process_DELETE();
+        break;
+    default:
+        // Handle unrecognized status code
+        break;
+    }
+    return res;
 }
 
 void Request::parse_first_line()
@@ -424,7 +458,8 @@ void Request::parse_first_line()
     iss >> word;
     url = word;
     size_t queryStart = url.find('?');
-    if (queryStart != std::string::npos) {
+    if (queryStart != std::string::npos)
+    {
         queryString = url.substr(queryStart + 1);
         url = url.substr(0, queryStart);
     }
@@ -521,7 +556,8 @@ std::string Request::getRequestHostHeader() const
 {
     // the first and HOPEFULLY the only header of the request
     const std::vector<std::string> hostVals = getHeaderVals("host");
-    if (hostVals == notFoundStrVec) {
+    if (hostVals == notFoundStrVec)
+    {
         server.lg.log(ERROR, "Could not find host header.");
         return "";
     }
@@ -545,7 +581,7 @@ const vsIt Request::findHost()
 
     if (headerDomain.length() > 0)
     {
-    // loop over the VServers and again over their names
+        // loop over the VServers and again over their names
         std::vector<vsIt>::const_iterator vs_it;
         for (vs_it = vs_vec.begin(); vs_it != vs_vec.end(); ++vs_it)
         {
@@ -680,11 +716,13 @@ bool Request::checkForGET()
     }
     else if (S_ISREG(st.st_mode))
     {
-        if (isCgiExtention(extractExtension(extractFileName(resourcePath)))) {
+        if (isCgiExtention(extractExtension(extractFileName(resourcePath))))
+        {
             statusCode = StatusCodeCGI;
             server.lg.log(DEBUG, "Request: reg file. set Status CGI");
         }
-        else {
+        else
+        {
             statusCode = StatusCode200;
             server.lg.log(DEBUG, "Request: reg file. set Status 200");
         }
@@ -709,18 +747,21 @@ bool Request::checkForPOST()
     std::string indexFile = (*LocationIt).getLocationIndex();
     std::string checkPath = resourcePath + indexFile;
     server.lg.log(DEBUG, "Request: checking if exists: " + checkPath);
-    if (indexFile.length() > 0 && hasReadPermission(checkPath) && isCgiExtention(extractExtension(extractFileName(checkPath)))) {
-            resourcePath = checkPath;
-            statusCode = StatusCodeCGI;
-            server.lg.log(DEBUG, "Request: dir with CGI index file. set Status CGI");
-            return true;
+    if (indexFile.length() > 0 && hasReadPermission(checkPath) && isCgiExtention(extractExtension(extractFileName(checkPath))))
+    {
+        resourcePath = checkPath;
+        statusCode = StatusCodeCGI;
+        server.lg.log(DEBUG, "Request: dir with CGI index file. set Status CGI");
+        return true;
     }
     else
     {
         std::string uploadDir = (*LocationIt).getUploadDir();
         server.lg.log(DEBUG, "Request: checking uploaddir: " + uploadDir);
-        if (isDirHasWritePermission(uploadDir)) {
-            if (isCgiExtention(extractExtension(extractFileName(resourcePath)))) {
+        if (isDirHasWritePermission(uploadDir))
+        {
+            if (isCgiExtention(extractExtension(extractFileName(resourcePath))))
+            {
                 statusCode = StatusCodeCGI;
                 server.lg.log(DEBUG, "Request: reg file. set Status CGI");
                 return true;
@@ -799,7 +840,8 @@ bool Request::process_dir()
         if (indexFile.length() > 0 && hasReadPermission(checkPath))
         {
             resourcePath = checkPath;
-            if (isCgiExtention(extractExtension(extractFileName(resourcePath)))) {
+            if (isCgiExtention(extractExtension(extractFileName(resourcePath))))
+            {
                 statusCode = StatusCodeCGI;
                 server.lg.log(DEBUG, "Request: dir with CGI index file. set Status CGI");
                 return true;
@@ -822,5 +864,4 @@ bool Request::process_dir()
             return false;
         }
     }
-
 }
