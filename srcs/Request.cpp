@@ -167,7 +167,7 @@ std::string Request::getMimeType(const std::string &extension)
     }
     else if (extension == "txt")
     {
-        return "text/txt";
+        return "text/plain";
     }
     else
     {
@@ -184,7 +184,7 @@ std::string Request::process_get200()
     std::string full_res;
     full_res += "HTTP/1.1 200 OK\r\n";
     full_res += "Content-Type: " + type + "\r\n";
-    full_res += "Content-Length : " + server.lg.str(res_body.length()) + "\r\n";
+    full_res += "Content-Length: " + server.lg.str(res_body.length()) + "\r\n";
     full_res += "\r\n";
     full_res += res_body;
 
@@ -228,7 +228,7 @@ std::string Request::process_get200dir()
     std::string full_res;
     full_res += "HTTP/1.1 200 OK\r\n";
     full_res += "Content-Type: text/html\r\n";
-    full_res += "Content-Length : " + server.lg.str(res_body.length()) + "\r\n";
+    full_res += "Content-Length: " + server.lg.str(res_body.length()) + "\r\n";
     full_res += "\r\n";
     full_res += res_body;
 
@@ -244,7 +244,7 @@ std::string Request::process_get301dir()
     std::string full_res;
     full_res += "HTTP/1.1 301 Moved Permanently\r\n";
     full_res += "Content-Type: text/html\r\n";
-    full_res += "Content-Length : " + server.lg.str(res_body.length()) + "\r\n";
+    full_res += "Content-Length: " + server.lg.str(res_body.length()) + "\r\n";
     full_res += "Location: " + url + "/\r\n";
     full_res += "\r\n";
     full_res += res_body;
