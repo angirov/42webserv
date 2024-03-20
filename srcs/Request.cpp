@@ -309,7 +309,7 @@ std::string Request::process_get404()
     const VirtServer &vs = *VirtServIt;
     std::string errorPath = vs.getErrorPage();
 
-    std::cout << "Error page path: " << errorPath << std::endl;
+    // std::cout << "Error page path: " << errorPath << std::endl;
 
     if (!errorPath.empty())
     {
