@@ -6,6 +6,8 @@ RUN apt install g++ -y
 WORKDIR /webserv
 COPY . .
 
+RUN cp /usr/bin/python3 ./cgi-bin/
+
 RUN make re
 
 EXPOSE 7777

@@ -26,3 +26,15 @@ https://docs.google.com/document/d/1AY-qDocJuQR4Rgr7KgyeAjsX5wkgn2mUF8NiFqpTxOQ/
 curl -X POST 127.0.0.1:80/uploads/test.txt -d "@./data/files/100k.txt" -v
 curl -X DELETE 127.0.0.1:80/uploads/test.txt  -v  
 ```
+
+```
+telnet 127.0.0.1 80
+
+GET /cgi-bin/../../data/pycgi/hellopy/hello.py?name=Max HTTP/1.1
+
+GET /cgi-bin/hello.py?name=Max HTTP/1.1
+
+curl 127.0.0.1/cgi-bin/hello.py?name=Max -v
+
+curl -X POST 127.0.0.1/cgi-bin/hello.py?name=Max -d "this is the body" -v
+```

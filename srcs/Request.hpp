@@ -16,7 +16,8 @@
 #define READ_FD     0
 #define WRITE_FD    1
 #define CGI_BUFF_SIZE 10000
-#define PY_EXEC "/usr/bin/python3"
+#define CGI_DIR "/webserv/cgi-bin/"
+#define CGI_EXEC "python3"
 
 #include "Server.hpp"
 #include "conf/ConfigClass.hpp"
@@ -100,7 +101,7 @@ public:
     std::string process_post500();
     std::string process_CGI();
     std::string process_cgi500();
-    char ** makeCgiArgv();
+    char ** makeCgiArgv(std::string file_name);
     char ** makeCgiEnv();
     void setCgiEnvVar(std::string varName, std::string varVal);
 };
