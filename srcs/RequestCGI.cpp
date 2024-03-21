@@ -201,7 +201,10 @@ std::string Request::process_CGI()
     }
     std::string full_res;
     if (cgi_res.length() > 0) {
-        full_res += "HTTP/1.1 200 OK (CGI)\r\n";
+        if (method == MethodGET)
+            full_res += "HTTP/1.1 200 OK (CGI)\r\n";
+        else
+            full_res += "HTTP/1.1 201 Created (CGI)\r\n";
         full_res += "Content-Length: " + server.lg.str(getHTTPBodySize(cgi_res)) + "\r\n";
         full_res +=  cgi_res;
     }
