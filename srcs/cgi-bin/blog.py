@@ -114,7 +114,7 @@ else:
             )
         )
     else:
-        file_name = date + "_" + title + ".html"
+        file_name = (date + "_" + title + ".html").replace(' ', '_')
         blog = generate_blog_page(title, date, text)
         write_html_to_file(blog, file_name, BLOG_DIR)
         print("Content-Type: text/html\r\n\r\n", end="")
