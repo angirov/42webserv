@@ -13,9 +13,9 @@ services:
         - type: bind
           source: ./data
           target: /data
-        - type: bind
-          source: ./srcs/cgi-bin
-          target: /webserv/cgi-bin
+#        - type: bind
+#          source: ./srcs/cgi-bin
+#          target: /webserv/cgi-bin
         - type: bind
           source: ./configs
           target: /configs
