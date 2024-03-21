@@ -92,6 +92,13 @@ def check_input_format(input_string):
         return False
 
 
+def remove_invalid_characters(text):
+    """Remove characters from a string that cannot be used in Unix file names."""
+    # Define a regular expression pattern to match invalid characters
+    invalid_chars_pattern = re.compile(r'[^\w\.-]+')
+    # Replace invalid characters with an empty string
+    return invalid_chars_pattern.sub('', text)
+
 ###################################################################################################
 
 method = os.environ.get("REQUEST_METHOD")
@@ -115,6 +122,7 @@ else:
         )
     else:
         file_name = (date + "_" + title + ".html").replace(' ', '_')
+        file_name = remove_invalid_characters(file_name)
         blog = generate_blog_page(title, date, text)
         write_html_to_file(blog, file_name, BLOG_DIR)
         print("Content-Type: text/html\r\n\r\n", end="")
