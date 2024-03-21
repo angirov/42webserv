@@ -17,11 +17,14 @@ print("<body>")
 print("<h1>Simple Calculator</h1>")
 
 qs = os.environ.get("QUERY_STRING", "")
+qs = qs.replace("+", "%2B")  # Replace '+' with its URL-encoded equivalent '%2B'
 parsed_qs = parse.parse_qs(qs)
 
 num1 = parsed_qs.get("num1", [""])[0]
 num2 = parsed_qs.get("num2", [""])[0]
 operand = parsed_qs.get("operand", [""])[0]
+
+ # print("<p>Debugging: num1 =", num1, ", num2 =", num2, ", operand =", operand, "</p>")
 
 if num1.isdigit() and num2.isdigit() and operand in ['+', '-', '*', '/']:
     num1 = float(num1)
