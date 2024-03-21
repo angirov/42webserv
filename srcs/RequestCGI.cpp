@@ -63,11 +63,14 @@ char ** Request::makeCgiEnv()
     return env_arr;
 }
 
-char ** Request::makeCgiArgv()
+char ** Request::makeCgiArgv(std::string file_name)
 {
+    std::string cgi_exec_path = CGI_EXEC;
+    cgi_exec_path = CGI_DIR + cgi_exec_path;
+    file_name = CGI_DIR + file_name;
     char ** cgi_argv = (char **)calloc(3, sizeof(char *));
-    cgi_argv[0] = strdup(PY_EXEC);
-    cgi_argv[1] = strdup(resourcePath.c_str());
+    cgi_argv[0] = strdup(cgi_exec_path.c_str());
+    cgi_argv[1] = strdup(file_name.c_str());
     cgi_argv[2] = NULL;
 
     return cgi_argv;
@@ -84,6 +87,15 @@ void freeCharPtrArr(char ** arr) {
 
 std::string Request::process_CGI()
 {
+    // std::string file_name = "../../data/pycgi/hellopy/hello.py"; 
+    std::string file_name = getDifference((*LocationIt).getRoute(), url);
+    server.lg.log(DEBUG, "Request: CGI file_name: " + file_name);
+
+    if (file_name.find("/") != std::string::npos) {
+        server.lg.log(DEBUG, "Request: Only scripts immediately in the cgi-bin dir are allowed.");
+        return process_get403();
+    }
+
     server.lg.log(DEBUG, "Request: start processing CGI...");
     server.lg.log(DEBUG, "Request: CGI body: " + body);
     int fdOut[2];
@@ -100,7 +112,7 @@ std::string Request::process_CGI()
         std::cerr << "Child is starting\n";
         close(fdOut[READ_FD]);
 
-        char ** cgi_argv = makeCgiArgv();
+        char ** cgi_argv = makeCgiArgv(file_name);
         char ** env_arr = makeCgiEnv();
 
         dup2(fdOut[WRITE_FD], STDOUT_FILENO);
