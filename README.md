@@ -38,3 +38,9 @@ curl 127.0.0.1/cgi-bin/hello.py?name=Max -v
 
 curl -X POST 127.0.0.1/cgi-bin/hello.py?name=Max -d "this is the body" -v
 ```
+
+# Blog
+
+```
+curl -X POST '127.0.0.1/cgi-bin/blog.py?title=webserv&date=2024-03-20' -d "This project is here to make you write your own HTTP server. You will be able to test it with a real browser. HTTP is one of the most used protocol on internet. Knowing its arcane will be useful, even if you won't be working on a website." -v
+```
