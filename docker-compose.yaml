@@ -1,0 +1,26 @@
+version: "3.8"
+
+services:
+    webserv:
+        container_name: webserv
+        build:
+          context: ./srcs
+          #network_mode: "host"
+        # command: "/configs/eval.conf" # command: ""
+        environment:
+            - "WEBSERV_LOGLEVEL=DEBUG" 
+        volumes:
+        - type: bind
+          source: ./data
+          target: /data
+#        - type: bind
+#          source: ./srcs/cgi-bin
+#          target: /webserv/cgi-bin
+        - type: bind
+          source: ./configs
+          target: /configs
+        ports:
+           - "7777:7777"
+           - "8080:8080"
+           - "8040:8040"
+           - "80:80"

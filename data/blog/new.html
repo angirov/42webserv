@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog Post Form</title>
+</head>
+<body>
+    <h1>Create a Blog Post</h1>
+    <form action="http://127.0.0.1/cgi-bin/blog.py" method="post">
+        <label for="title">Title:</label><br>
+        <input type="text" id="title" name="title" required><br><br>
+        
+        <label for="date">Date:</label><br>
+        <input type="date" id="date" name="date" required><br><br>
+        
+        <label for="text">Text:</label><br>
+        <textarea id="text" name="text" rows="4" cols="50" required></textarea><br><br>
+        
+        <input type="submit" value="Submit">
+    </form>
+    
+    <script>
+        document.querySelector('form').addEventListener('submit', function(event) {
+            var form = event.target;
+            var title = form.elements['title'].value;
+            var date = form.elements['date'].value;
+            var text = form.elements['text'].value;
+            
+            // Append title and date to the action URL as query parameters
+            form.setAttribute('action', form.getAttribute('action') + '?title=' + encodeURIComponent(title) + '&date=' + encodeURIComponent(date));
+            
+            // Clear title and date fields so they won't be included in the body
+            form.elements['title'].value = '';
+            form.elements['date'].value = '';
+            form.submit();
+
+        });
+    </script>
+</body>
+</html>
