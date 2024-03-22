@@ -81,7 +81,7 @@ port 8080
 http://127.0.0.1:8080
 
 / -> default page same as default.local maybe not necessary: could/should be deleted
-/git_vladirmir
+/git_vladimir
 /git_kolja
 /git_max
 /42wolfsburg
