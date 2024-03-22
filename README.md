@@ -25,8 +25,8 @@ https://docs.google.com/document/d/1AY-qDocJuQR4Rgr7KgyeAjsX5wkgn2mUF8NiFqpTxOQ/
 # Uploads tests
 
 ```
-curl -X POST 127.0.0.1:80/uploads/test.txt -d "@./data/files/100k.txt" -v
-curl -X DELETE 127.0.0.1:80/uploads/test.txt  -v  
+curl -X POST 127.0.0.1:80/uploads/test100.txt -d "@/home/mwagner/webserv_eval/data/files/100k.txt" -v -w '%{size_request} %{size_upload}'
+curl -X DELETE 127.0.0.1:80/uploads/test100.txt  -v  
 ```
 
 ```

@@ -201,7 +201,7 @@ bool Parser::hasWrongGlobalSettings(std::ifstream& file) {
 				} else if (key == "max_clients" && (numericValue < 0 || numericValue > 1000)) {
 					std::cerr << "Syntax Error: Max clients value out of range in line: " << line << std::endl;
 					return true;
-				} else if (key == "client_max_body_size" && (numericValue < 0 || numericValue > 1000000)) {
+				} else if (key == "client_max_body_size" && (numericValue < 0 || numericValue > 1000000000)) { // 1 GB
 					std::cerr << "Syntax Error: Client max body size value out of range in line: " << line << std::endl;
 					return true;
 				}
