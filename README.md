@@ -58,3 +58,69 @@ operand=
 ```
 http://localhost/cgi-bin/calc.py?num1=10&num2=5&operand=+
 ```
+
+
+
+# Config explanation
+```
+default.conf
+
+default.local
+port 80
+http://127.0.0.1:80
+
+/
+/colorful
+/uploads
+/cgi-bin
+/blog
+
+
+redirect.local
+port 8080
+http://127.0.0.1:8080
+
+/ -> default page same as default.local maybe not necessary: could/should be deleted
+/git_vladirmir
+/git_kolja
+/git_max
+/42wolfsburg
+/columbia301
+/columbia303
+
+
+indexserver.local
+port 8040
+http://127.0.0.1:8040
+
+/ NO METHODS ALLOWED -> FORBIDDEN
+/colorful : index set, takes priority over autoindex on
+/colorfulaion : no index page, autoindex on
+/colorfulaioff : no index page, autoindex off -> FORBIDDEN
+
+
+
+
+benchmark.conf
+
+benchmark.local
+port 80
+http://127.0.0.1:80
+
+/ -> empty index page
+
+
+eval.conf
+
+default.local
+port 80
+http://127.0.0.1:80
+
+/
+/colorful
+/uploads
+/cgi-bin
+/blog
+
+Same as default, to be modified by evaluator
+```
